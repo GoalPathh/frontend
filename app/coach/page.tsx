@@ -182,31 +182,5 @@ export default function CoachPage() {
           </div>
         </footer>
 
-        <nav className="md:hidden fixed bottom-0 left-0 right-0 z-50 bg-white/95 backdrop-blur-xl border-t border-[#E5E7EB] py-2 px-4">
-          <div className="flex items-center justify-between">
-            <a href="/today" className="flex flex-col items-center gap-1 text-[#6B7280] text-[10px] uppercase tracking-[0.25em]">
-              <Home className="h-5 w-5" />
-              Today
-            </a>
-            <a href="/goals" className="flex flex-col items-center gap-1 text-[#6B7280] text-[10px] uppercase tracking-[0.25em]">
-              <Award className="h-5 w-5" />
-              Goals
-            </a>
-            <a href="/progress" className="flex flex-col items-center gap-1 text-[#6B7280] text-[10px] uppercase tracking-[0.25em]">
-              <BarChart3 className="h-5 w-5" />
-              Progress
-            </a>
-            <a href="/coach" className="flex flex-col items-center gap-1 text-[#9288F8] text-[10px] uppercase tracking-[0.25em]">
-              <Cpu className="h-5 w-5" />
-              Coach
-            </a>
-            <a href="/me" className="flex flex-col items-center gap-1 text-[#6B7280] text-[10px] uppercase tracking-[0.25em]">
-              <User className="h-5 w-5" />
-              Me
-            </a>
-          </div>
-        </nav>
-      </main>
-    </div>
-  );
+NOOP  );
 }

@@ -107,3 +107,35 @@ export interface ConsistencyPoint {
   completionRate: number;
   habitsCompleted: number;
 }
+
+export interface UserProfile {
+  name: string;
+  username: string;
+  avatarUrl: string;
+  level: number;
+  xp: number;
+  streakDays: number;
+}
+
+export interface UserStats {
+  activeGoals: number;
+  longestStreak: number;
+  achievements: number;
+  completionRate: number;
+}
+
+export interface NotificationPreference {
+  id: string;
+  title: string;
+  enabled: boolean;
+  description: string;
+}
+
+export type AppearancePreference = "light" | "dark" | "system";
+
+export interface JourneyStep {
+  id: string;
+  title: string;
+  date: string;
+  completed: boolean;
+}

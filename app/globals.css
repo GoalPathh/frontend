@@ -1,0 +1,96 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --background: 248 249 255;
+  --foreground: 18 18 33;
+  --surface: 255 255 255;
+  --muted: 238 240 251;
+  --border: 228 229 241;
+  --primary: 146 136 248;
+  --primary-soft: 183 169 255;
+  --gold: 251 191 36;
+  --sky: 82 152 236;
+  --coral: 255 138 128;
+}
+
+.dark {
+  --background: 18 18 33;
+  --foreground: 255 255 255;
+  --surface: 27 27 47;
+  --muted: 36 36 58;
+  --border: 48 48 75;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  min-height: 100vh;
+  background: rgb(var(--background));
+  color: rgb(var(--foreground));
+}
+
+button,
+a,
+input {
+  -webkit-tap-highlight-color: transparent;
+}
+
+.page-band {
+  position: relative;
+  overflow: hidden;
+}
+
+.page-band::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background:
+    linear-gradient(120deg, rgba(146, 136, 248, 0.12), transparent 34%),
+    linear-gradient(240deg, rgba(251, 191, 36, 0.12), transparent 30%);
+}
+
+.glass-surface {
+  background: rgba(255, 255, 255, 0.72);
+  border: 1px solid rgba(255, 255, 255, 0.68);
+  backdrop-filter: blur(18px);
+}
+
+.float-soft {
+  animation: float-soft 7s ease-in-out infinite;
+}
+
+.float-soft-delay {
+  animation: float-soft 7s ease-in-out infinite;
+  animation-delay: 1.4s;
+}
+
+@keyframes float-soft {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+
+  50% {
+    transform: translateY(-14px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    scroll-behavior: auto !important;
+    transition-duration: 0.01ms !important;
+  }
+}

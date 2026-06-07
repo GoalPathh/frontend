@@ -74,6 +74,7 @@ input {
 }
 
 @keyframes float-soft {
+
   0%,
   100% {
     transform: translateY(0);
@@ -85,6 +86,7 @@ input {
 }
 
 @media (prefers-reduced-motion: reduce) {
+
   *,
   *::before,
   *::after {
@@ -93,4 +95,10 @@ input {
     scroll-behavior: auto !important;
     transition-duration: 0.01ms !important;
   }
+}
+
+.glass-panel {
+  background: rgba(255, 255, 255, 0.72);
+  backdrop-filter: blur(18px);
+  border: 1px solid rgba(148, 136, 248, 0.16);
 }

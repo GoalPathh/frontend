@@ -235,4 +235,16 @@ export default function TodayPage() {
             <BarChart3 className="h-6 w-6" />
             <span className="mt-1 text-[10px] font-medium uppercase tracking-[0.24em]">Progress</span>
           </a>
-NOOP
+          <a className="flex flex-col items-center justify-center px-3 py-2 text-[#6b7280] hover:text-primary transition-colors" href="/coach">
+            <UserCog className="h-6 w-6" />
+            <span className="mt-1 text-[10px] font-medium uppercase tracking-[0.24em]">Coach</span>
+          </a>
+          <a className="flex flex-col items-center justify-center px-3 py-2 text-[#6b7280] hover:text-primary transition-colors" href="/me">
+            <User className="h-6 w-6" />
+            <span className="mt-1 text-[10px] font-medium uppercase tracking-[0.24em]">Me</span>
+          </a>
+        </div>
+      </div>
+    </div>
+  );
+}

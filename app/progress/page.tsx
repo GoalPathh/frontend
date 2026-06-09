@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Activity, Award, BarChart3, BrainCog, CheckCircle2, Flame, Sparkles, Trophy, TrendingUp, User, UserCog } from "lucide-react";
+import { Activity, BrainCog, CheckCircle2, Flame, Sparkles, Trophy, TrendingUp } from "lucide-react";
 import { DateRangeSelector } from "@/components/progress/date-range-selector";
 import { StatCard } from "@/components/progress/stat-card";
 import { GoalProgressCard } from "@/components/progress/goal-progress-card";
@@ -10,6 +10,7 @@ import { HabitRankingCard } from "@/components/progress/habit-ranking-card";
 import { ActivityHeatmap } from "@/components/progress/activity-heatmap";
 import { AchievementCard } from "@/components/progress/achievement-card";
 import { AIInsightCard } from "@/components/progress/ai-insight-card";
+import { BottomNavigation } from "@/components/bottom-navigation";
 import { progressService } from "@/lib/progressService";
 import type { DateRange, GoalProgress, HabitPerformance, Insight, ProgressStats, Achievement } from "@/lib/types";
 
@@ -155,30 +156,7 @@ export default function ProgressPage() {
                 </div>
               </div>
             </section>
-            <div className="fixed bottom-0 left-0 right-0 z-50 bg-white/90 backdrop-blur-xl border-t border-[#e4e5f1] py-3 px-6">
-              <div className="mx-auto flex max-w-7xl items-center justify-between gap-2 rounded-[24px] border border-[#e4e5f1] bg-white p-3 shadow-sm">
-                <a href="/today" className="flex flex-col items-center justify-center px-3 py-2 text-[#6b7280] hover:text-primary transition-colors">
-                  <CheckCircle2 className="h-6 w-6" />
-                  <span className="mt-1 text-[10px] font-medium uppercase tracking-[0.24em]">Today</span>
-                </a>
-                <a href="/goals" className="flex flex-col items-center justify-center px-3 py-2 text-[#6b7280] hover:text-primary transition-colors">
-                  <Award className="h-6 w-6" />
-                  <span className="mt-1 text-[10px] font-medium uppercase tracking-[0.24em]">Goals</span>
-                </a>
-                <a href="/progress" className="flex flex-col items-center justify-center rounded-xl bg-primary/10 px-3 py-2 text-primary">
-                  <BarChart3 className="h-6 w-6" />
-                  <span className="mt-1 text-[10px] font-bold uppercase tracking-[0.24em]">Progress</span>
-                </a>
-                <a href="/coach" className="flex flex-col items-center justify-center px-3 py-2 text-[#6b7280] hover:text-primary transition-colors">
-                  <UserCog className="h-6 w-6" />
-                  <span className="mt-1 text-[10px] font-medium uppercase tracking-[0.24em]">Coach</span>
-                </a>
-                <a href="/me" className="flex flex-col items-center justify-center px-3 py-2 text-[#6b7280] hover:text-primary transition-colors">
-                  <User className="h-6 w-6" />
-                  <span className="mt-1 text-[10px] font-medium uppercase tracking-[0.24em]">Me</span>
-                </a>
-              </div>
-            </div>
+            <BottomNavigation active="progress" />
           </>
         )}
       </div>

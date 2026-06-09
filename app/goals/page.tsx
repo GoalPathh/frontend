@@ -2,10 +2,11 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Plus, Target, Award, BarChart3, CheckCircle2, User, UserCog } from "lucide-react";
+import { Plus, Target } from "lucide-react";
 import { Goal } from "@/lib/types";
 import { goalService } from "@/lib/goalService";
 import { GoalCard } from "@/components/goals/goal-card";
+import { BottomNavigation } from "@/components/bottom-navigation";
 
 export default function GoalsPage() {
   const router = useRouter();
@@ -86,29 +87,7 @@ export default function GoalsPage() {
         )}
       </main>
 
-      {/* Bottom Navigation */}
-      <nav className="fixed bottom-0 w-full z-50 rounded-t-[24px] glass-surface border-t border-[#e4e5f1] shadow-lg flex justify-around items-center px-6 pb-8 pt-4">
-        <a href="/today" className="flex flex-col items-center justify-center text-[#6b7280] hover:text-primary transition-colors active:scale-90 duration-200">
-          <CheckCircle2 className="h-6 w-6" />
-          <span className="text-[10px] font-medium uppercase tracking-widest mt-1">Today</span>
-        </a>
-        <a href="/goals" className="flex flex-col items-center justify-center text-primary">
-          <Award className="h-6 w-6" />
-          <span className="text-[10px] font-bold uppercase tracking-widest mt-1">Goals</span>
-        </a>
-        <a href="/progress" className="flex flex-col items-center justify-center text-[#6b7280] hover:text-primary transition-colors active:scale-90 duration-200">
-          <BarChart3 className="h-6 w-6" />
-          <span className="text-[10px] font-medium uppercase tracking-widest mt-1">Progress</span>
-        </a>
-        <a href="/coach" className="flex flex-col items-center justify-center text-[#6b7280] hover:text-primary transition-colors active:scale-90 duration-200">
-          <UserCog className="h-6 w-6" />
-          <span className="text-[10px] font-medium uppercase tracking-widest mt-1">Coach</span>
-        </a>
-        <a href="#" className="flex flex-col items-center justify-center text-[#6b7280] hover:text-primary transition-colors active:scale-90 duration-200">
-          <User className="h-6 w-6" />
-          <span className="text-[10px] font-medium uppercase tracking-widest mt-1">Me</span>
-        </a>
-      </nav>
+      <BottomNavigation active="goals" />
     </div>
   );
 }

@@ -1,10 +1,7 @@
 import {
-  Award,
-  BarChart3,
   Bell,
   BookOpen,
   Check,
-  CheckCircle2,
   Droplet,
   Edit3,
   Flame,
@@ -16,11 +13,10 @@ import {
   Sparkles,
   Sun,
   Target,
-  User,
-  UserCog,
   Utensils,
   Zap,
 } from "lucide-react";
+import { BottomNavigation } from "@/components/bottom-navigation";
 
 export default function TodayPage() {
   return (
@@ -221,30 +217,7 @@ export default function TodayPage() {
         </div>
       </main>
 
-      <div className="fixed bottom-0 w-full z-50 px-4 pb-6 bg-[#f8f9ff]/90 backdrop-blur-lg">
-        <div className="mx-auto flex max-w-7xl items-center justify-around gap-2 rounded-[24px] glass-surface border-[#e4e5f1] p-3 shadow-lg">
-          <a className="flex flex-col items-center justify-center rounded-xl bg-primary/10 px-3 py-2 text-primary" href="/today">
-            <CheckCircle2 className="h-6 w-6" />
-            <span className="mt-1 text-[10px] font-bold uppercase tracking-[0.24em]">Today</span>
-          </a>
-          <a className="flex flex-col items-center justify-center px-3 py-2 text-[#6b7280] hover:text-primary transition-colors" href="/goals">
-            <Award className="h-6 w-6" />
-            <span className="mt-1 text-[10px] font-medium uppercase tracking-[0.24em]">Goals</span>
-          </a>
-          <a className="flex flex-col items-center justify-center px-3 py-2 text-[#6b7280] hover:text-primary transition-colors" href="/progress">
-            <BarChart3 className="h-6 w-6" />
-            <span className="mt-1 text-[10px] font-medium uppercase tracking-[0.24em]">Progress</span>
-          </a>
-          <a className="flex flex-col items-center justify-center px-3 py-2 text-[#6b7280] hover:text-primary transition-colors" href="/coach">
-            <UserCog className="h-6 w-6" />
-            <span className="mt-1 text-[10px] font-medium uppercase tracking-[0.24em]">Coach</span>
-          </a>
-          <a className="flex flex-col items-center justify-center px-3 py-2 text-[#6b7280] hover:text-primary transition-colors" href="/me">
-            <User className="h-6 w-6" />
-            <span className="mt-1 text-[10px] font-medium uppercase tracking-[0.24em]">Me</span>
-          </a>
-        </div>
-      </div>
+      <BottomNavigation active="today" />
     </div>
   );
 }

@@ -40,27 +40,27 @@ export default function ProgressPage() {
   const emptyState = !stats && goals.length === 0 && series.length === 0 && habits.length === 0 && heatmap.length === 0;
 
   return (
-    <div className="min-h-screen bg-[#f8f9ff] text-[#121221] pb-20 dark:bg-[#121221] dark:text-white">
+    <div className="min-h-screen bg-background text-foreground pb-20 dark:bg-background dark:text-white">
       <div className="max-w-7xl mx-auto px-6 py-8 md:px-10">
         <div className="mb-10 flex flex-col gap-5 md:flex-row md:items-end md:justify-between">
           <div className="max-w-2xl">
-            <p className="text-sm font-semibold uppercase tracking-[0.28em] text-[#9288F8] mb-3">Progress</p>
-            <h1 className="text-4xl font-bold tracking-tight text-[#121221]">Track your growth and stay motivated.</h1>
+            <p className="text-sm font-semibold uppercase tracking-[0.28em] text-primary mb-3">Progress</p>
+            <h1 className="text-4xl font-bold tracking-tight text-foreground">Track your growth and stay motivated.</h1>
           </div>
           <div className="flex items-center gap-3">
-            <ThemeToggle className="bg-white/80 dark:bg-white/10" />
+            <ThemeToggle className="bg-surface/80 dark:bg-surface/10" />
             <DateRangeSelector selectedRange={range} onChange={setRange} />
           </div>
         </div>
 
         {emptyState ? (
-          <section className="rounded-[32px] border border-[#e4e5f1] bg-white p-12 text-center shadow-sm">
-            <div className="mx-auto mb-6 inline-flex h-20 w-20 items-center justify-center rounded-full bg-[#9288F8]/10 text-[#9288F8]">
+          <section className="rounded-[32px] border border-border bg-surface p-12 text-center shadow-sm">
+            <div className="mx-auto mb-6 inline-flex h-20 w-20 items-center justify-center rounded-full bg-primary/10 text-primary">
               <Activity className="h-10 w-10" />
             </div>
-            <h2 className="text-2xl font-bold text-[#121221] mb-3">No progress data yet.</h2>
-            <p className="text-[#6b7280] mb-6">Start your first goal to unlock personalized analytics and streak tracking.</p>
-            <button className="rounded-full bg-[#9288F8] px-6 py-3 text-sm font-bold text-white shadow-sm hover:bg-[#7a6de4] transition-colors">
+            <h2 className="text-2xl font-bold text-foreground mb-3">No progress data yet.</h2>
+            <p className="text-foreground/60 mb-6">Start your first goal to unlock personalized analytics and streak tracking.</p>
+            <button className="rounded-full bg-primary px-6 py-3 text-sm font-bold text-white shadow-sm hover:bg-primary/90 transition-colors">
               Start Your First Goal
             </button>
           </section>
@@ -70,34 +70,34 @@ export default function ProgressPage() {
               <StatCard
                 title="Current Streak"
                 value={stats?.currentStreak ?? "—"}
-                icon={<Flame className="h-5 w-5 text-[#FB7185]" />}
-                accentClass="bg-[#FB7185]/10 text-[#FB7185]"
+                icon={<Flame className="h-5 w-5 text-coral" />}
+                accentClass="bg-coral/10 text-coral"
               />
               <StatCard
                 title="Total XP"
                 value={stats?.totalXp ?? "—"}
-                icon={<Trophy className="h-5 w-5 text-[#FBBF24]" />}
-                accentClass="bg-[#FBBF24]/10 text-[#B27A00]"
+                icon={<Trophy className="h-5 w-5 text-gold" />}
+                accentClass="bg-gold/10 text-[#8a6100]"
               />
               <StatCard
                 title="Completion Rate"
                 value={stats?.completionRate ?? "—"}
-                icon={<TrendingUp className="h-5 w-5 text-[#60A5FA]" />}
-                accentClass="bg-[#60A5FA]/10 text-[#2563EB]"
+                icon={<TrendingUp className="h-5 w-5 text-sky" />}
+                accentClass="bg-sky/10 text-sky"
               />
               <StatCard
                 title="Habits Completed"
                 value={stats?.habitsCompleted ?? "—"}
-                icon={<CheckCircle2 className="h-5 w-5 text-[#22C55E]" />}
-                accentClass="bg-[#22C55E]/10 text-[#166534]"
+                icon={<CheckCircle2 className="h-5 w-5 text-primary" />}
+                accentClass="bg-primary/10 text-primary"
               />
             </section>
 
             <section className="mb-8">
               <div className="mb-6 flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
                 <div>
-                  <p className="text-sm font-semibold text-[#6b7280] uppercase tracking-[0.24em]">Goal Performance</p>
-                  <h2 className="text-2xl font-bold text-[#121221]">Progress toward your goals</h2>
+                  <p className="text-sm font-semibold text-foreground/60 uppercase tracking-[0.24em]">Goal Performance</p>
+                  <h2 className="text-2xl font-bold text-foreground">Progress toward your goals</h2>
                 </div>
               </div>
               <div className="grid gap-6 lg:grid-cols-2">
@@ -110,13 +110,13 @@ export default function ProgressPage() {
             <section className="grid gap-6 xl:grid-cols-[1.4fr_0.8fr] mb-8">
               <ConsistencyChart series={series} />
               <div className="grid gap-6">
-                <div className="rounded-[28px] border border-[#e4e5f1] bg-white p-5 shadow-sm">
+                <div className="rounded-[28px] border border-border bg-surface p-5 shadow-sm">
                   <div className="flex items-center justify-between gap-4 mb-5">
                     <div>
-                      <p className="text-sm font-semibold text-[#6b7280] uppercase tracking-[0.24em]">Top Performing Habits</p>
-                      <h3 className="text-xl font-bold text-[#121221]">Your best habits</h3>
+                      <p className="text-sm font-semibold text-foreground/60 uppercase tracking-[0.24em]">Top Performing Habits</p>
+                      <h3 className="text-xl font-bold text-foreground">Your best habits</h3>
                     </div>
-                    <Sparkles className="h-6 w-6 text-[#9288F8]" />
+                    <Sparkles className="h-6 w-6 text-primary" />
                   </div>
                   <div className="space-y-4">
                     {habits.map((habit, index) => (
@@ -130,13 +130,13 @@ export default function ProgressPage() {
 
             <section className="grid gap-6 xl:grid-cols-[1.2fr_0.8fr]">
               <div className="grid gap-6">
-                <div className="rounded-[28px] border border-[#e4e5f1] bg-white p-5 shadow-sm">
+                <div className="rounded-[28px] border border-border bg-surface p-5 shadow-sm">
                   <div className="mb-5 flex items-center justify-between gap-4">
                     <div>
-                      <p className="text-sm font-semibold text-[#6b7280] uppercase tracking-[0.24em]">Achievements</p>
-                      <h3 className="text-xl font-bold text-[#121221]">Unlocked badges</h3>
+                      <p className="text-sm font-semibold text-foreground/60 uppercase tracking-[0.24em]">Achievements</p>
+                      <h3 className="text-xl font-bold text-foreground">Unlocked badges</h3>
                     </div>
-                    <Sparkles className="h-6 w-6 text-[#FBBF24]" />
+                    <Sparkles className="h-6 w-6 text-gold" />
                   </div>
                   <div className="grid gap-4 sm:grid-cols-2">
                     {achievements.map((achievement) => (
@@ -144,13 +144,13 @@ export default function ProgressPage() {
                     ))}
                   </div>
                 </div>
-                <div className="rounded-[28px] border border-[#e4e5f1] bg-white p-5 shadow-sm">
+                <div className="rounded-[28px] border border-border bg-surface p-5 shadow-sm">
                   <div className="mb-5 flex items-center justify-between gap-4">
                     <div>
-                      <p className="text-sm font-semibold text-[#6b7280] uppercase tracking-[0.24em]">AI Insights</p>
-                      <h3 className="text-xl font-bold text-[#121221]">Smart guidance</h3>
+                      <p className="text-sm font-semibold text-foreground/60 uppercase tracking-[0.24em]">AI Insights</p>
+                      <h3 className="text-xl font-bold text-foreground">Smart guidance</h3>
                     </div>
-                    <BrainCog className="h-6 w-6 text-[#9288F8]" />
+                    <BrainCog className="h-6 w-6 text-primary" />
                   </div>
                   <div className="grid gap-4">
                     {insights.map((insight) => (

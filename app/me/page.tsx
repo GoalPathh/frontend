@@ -74,17 +74,17 @@ export default function MePage() {
   };
 
   return (
-    <div className="min-h-screen bg-[#f8f9ff] text-[#121221] pb-32 dark:bg-[#121221] dark:text-white">
+    <div className="min-h-screen bg-background text-foreground pb-32 dark:bg-background dark:text-white">
       <div className="max-w-7xl mx-auto px-6 py-8 md:px-10">
         <div className="mb-8 flex items-start justify-between gap-4">
           <div>
-            <p className="text-sm font-semibold uppercase tracking-[0.28em] text-[#9288F8]">Me</p>
-            <h1 className="mt-3 text-4xl font-bold tracking-tight text-[#121221] dark:text-white">Your GoalPath dashboard</h1>
-            <p className="mt-2 max-w-2xl text-sm text-[#6b7280]">
+            <p className="text-sm font-semibold uppercase tracking-[0.28em] text-primary">Me</p>
+            <h1 className="mt-3 text-4xl font-bold tracking-tight text-foreground dark:text-white">Your GoalPath dashboard</h1>
+            <p className="mt-2 max-w-2xl text-sm text-foreground/60">
               A modern personal space to review your profile, achievements, settings, and growth journey.
             </p>
           </div>
-          <ThemeToggle className="shrink-0 bg-white/80 dark:bg-white/10" />
+          <ThemeToggle className="shrink-0 bg-surface/80 dark:bg-surface/10" />
         </div>
 
         {profile && (
@@ -96,40 +96,40 @@ export default function MePage() {
             title="Active Goals"
             value={stats?.activeGoals ?? "—"}
             icon={<Award className="h-5 w-5" />}
-            accent="#9288F8"
+            accent="rgb(var(--primary))"
           />
           <StatCard
             title="Longest Streak"
             value={`${stats?.longestStreak ?? "—"} Days`}
             icon={<Zap className="h-5 w-5" />}
-            accent="#FB7185"
+            accent="rgb(var(--coral))"
           />
           <StatCard
             title="Achievements"
             value={stats?.achievements ?? "—"}
             icon={<Trophy className="h-5 w-5" />}
-            accent="#FBBF24"
+            accent="rgb(var(--gold))"
           />
           <StatCard
             title="Completion Rate"
             value={`${stats?.completionRate ?? "—"}%`}
             icon={<BarChart3 className="h-5 w-5" />}
-            accent="#60A5FA"
+            accent="rgb(var(--sky))"
           />
         </section>
 
         <section className="mt-10 space-y-6">
           <div className="flex items-center justify-between gap-4">
             <div>
-              <p className="text-sm font-semibold uppercase tracking-[0.22em] text-[#9288F8]">Achievements</p>
-              <h2 className="mt-2 text-2xl font-bold text-[#121221]">Unlocked badges & milestones</h2>
+              <p className="text-sm font-semibold uppercase tracking-[0.22em] text-primary">Achievements</p>
+              <h2 className="mt-2 text-2xl font-bold text-foreground">Unlocked badges & milestones</h2>
             </div>
             <button
               type="button"
               onClick={() => scrollToNotifications()}
-              className="inline-flex items-center gap-2 rounded-2xl border border-[#e4e5f1] bg-white px-4 py-3 text-sm font-semibold text-[#121221] transition hover:border-[#9288F8]"
+              className="inline-flex items-center gap-2 rounded-2xl border border-border bg-surface px-4 py-3 text-sm font-semibold text-foreground transition hover:border-primary"
             >
-              <ChevronRight className="h-4 w-4 text-[#9288F8]" />
+              <ChevronRight className="h-4 w-4 text-primary" />
               Manage Settings
             </button>
           </div>
@@ -137,12 +137,12 @@ export default function MePage() {
             {achievements.length ? (
               achievements.map((item) => <AchievementCard key={item.id} achievement={item} />)
             ) : (
-              <div className="rounded-[28px] border border-[#e4e5f1] bg-white p-8 text-center shadow-sm">
-                <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-[#9288F8]/10 text-[#9288F8]">
+              <div className="rounded-[28px] border border-border bg-surface p-8 text-center shadow-sm">
+                <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-primary/10 text-primary">
                   <Award className="h-8 w-8" />
                 </div>
-                <p className="text-xl font-semibold text-[#121221]">No achievements yet</p>
-                <p className="mt-3 text-sm text-[#6b7280]">Start completing habits to unlock achievements.</p>
+                <p className="text-xl font-semibold text-foreground">No achievements yet</p>
+                <p className="mt-3 text-sm text-foreground/60">Start completing habits to unlock achievements.</p>
               </div>
             )}
           </div>
@@ -151,9 +151,9 @@ export default function MePage() {
         <section className="mt-10 grid gap-6 xl:grid-cols-[1.3fr_0.9fr]">
           <GrowthTimeline journey={journey} />
           <div className="space-y-6">
-            <div className="rounded-[28px] border border-[#e4e5f1] bg-white p-6 shadow-sm">
-              <p className="text-sm font-semibold uppercase tracking-[0.22em] text-[#9288F8]">Preferences</p>
-              <h2 className="mt-2 text-2xl font-bold text-[#121221]">Personalize your experience</h2>
+            <div className="rounded-[28px] border border-border bg-surface p-6 shadow-sm">
+              <p className="text-sm font-semibold uppercase tracking-[0.22em] text-primary">Preferences</p>
+              <h2 className="mt-2 text-2xl font-bold text-foreground">Personalize your experience</h2>
               <div className="mt-6 grid gap-4">
                 <PreferenceCard
                   icon={<Sun className="h-5 w-5" />}
@@ -188,8 +188,8 @@ export default function MePage() {
         <section className="mt-10 space-y-6">
           <div className="flex items-center justify-between gap-4">
             <div>
-              <p className="text-sm font-semibold uppercase tracking-[0.22em] text-[#9288F8]">Account</p>
-              <h2 className="mt-2 text-2xl font-bold text-[#121221]">Manage your settings</h2>
+              <p className="text-sm font-semibold uppercase tracking-[0.22em] text-primary">Account</p>
+              <h2 className="mt-2 text-2xl font-bold text-foreground">Manage your settings</h2>
             </div>
           </div>
           <div className="grid gap-4 md:grid-cols-2">

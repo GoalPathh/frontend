@@ -15,7 +15,7 @@ export function SuccessModal({
 
   return (
     <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-      <div className="bg-white rounded-[24px] p-8 max-w-md w-full text-center space-y-6 animate-in fade-in zoom-in">
+      <div className="bg-surface rounded-[24px] p-8 max-w-md w-full text-center space-y-6 animate-in fade-in zoom-in">
         <div className="flex justify-center">
           <div className="relative">
             <div className="absolute inset-0 bg-primary/20 blur-2xl rounded-full" />
@@ -26,10 +26,10 @@ export function SuccessModal({
         </div>
 
         <div>
-          <h2 className="text-2xl font-bold text-[#121221] mb-2">
+          <h2 className="text-2xl font-bold text-foreground mb-2">
             Your GoalPath is Ready!
           </h2>
-          <p className="text-[#6b7280]">
+          <p className="text-foreground/60">
             Your goal has been turned into small daily habits. Start your
             journey today.
           </p>
@@ -44,7 +44,7 @@ export function SuccessModal({
           </button>
           <button
             onClick={onViewGoals}
-            className="w-full bg-[#eef0fb] text-primary font-bold py-3 rounded-xl hover:bg-[#e4e5f1] transition-all"
+            className="w-full bg-muted text-primary font-bold py-3 rounded-xl hover:bg-muted transition-all"
           >
             View Goals
           </button>

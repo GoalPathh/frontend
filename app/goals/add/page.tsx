@@ -145,9 +145,9 @@ export default function AddGoalPage() {
   const steps = ["Goal", "Habits", "Schedule", "Review"];
 
   return (
-    <div className="min-h-screen bg-[#f8f9ff] pb-20">
+    <div className="min-h-screen bg-background pb-20">
       {/* Header */}
-      <header className="fixed top-0 w-full z-40 bg-[#f8f9ff]/90 backdrop-blur-xl border-b border-[#e4e5f1] px-6 py-4 md:px-10">
+      <header className="fixed top-0 w-full z-40 bg-background/90 backdrop-blur-xl border-b border-border px-6 py-4 md:px-10">
         <div className="max-w-3xl mx-auto flex items-center gap-4">
           <button
             onClick={() => {
@@ -157,11 +157,11 @@ export default function AddGoalPage() {
                 router.back();
               }
             }}
-            className="p-2 hover:bg-[#eef0fb] rounded-lg transition-colors"
+            className="p-2 hover:bg-muted rounded-lg transition-colors"
           >
-            <ArrowLeft className="w-6 h-6 text-[#121221]" />
+            <ArrowLeft className="w-6 h-6 text-foreground" />
           </button>
-          <h1 className="text-2xl font-bold text-[#121221]">Add Goal</h1>
+          <h1 className="text-2xl font-bold text-foreground">Add Goal</h1>
         </div>
       </header>
 
@@ -173,17 +173,17 @@ export default function AddGoalPage() {
         {currentStep === 1 && (
           <div className="space-y-8">
             <div>
-              <h2 className="text-3xl font-bold text-[#121221] mb-2">
+              <h2 className="text-3xl font-bold text-foreground mb-2">
                 What do you want to achieve?
               </h2>
-              <p className="text-[#6b7280]">
+              <p className="text-foreground/60">
                 Choose a suggestion or write your own goal.
               </p>
             </div>
 
             {/* Custom Goal Input */}
             <div>
-              <label className="block text-sm font-semibold text-[#121221] mb-2">
+              <label className="block text-sm font-semibold text-foreground mb-2">
                 Your Goal
               </label>
               <input
@@ -194,13 +194,13 @@ export default function AddGoalPage() {
                   setSelectedGoal(null);
                 }}
                 placeholder="e.g., Learn Guitar"
-                className="w-full px-4 py-3 border border-[#e4e5f1] rounded-xl focus:outline-none focus:border-primary bg-white text-[#121221]"
+                className="w-full px-4 py-3 border border-border rounded-xl focus:outline-none focus:border-primary bg-surface text-foreground"
               />
             </div>
 
             {/* Suggestions */}
             <div>
-              <p className="text-sm font-semibold text-[#6b7280] mb-3">
+              <p className="text-sm font-semibold text-foreground/60 mb-3">
                 Or choose from suggestions:
               </p>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
@@ -220,7 +220,7 @@ export default function AddGoalPage() {
 
             {/* Period Selector */}
             <div>
-              <p className="text-sm font-semibold text-[#6b7280] mb-3">
+              <p className="text-sm font-semibold text-foreground/60 mb-3">
                 How long do you want to achieve this goal?
               </p>
               <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
@@ -231,7 +231,7 @@ export default function AddGoalPage() {
                     className={`px-4 py-2 rounded-lg font-semibold transition-all ${
                       selectedPeriod === period.value
                         ? "bg-primary text-white"
-                        : "bg-white border-2 border-[#e4e5f1] text-[#121221] hover:border-primary"
+                        : "bg-surface border-2 border-border text-foreground hover:border-primary"
                     }`}
                   >
                     {period.label}
@@ -244,7 +244,7 @@ export default function AddGoalPage() {
             <div className="flex gap-3">
               <button
                 onClick={() => router.back()}
-                className="flex-1 px-4 py-3 rounded-xl border-2 border-[#e4e5f1] text-[#121221] font-bold hover:bg-[#eef0fb] transition-all"
+                className="flex-1 px-4 py-3 rounded-xl border-2 border-border text-foreground font-bold hover:bg-muted transition-all"
               >
                 Back
               </button>
@@ -256,7 +256,7 @@ export default function AddGoalPage() {
                 className={`flex-1 px-4 py-3 rounded-xl font-bold transition-all ${
                   selectedGoal && selectedPeriod || customGoal && selectedPeriod
                     ? "bg-primary text-white hover:bg-primary/90"
-                    : "bg-[#e4e5f1] text-[#6b7280] cursor-not-allowed"
+                    : "bg-muted text-foreground/60 cursor-not-allowed"
                 }`}
               >
                 Continue
@@ -269,14 +269,14 @@ export default function AddGoalPage() {
         {currentStep === 2 && (
           <div className="space-y-8">
             <div>
-              <h2 className="text-3xl font-bold text-[#121221] mb-2">
+              <h2 className="text-3xl font-bold text-foreground mb-2">
                 AI Habit Breakdown
               </h2>
-              <p className="text-[#6b7280]">
+              <p className="text-foreground/60">
                 GoalPath recommends small habits to help you stay consistent.
               </p>
-              <div className="mt-4 p-4 bg-white border border-[#e4e5f1] rounded-lg">
-                <p className="font-semibold text-[#121221]">
+              <div className="mt-4 p-4 bg-surface border border-border rounded-lg">
+                <p className="font-semibold text-foreground">
                   {selectedGoal || customGoal}
                 </p>
               </div>
@@ -284,7 +284,7 @@ export default function AddGoalPage() {
 
             {/* Habit Suggestions */}
             <div>
-              <p className="text-sm font-semibold text-[#6b7280] mb-3">
+              <p className="text-sm font-semibold text-foreground/60 mb-3">
                 Select 1 or more habits:
               </p>
               <div className="space-y-3">
@@ -314,7 +314,7 @@ export default function AddGoalPage() {
             <div className="flex gap-3">
               <button
                 onClick={() => setCurrentStep(1)}
-                className="flex-1 px-4 py-3 rounded-xl border-2 border-[#e4e5f1] text-[#121221] font-bold hover:bg-[#eef0fb] transition-all"
+                className="flex-1 px-4 py-3 rounded-xl border-2 border-border text-foreground font-bold hover:bg-muted transition-all"
               >
                 Back
               </button>
@@ -324,7 +324,7 @@ export default function AddGoalPage() {
                 className={`flex-1 px-4 py-3 rounded-xl font-bold transition-all ${
                   selectedHabits.length > 0
                     ? "bg-primary text-white hover:bg-primary/90"
-                    : "bg-[#e4e5f1] text-[#6b7280] cursor-not-allowed"
+                    : "bg-muted text-foreground/60 cursor-not-allowed"
                 }`}
               >
                 Continue
@@ -337,10 +337,10 @@ export default function AddGoalPage() {
         {currentStep === 3 && (
           <div className="space-y-8">
             <div>
-              <h2 className="text-3xl font-bold text-[#121221] mb-2">
+              <h2 className="text-3xl font-bold text-foreground mb-2">
                 Set Your Habit Schedule
               </h2>
-              <p className="text-[#6b7280]">
+              <p className="text-foreground/60">
                 Configure when and how often you want to do each habit.
               </p>
             </div>
@@ -362,48 +362,48 @@ export default function AddGoalPage() {
             </div>
 
             {/* Goal Settings */}
-            <div className="space-y-4 bg-white border border-[#e4e5f1] rounded-[16px] p-6">
-              <h3 className="font-bold text-[#121221]">Goal Settings</h3>
+            <div className="space-y-4 bg-surface border border-border rounded-[16px] p-6">
+              <h3 className="font-bold text-foreground">Goal Settings</h3>
 
               {/* Start Date */}
               <div>
-                <label className="text-sm font-semibold text-[#121221] block mb-2">
+                <label className="text-sm font-semibold text-foreground block mb-2">
                   Start Date
                 </label>
                 <input
                   type="date"
                   value={startDate}
                   onChange={(e) => setStartDate(e.target.value)}
-                  className="w-full px-4 py-2 border border-[#e4e5f1] rounded-lg focus:outline-none focus:border-primary"
+                  className="w-full px-4 py-2 border border-border rounded-lg focus:outline-none focus:border-primary"
                 />
               </div>
 
               {/* Target Date */}
               <div>
-                <label className="text-sm font-semibold text-[#121221] block mb-2">
+                <label className="text-sm font-semibold text-foreground block mb-2">
                   Target Date
                 </label>
                 <input
                   type="date"
                   value={targetDate}
                   onChange={(e) => setTargetDate(e.target.value)}
-                  className="w-full px-4 py-2 border border-[#e4e5f1] rounded-lg focus:outline-none focus:border-primary"
+                  className="w-full px-4 py-2 border border-border rounded-lg focus:outline-none focus:border-primary"
                 />
               </div>
 
               {/* Reminder Toggle */}
               <div className="flex items-center justify-between">
-                <label className="text-sm font-semibold text-[#121221]">
+                <label className="text-sm font-semibold text-foreground">
                   Reminders
                 </label>
                 <button
                   onClick={() => setReminderEnabled(!reminderEnabled)}
                   className={`relative inline-flex h-6 w-11 rounded-full transition-colors ${
-                    reminderEnabled ? "bg-primary" : "bg-[#e4e5f1]"
+                    reminderEnabled ? "bg-primary" : "bg-muted"
                   }`}
                 >
                   <span
-                    className={`inline-block h-5 w-5 transform rounded-full bg-white transition-transform ${
+                    className={`inline-block h-5 w-5 transform rounded-full bg-surface transition-transform ${
                       reminderEnabled ? "translate-x-5" : "translate-x-0.5"
                     } mt-0.5`}
                   />
@@ -412,7 +412,7 @@ export default function AddGoalPage() {
 
               {/* Notification Preference */}
               <div>
-                <label className="text-sm font-semibold text-[#121221] block mb-2">
+                <label className="text-sm font-semibold text-foreground block mb-2">
                   Notification Preference
                 </label>
                 <select
@@ -422,7 +422,7 @@ export default function AddGoalPage() {
                       e.target.value as "all" | "important" | "none"
                     )
                   }
-                  className="w-full px-4 py-2 border border-[#e4e5f1] rounded-lg focus:outline-none focus:border-primary"
+                  className="w-full px-4 py-2 border border-border rounded-lg focus:outline-none focus:border-primary"
                 >
                   <option value="all">All Notifications</option>
                   <option value="important">Important Only</option>
@@ -435,7 +435,7 @@ export default function AddGoalPage() {
             <div className="flex gap-3">
               <button
                 onClick={() => setCurrentStep(2)}
-                className="flex-1 px-4 py-3 rounded-xl border-2 border-[#e4e5f1] text-[#121221] font-bold hover:bg-[#eef0fb] transition-all"
+                className="flex-1 px-4 py-3 rounded-xl border-2 border-border text-foreground font-bold hover:bg-muted transition-all"
               >
                 Back
               </button>
@@ -453,10 +453,10 @@ export default function AddGoalPage() {
         {currentStep === 4 && reviewData && (
           <div className="space-y-8">
             <div>
-              <h2 className="text-3xl font-bold text-[#121221] mb-2">
+              <h2 className="text-3xl font-bold text-foreground mb-2">
                 Review Your GoalPath
               </h2>
-              <p className="text-[#6b7280]">
+              <p className="text-foreground/60">
                 Make sure everything looks good before saving.
               </p>
             </div>
@@ -467,7 +467,7 @@ export default function AddGoalPage() {
             <div className="flex gap-3">
               <button
                 onClick={() => setCurrentStep(3)}
-                className="flex-1 px-4 py-3 rounded-xl border-2 border-[#e4e5f1] text-[#121221] font-bold hover:bg-[#eef0fb] transition-all"
+                className="flex-1 px-4 py-3 rounded-xl border-2 border-border text-foreground font-bold hover:bg-muted transition-all"
               >
                 Back
               </button>

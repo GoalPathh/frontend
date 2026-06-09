@@ -28,7 +28,7 @@ export function GoalCard({ goal, onClick }: GoalCardProps) {
   return (
     <div
       onClick={onClick}
-      className="bg-white border border-[#e4e5f1] rounded-[20px] p-6 hover:shadow-lg transition-all cursor-pointer group"
+      className="bg-surface border border-border rounded-[20px] p-6 hover:shadow-lg transition-all cursor-pointer group"
     >
       {/* Header with Icon and Category */}
       <div className="flex items-start justify-between mb-4">
@@ -39,18 +39,18 @@ export function GoalCard({ goal, onClick }: GoalCardProps) {
       </div>
 
       {/* Goal Title */}
-      <h3 className="text-lg font-bold text-[#121221] mb-1 group-hover:text-primary transition-colors">
+      <h3 className="text-lg font-bold text-foreground mb-1 group-hover:text-primary transition-colors">
         {goal.title}
       </h3>
 
       {/* Habit Count */}
-      <p className="text-sm text-[#6b7280] mb-4">
+      <p className="text-sm text-foreground/60 mb-4">
         {goal.habits.length} active habit{goal.habits.length !== 1 ? "s" : ""}
       </p>
 
       {/* Progress Bar */}
       <div className="mb-4">
-        <div className="w-full h-2 bg-[#eef0fb] rounded-full overflow-hidden">
+        <div className="w-full h-2 bg-muted rounded-full overflow-hidden">
           <div
             className="h-full bg-gradient-to-r from-primary to-primary/70 rounded-full transition-all duration-500"
             style={{ width: `${goal.progress}%` }}
@@ -59,7 +59,7 @@ export function GoalCard({ goal, onClick }: GoalCardProps) {
       </div>
 
       {/* Goal Period */}
-      <div className="flex items-center justify-between text-xs text-[#6b7280]">
+      <div className="flex items-center justify-between text-xs text-foreground/60">
         <span>{goal.period.replace(/([0-9]+)([a-z]+)/, "$1 $2").toUpperCase()}</span>
         <div className="flex items-center gap-1 text-primary">
           <Zap className="w-3 h-3" />

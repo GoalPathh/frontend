@@ -17,11 +17,11 @@ const OPTIONS: { label: string; value: DateRange }[] = [
 
 export function DateRangeSelector({ selectedRange, onChange }: DateRangeSelectorProps) {
   return (
-    <div className="inline-flex items-center gap-2 rounded-3xl border border-[#e4e5f1] bg-white px-4 py-3 shadow-sm">
-      <span className="text-sm font-semibold text-[#6b7280]">Range</span>
+    <div className="inline-flex items-center gap-2 rounded-3xl border border-border bg-surface px-4 py-3 shadow-sm">
+      <span className="text-sm font-semibold text-foreground/60">Range</span>
       <div className="relative">
         <select
-          className="appearance-none pr-8 bg-transparent text-sm font-semibold text-[#121221] focus:outline-none"
+          className="appearance-none pr-8 bg-transparent text-sm font-semibold text-foreground focus:outline-none"
           value={selectedRange}
           onChange={(event) => onChange(event.target.value as DateRange)}
         >
@@ -31,7 +31,7 @@ export function DateRangeSelector({ selectedRange, onChange }: DateRangeSelector
             </option>
           ))}
         </select>
-        <ChevronDown className="pointer-events-none absolute right-0 top-1/2 h-4 w-4 -translate-y-1/2 text-[#6b7280]" />
+        <ChevronDown className="pointer-events-none absolute right-0 top-1/2 h-4 w-4 -translate-y-1/2 text-foreground/60" />
       </div>
     </div>
   );

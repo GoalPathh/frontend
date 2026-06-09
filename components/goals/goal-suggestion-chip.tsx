@@ -15,7 +15,7 @@ export function GoalSuggestionChip({
       className={`px-4 py-2 rounded-full font-semibold text-sm transition-all duration-200 ${
         isSelected
           ? "bg-primary text-white shadow-md"
-          : "bg-[#eef0fb] text-[#121221] border-2 border-transparent hover:border-primary"
+          : "bg-muted text-foreground border-2 border-transparent hover:border-primary"
       }`}
     >
       {label}

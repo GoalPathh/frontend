@@ -28,23 +28,23 @@ export default function GoalsPage() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-[#f8f9ff] flex items-center justify-center">
+      <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="text-center">
-          <div className="w-12 h-12 border-4 border-[#e4e5f1] border-t-primary rounded-full animate-spin mx-auto mb-4" />
-          <p className="text-[#6b7280]">Loading your goals...</p>
+          <div className="w-12 h-12 border-4 border-border border-t-primary rounded-full animate-spin mx-auto mb-4" />
+          <p className="text-foreground/60">Loading your goals...</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-[#f8f9ff] pb-32 dark:bg-[#121221]">
+    <div className="min-h-screen bg-background pb-32 dark:bg-background">
       {/* Header */}
-      <header className="fixed top-0 w-full z-40 bg-[#f8f9ff]/90 backdrop-blur-xl border-b border-[#e4e5f1] px-6 py-4 dark:border-white/10 dark:bg-[#121221]/90 md:px-10">
+      <header className="fixed top-0 w-full z-40 bg-background/90 backdrop-blur-xl border-b border-border px-6 py-4 dark:border-surface/10 dark:bg-background/90 md:px-10">
         <div className="max-w-7xl mx-auto flex items-center justify-between">
-          <h1 className="text-2xl font-bold text-[#121221] dark:text-white">Your Goals</h1>
+          <h1 className="text-2xl font-bold text-foreground dark:text-white">Your Goals</h1>
           <div className="flex items-center gap-3">
-            <ThemeToggle className="size-10 bg-white/80 dark:bg-white/10" />
+            <ThemeToggle className="size-10 bg-surface/80 dark:bg-surface/10" />
             <button
               onClick={handleAddGoal}
               className="flex items-center gap-2 bg-primary text-white px-4 py-2 rounded-xl font-semibold hover:bg-primary/90 transition-all active:scale-95"
@@ -60,7 +60,7 @@ export default function GoalsPage() {
       <main className="mt-24 px-6 md:px-10 max-w-7xl mx-auto">
         {/* Page Description */}
         <div className="mb-12">
-          <p className="text-[#6b7280] text-lg">
+          <p className="text-foreground/60 text-lg">
             Turn your goals into small daily habits.
           </p>
         </div>
@@ -71,8 +71,8 @@ export default function GoalsPage() {
             <div className="bg-primary/10 rounded-full p-4 mb-4">
               <Target className="w-8 h-8 text-primary" />
             </div>
-            <h2 className="text-xl font-bold text-[#121221] mb-2">No goals yet</h2>
-            <p className="text-[#6b7280] mb-6">
+            <h2 className="text-xl font-bold text-foreground mb-2">No goals yet</h2>
+            <p className="text-foreground/60 mb-6">
               Create your first goal to get started!
             </p>
             <button

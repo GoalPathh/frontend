@@ -55,12 +55,12 @@ export function HabitSettingsCard({
   };
 
   return (
-    <div className="bg-white border border-[#e4e5f1] rounded-[16px] p-6 space-y-6">
-      <h3 className="font-bold text-[#121221]">{habit.title}</h3>
+    <div className="bg-surface border border-border rounded-[16px] p-6 space-y-6">
+      <h3 className="font-bold text-foreground">{habit.title}</h3>
 
       {/* Time Range */}
       <div>
-        <label className="flex items-center gap-2 text-sm font-semibold text-[#121221] mb-3">
+        <label className="flex items-center gap-2 text-sm font-semibold text-foreground mb-3">
           <Clock className="w-4 h-4" /> Time Range
         </label>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
@@ -71,7 +71,7 @@ export function HabitSettingsCard({
               className={`px-3 py-2 rounded-lg text-sm font-semibold transition-all ${
                 habit.schedule.timeRange === range.value
                   ? "bg-primary text-white"
-                  : "bg-[#eef0fb] text-[#121221] hover:bg-[#e4e5f1]"
+                  : "bg-muted text-foreground hover:bg-muted"
               }`}
             >
               {range.label}
@@ -82,7 +82,7 @@ export function HabitSettingsCard({
 
       {/* Reminder Time */}
       <div>
-        <label className="flex items-center gap-2 text-sm font-semibold text-[#121221] mb-3">
+        <label className="flex items-center gap-2 text-sm font-semibold text-foreground mb-3">
           <Bell className="w-4 h-4" /> Reminder Time
         </label>
         <input
@@ -91,13 +91,13 @@ export function HabitSettingsCard({
           onChange={(e) =>
             handleScheduleChange({ reminderTime: e.target.value })
           }
-          className="w-full px-4 py-2 border border-[#e4e5f1] rounded-lg text-[#121221] focus:outline-none focus:border-primary"
+          className="w-full px-4 py-2 border border-border rounded-lg text-foreground focus:outline-none focus:border-primary"
         />
       </div>
 
       {/* Active Days */}
       <div>
-        <label className="flex items-center gap-2 text-sm font-semibold text-[#121221] mb-3">
+        <label className="flex items-center gap-2 text-sm font-semibold text-foreground mb-3">
           <Calendar className="w-4 h-4" /> Active Days
         </label>
         <div className="grid grid-cols-7 gap-2">
@@ -108,7 +108,7 @@ export function HabitSettingsCard({
               className={`px-2 py-2 rounded-lg text-xs font-bold transition-all ${
                 habit.schedule.activeDays.includes(day.value)
                   ? "bg-primary text-white"
-                  : "bg-[#eef0fb] text-[#121221] hover:bg-[#e4e5f1]"
+                  : "bg-muted text-foreground hover:bg-muted"
               }`}
             >
               {day.short}
@@ -119,7 +119,7 @@ export function HabitSettingsCard({
 
       {/* Priority */}
       <div>
-        <label className="text-sm font-semibold text-[#121221] mb-3 block">
+        <label className="text-sm font-semibold text-foreground mb-3 block">
           Priority
         </label>
         <div className="grid grid-cols-3 gap-2">
@@ -132,7 +132,7 @@ export function HabitSettingsCard({
               className={`px-3 py-2 rounded-lg text-sm font-semibold transition-all ${
                 habit.schedule.priority === priority.value
                   ? "bg-primary text-white"
-                  : "bg-[#eef0fb] text-[#121221] hover:bg-[#e4e5f1]"
+                  : "bg-muted text-foreground hover:bg-muted"
               }`}
             >
               {priority.label}

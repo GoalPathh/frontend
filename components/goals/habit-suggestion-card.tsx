@@ -28,7 +28,7 @@ export function HabitSuggestionCard({
       className={`p-4 rounded-[16px] border-2 transition-all cursor-pointer ${
         isSelected
           ? "border-primary bg-primary/5"
-          : "border-[#e4e5f1] bg-white hover:border-primary"
+          : "border-border bg-surface hover:border-primary"
       }`}
     >
       <div className="flex items-start gap-4">
@@ -40,16 +40,16 @@ export function HabitSuggestionCard({
           className={`flex-shrink-0 w-6 h-6 rounded-full border-2 flex items-center justify-center transition-all ${
             isSelected
               ? "bg-primary border-primary"
-              : "border-[#e4e5f1] hover:border-primary"
+              : "border-border hover:border-primary"
           }`}
         >
           {isSelected && <Check className="w-4 h-4 text-white" />}
         </button>
 
         <div className="flex-grow">
-          <h3 className="font-semibold text-[#121221] mb-1">{habit.title}</h3>
+          <h3 className="font-semibold text-foreground mb-1">{habit.title}</h3>
           <div className="flex items-center gap-2 flex-wrap">
-            <span className="text-xs text-[#6b7280]">
+            <span className="text-xs text-foreground/60">
               ⏱️ {habit.duration} min
             </span>
             <span
@@ -71,7 +71,7 @@ export function HabitSuggestionCard({
                   e.stopPropagation();
                   onEdit();
                 }}
-                className="p-1 text-[#6b7280] hover:text-primary transition-colors"
+                className="p-1 text-foreground/60 hover:text-primary transition-colors"
               >
                 <Edit2 className="w-4 h-4" />
               </button>
@@ -82,7 +82,7 @@ export function HabitSuggestionCard({
                   e.stopPropagation();
                   onDelete();
                 }}
-                className="p-1 text-[#6b7280] hover:text-red-500 transition-colors"
+                className="p-1 text-foreground/60 hover:text-red-500 transition-colors"
               >
                 <Trash2 className="w-4 h-4" />
               </button>

@@ -20,7 +20,7 @@ export function StepIndicator({
                   ? "bg-primary text-white"
                   : index === currentStep - 1
                     ? "bg-primary text-white border-2 border-primary"
-                    : "bg-[#eef0fb] text-[#6b7280]"
+                    : "bg-muted text-foreground/60"
               }`}
             >
               {index < currentStep - 1 ? "✓" : index + 1}
@@ -29,7 +29,7 @@ export function StepIndicator({
             {index < totalSteps - 1 && (
               <div
                 className={`flex-1 h-1 mx-2 transition-all ${
-                  index < currentStep - 1 ? "bg-primary" : "bg-[#e4e5f1]"
+                  index < currentStep - 1 ? "bg-primary" : "bg-muted"
                 }`}
               />
             )}
@@ -37,7 +37,7 @@ export function StepIndicator({
         ))}
       </div>
 
-      <div className="flex justify-between text-xs font-bold text-[#6b7280]">
+      <div className="flex justify-between text-xs font-bold text-foreground/60">
         {steps.map((step, index) => (
           <span
             key={step}

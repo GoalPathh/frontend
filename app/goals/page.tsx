@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Plus, Target } from "lucide-react";
+import { ArrowRight, CalendarDays, CheckCircle2, Flame, Plus, Sparkles, Target, Trophy, Zap } from "lucide-react";
 import { Goal } from "@/lib/types";
 import { goalService } from "@/lib/goalService";
 import { GoalCard } from "@/components/goals/goal-card";
@@ -12,37 +12,33 @@ import { ThemeToggle } from "@/components/theme-toggle";
 export default function GoalsPage() {
   const router = useRouter();
   const [goals, setGoals] = useState<Goal[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    // Initialize mock data and load goals
     goalService.initializeMockData();
-    const loadedGoals = goalService.getAllGoals();
-    setGoals(loadedGoals);
-    setIsLoading(false);
+    setGoals(goalService.getAllGoals());
   }, []);
 
   const handleAddGoal = () => {
     router.push("/goals/add");
   };
 
-  if (isLoading) {
-    return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="text-center">
-          <div className="w-12 h-12 border-4 border-border border-t-primary rounded-full animate-spin mx-auto mb-4" />
-          <p className="text-foreground/60">Loading your goals...</p>
-        </div>
-      </div>
-    );
-  }
+  const totalHabits = goals.reduce((sum, goal) => sum + goal.habits.length, 0);
+  const totalMinutes = goals.reduce((sum, goal) => sum + goal.habits.reduce((habitSum, habit) => habitSum + habit.duration, 0), 0);
+  const averageProgress = goals.length ? Math.round(goals.reduce((sum, goal) => sum + goal.progress, 0) / goals.length) : 0;
+  const strongestGoal = goals.reduce<Goal | null>((best, goal) => (!best || goal.progress > best.progress ? goal : best), null);
+
+  const stats = [
+    { label: "Active Goals", value: goals.length, icon: Target, tone: "bg-primary/10 text-primary" },
+    { label: "Daily Habits", value: totalHabits, icon: CheckCircle2, tone: "bg-sky/10 text-sky" },
+    { label: "Focus Time", value: `${totalMinutes}m`, icon: Zap, tone: "bg-gold/20 text-[#8a6100]" },
+    { label: "Avg Progress", value: `${averageProgress}%`, icon: Trophy, tone: "bg-coral/12 text-coral" },
+  ];
 
   return (
-    <div className="min-h-screen bg-background pb-32 dark:bg-background">
-      {/* Header */}
+    <div className="min-h-screen bg-background pb-32 text-foreground dark:bg-background">
       <header className="fixed top-0 w-full z-40 bg-background/90 backdrop-blur-xl border-b border-border px-6 py-4 dark:border-surface/10 dark:bg-background/90 md:px-10">
         <div className="max-w-7xl mx-auto flex items-center justify-between">
-          <h1 className="text-2xl font-bold text-foreground dark:text-white">Your Goals</h1>
+          <h1 className="text-2xl font-bold text-foreground">Goals</h1>
           <div className="flex items-center gap-3">
             <ThemeToggle className="size-10 bg-surface/80 dark:bg-surface/10" />
             <button
@@ -56,38 +52,105 @@ export default function GoalsPage() {
         </div>
       </header>
 
-      {/* Main Content */}
-      <main className="mt-24 px-6 md:px-10 max-w-7xl mx-auto">
-        {/* Page Description */}
-        <div className="mb-12">
-          <p className="text-foreground/60 text-lg">
-            Turn your goals into small daily habits.
-          </p>
-        </div>
-
-        {/* Goals Grid */}
-        {goals.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-20">
-            <div className="bg-primary/10 rounded-full p-4 mb-4">
-              <Target className="w-8 h-8 text-primary" />
+      <main className="mt-24 px-5 md:px-10 max-w-7xl mx-auto space-y-8">
+        <section className="relative overflow-hidden rounded-[24px] border border-border bg-surface p-5 shadow-card sm:p-7 lg:p-8">
+          <div className="absolute -right-20 -top-24 h-64 w-64 rounded-full bg-primary/12 blur-3xl" />
+          <div className="absolute -bottom-24 left-1/4 h-64 w-64 rounded-full bg-gold/14 blur-3xl" />
+          <div className="relative grid gap-8 lg:grid-cols-[1fr_22rem] lg:items-center">
+            <div>
+              <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-primary/20 bg-primary/10 px-3 py-2 text-[11px] font-extrabold uppercase tracking-[0.18em] text-primary">
+                <Sparkles className="h-4 w-4" />
+                Goal dashboard
+              </div>
+              <h2 className="text-3xl font-extrabold tracking-tight text-foreground sm:text-4xl lg:text-5xl">
+                Build big goals from small daily wins.
+              </h2>
+              <p className="mt-4 max-w-2xl text-sm font-medium leading-7 text-foreground/60 sm:text-base">
+                Track every goal, habit, reminder, and progress signal in one focused place. Keep the plan realistic and easy to continue.
+              </p>
+              <div className="mt-6 flex flex-col gap-3 sm:flex-row">
+                <button
+                  onClick={handleAddGoal}
+                  className="inline-flex items-center justify-center gap-2 rounded-full bg-primary px-5 py-3 text-sm font-extrabold text-white shadow-lg shadow-primary/20 transition hover:-translate-y-0.5 hover:bg-primary/90 active:translate-y-0"
+                >
+                  Add New Goal
+                  <ArrowRight className="h-4 w-4" />
+                </button>
+                <a
+                  href="/today"
+                  className="inline-flex items-center justify-center gap-2 rounded-full border border-border bg-background px-5 py-3 text-sm font-extrabold text-foreground transition hover:-translate-y-0.5 hover:border-primary hover:text-primary active:translate-y-0"
+                >
+                  View Today
+                </a>
+              </div>
             </div>
-            <h2 className="text-xl font-bold text-foreground mb-2">No goals yet</h2>
-            <p className="text-foreground/60 mb-6">
-              Create your first goal to get started!
+
+            <div className="rounded-[20px] border border-border bg-background/80 p-5">
+              <p className="text-[10px] font-extrabold uppercase tracking-[0.22em] text-foreground/50">Top Momentum</p>
+              <div className="mt-4 flex items-start justify-between gap-4">
+                <div>
+                  <h3 className="text-xl font-extrabold text-foreground">{strongestGoal?.title ?? "No goal yet"}</h3>
+                  <p className="mt-2 text-sm font-semibold text-foreground/60">
+                    {strongestGoal ? `${strongestGoal.habits.length} active habits` : "Create your first goal to start tracking."}
+                  </p>
+                </div>
+                <div className="flex h-20 w-20 shrink-0 items-center justify-center rounded-full border-[10px] border-primary/20 bg-surface text-lg font-extrabold text-primary shadow-card">
+                  {strongestGoal?.progress ?? 0}%
+                </div>
+              </div>
+              <div className="mt-5 h-2 overflow-hidden rounded-full bg-muted">
+                <div className="h-full rounded-full bg-gradient-to-r from-primary via-sky to-gold" style={{ width: `${strongestGoal?.progress ?? 0}%` }} />
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+          {stats.map(({ label, value, icon: Icon, tone }) => (
+            <article key={label} className="rounded-[18px] border border-border bg-surface p-5 shadow-card">
+              <div className={`mb-5 flex h-12 w-12 items-center justify-center rounded-[14px] ${tone}`}>
+                <Icon className="h-5 w-5" />
+              </div>
+              <p className="text-[10px] font-extrabold uppercase tracking-[0.22em] text-foreground/50">{label}</p>
+              <p className="mt-2 text-3xl font-extrabold text-foreground">{value}</p>
+            </article>
+          ))}
+        </section>
+
+        {goals.length === 0 ? (
+          <section className="flex flex-col items-center justify-center rounded-[24px] border border-dashed border-primary/30 bg-surface p-10 text-center shadow-card">
+            <div className="mb-5 flex h-16 w-16 items-center justify-center rounded-full bg-primary/10">
+              <Target className="h-8 w-8 text-primary" />
+            </div>
+            <h2 className="text-2xl font-extrabold text-foreground">No goals yet</h2>
+            <p className="mt-3 max-w-md text-sm leading-7 text-foreground/60">
+              Start with one goal. GoalPath will help you break it into small habits you can actually repeat.
             </p>
             <button
               onClick={handleAddGoal}
-              className="bg-primary text-white px-6 py-3 rounded-xl font-bold hover:bg-primary/90 transition-all active:scale-95"
+              className="mt-6 rounded-full bg-primary px-6 py-3 text-sm font-extrabold text-white shadow-lg shadow-primary/20 transition hover:bg-primary/90"
             >
               Create Your First Goal
             </button>
-          </div>
+          </section>
         ) : (
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {goals.map((goal) => (
-              <GoalCard key={goal.id} goal={goal} />
-            ))}
-          </div>
+          <section className="space-y-5">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+              <div>
+                <p className="text-[10px] font-extrabold uppercase tracking-[0.24em] text-primary">Your active plan</p>
+                <h2 className="mt-2 text-2xl font-extrabold text-foreground">Goals in progress</h2>
+              </div>
+              <div className="flex items-center gap-2 rounded-full border border-border bg-surface px-4 py-2 text-sm font-bold text-foreground/60">
+                <CalendarDays className="h-4 w-4 text-primary" />
+                Updated today
+              </div>
+            </div>
+            <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">
+              {goals.map((goal) => (
+                <GoalCard key={goal.id} goal={goal} />
+              ))}
+            </div>
+          </section>
         )}
       </main>
 

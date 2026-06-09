@@ -19,8 +19,9 @@ import {
 } from "lucide-react";
 
 export const navigation = [
-  { label: "Features", href: "#features" },
+  { label: "Problem", href: "#problem" },
   { label: "How It Works", href: "#how-it-works" },
+  { label: "Features", href: "#features" },
   { label: "Progress", href: "#progress" },
 ];
 
@@ -71,30 +72,34 @@ export const features = [
   {
     title: "AI Habit Breakdown",
     description:
-      "Type a big goal and GoalPath turns it into a practical habit plan with small daily actions.",
+      "Drop one ambitious goal and get a daily plan that feels realistic from day one.",
     icon: Sparkles,
     variant: "large",
+    metrics: ["Goal: fluent English", "3 daily habits", "10 min starter"],
   },
   {
     title: "24/7 AI Coach",
     description:
-      "Quick guidance for motivation, tired days, simpler plans, and habit adjustments.",
+      "A coach that helps you simplify hard days, reset motivation, and keep moving.",
     icon: MessageCircle,
     variant: "primary",
+    metrics: ["Tired today?", "Try a 5-min version", "Streak protected"],
   },
   {
     title: "Adaptive Habit System",
     description:
-      "When users struggle, GoalPath suggests easier habits without changing the goal.",
+      "When consistency drops, GoalPath lowers the friction without lowering your goal.",
     icon: Settings2,
     variant: "gold",
+    metrics: ["Missed 2 days", "Plan adjusted", "No guilt loop"],
   },
   {
     title: "Progress Analytics",
     description:
-      "Track completion rate, XP, streaks, completed habits, and growth over time.",
+      "See the proof: XP, streaks, completion rate, habit ranking, and weekly momentum.",
     icon: ChartNoAxesCombined,
     variant: "analytics",
+    metrics: ["85% complete", "7 day streak", "+250 XP"],
   },
 ];
 
@@ -116,4 +121,3 @@ export const achievements = [
   { title: "7-Day Streak", icon: Flame },
   { title: "Goal Starter", icon: Medal },
 ];
-

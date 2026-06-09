@@ -1,6 +1,11 @@
 import { Target } from "lucide-react";
 import { navigation } from "@/lib/landing-content";
-import { Button } from "@/components/ui/button";
+import { ThemeToggle } from "@/components/theme-toggle";
+import { cn } from "@/lib/utils";
+
+const startButtonClass = cn(
+  "inline-flex min-h-11 items-center justify-center gap-2 rounded-full bg-primary px-5 py-2.5 text-sm font-bold text-white shadow-lg shadow-primary/25 transition duration-200 hover:-translate-y-0.5 hover:shadow-xl hover:shadow-primary/30 focus:outline-none focus:ring-4 focus:ring-primary/20 active:translate-y-0",
+);
 
 export function Navbar() {
   return (
@@ -25,12 +30,16 @@ export function Navbar() {
           ))}
         </div>
 
-        <Button className="hidden sm:inline-flex">Get Started</Button>
-        <Button className="sm:hidden" aria-label="Get started">
-          Start
-        </Button>
+        <div className="flex items-center gap-2">
+          <ThemeToggle className="bg-white/80" />
+          <a href="/login" className={cn(startButtonClass, "hidden sm:inline-flex")}>
+            Get Started
+          </a>
+          <a href="/login" className={cn(startButtonClass, "sm:hidden")} aria-label="Get started">
+            Start
+          </a>
+        </div>
       </nav>
     </header>
   );
 }
-

@@ -1,4 +1,5 @@
-const APPEARANCE_KEY = "goalpathAppearance";
+import { APPEARANCE_KEY } from "@/lib/theme";
+
 const NOTIFICATION_KEY = "goalpathNotifications";
 
 const defaultProfile = {

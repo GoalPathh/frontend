@@ -13,10 +13,11 @@ import {
   Sparkles,
 } from "lucide-react";
 import { BottomNavigation } from "@/components/bottom-navigation";
+import { ThemeToggle } from "@/components/theme-toggle";
 
 export default function CoachPage() {
   return (
-    <div className="min-h-screen flex overflow-hidden bg-[#F8F9FF] text-[#121221]">
+    <div className="min-h-screen flex overflow-hidden bg-[#F8F9FF] text-[#121221] dark:bg-[#121221] dark:text-white">
       <aside className="hidden md:flex flex-col w-[28%] lg:w-[22%] bg-white border-r border-[#E5E7EB] relative z-20">
         <div className="p-6">
           <div className="flex items-center gap-3 mb-8">
@@ -85,7 +86,7 @@ export default function CoachPage() {
       </aside>
 
       <main className="flex-1 flex flex-col relative overflow-hidden bg-[#F8F9FF]">
-        <header className="flex items-center justify-between px-6 py-4 bg-white/90 backdrop-blur-xl border-b border-[#E5E7EB] z-30">
+        <header className="flex items-center justify-between px-6 py-4 bg-white/90 backdrop-blur-xl border-b border-[#E5E7EB] z-30 dark:border-white/10 dark:bg-[#121221]/90">
           <div className="flex items-center gap-4">
             <button className="md:hidden p-2 text-[#9288F8] rounded-xl hover:bg-[#F1F2F9] transition-colors">
               <Menu className="h-5 w-5" />
@@ -95,9 +96,12 @@ export default function CoachPage() {
               <p className="text-sm text-[#6B7280] mt-1">Your personal growth assistant</p>
             </div>
           </div>
-          <button className="p-2 text-[#6B7280] hover:text-[#9288F8] transition-colors rounded-xl">
-            <MoreVertical className="h-5 w-5" />
-          </button>
+          <div className="flex items-center gap-2">
+            <ThemeToggle className="size-10 bg-white/80 dark:bg-white/10" />
+            <button className="p-2 text-[#6B7280] hover:text-[#9288F8] transition-colors rounded-xl">
+              <MoreVertical className="h-5 w-5" />
+            </button>
+          </div>
         </header>
 
         <section className="flex-1 overflow-y-auto px-6 py-8 space-y-8 max-w-5xl mx-auto">

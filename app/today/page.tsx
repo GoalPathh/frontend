@@ -17,11 +17,12 @@ import {
   Zap,
 } from "lucide-react";
 import { BottomNavigation } from "@/components/bottom-navigation";
+import { ThemeToggle } from "@/components/theme-toggle";
 
 export default function TodayPage() {
   return (
-    <div className="min-h-screen bg-[#f8f9ff] text-[#121221] antialiased">
-      <nav className="fixed top-0 w-full z-50 bg-[#f8f9ff]/80 backdrop-blur-xl border-b border-[#e4e5f1] px-6 py-3 md:px-10">
+    <div className="min-h-screen bg-[#f8f9ff] text-[#121221] antialiased dark:bg-[#121221] dark:text-white">
+      <nav className="fixed top-0 w-full z-50 bg-[#f8f9ff]/80 backdrop-blur-xl border-b border-[#e4e5f1] px-6 py-3 dark:border-white/10 dark:bg-[#121221]/80 md:px-10">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-4">
             <button className="text-primary active:scale-95 duration-200">
@@ -29,11 +30,14 @@ export default function TodayPage() {
             </button>
             <h1 className="text-xl font-bold text-primary tracking-tight">Today</h1>
           </div>
-          <div className="relative">
+          <div className="flex items-center gap-3">
+            <ThemeToggle className="size-10 bg-white/80 dark:bg-white/10" />
+            <div className="relative">
             <button className="text-primary active:scale-95 duration-200">
               <Bell className="h-6 w-6" />
             </button>
             <span className="absolute top-0 right-0 w-2 h-2 rounded-full bg-primary shadow-[0_0_8px_rgba(89,79,187,0.4)]" />
+            </div>
           </div>
         </div>
       </nav>

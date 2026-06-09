@@ -7,6 +7,7 @@ import { Goal } from "@/lib/types";
 import { goalService } from "@/lib/goalService";
 import { GoalCard } from "@/components/goals/goal-card";
 import { BottomNavigation } from "@/components/bottom-navigation";
+import { ThemeToggle } from "@/components/theme-toggle";
 
 export default function GoalsPage() {
   const router = useRouter();
@@ -37,18 +38,21 @@ export default function GoalsPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[#f8f9ff] pb-32">
+    <div className="min-h-screen bg-[#f8f9ff] pb-32 dark:bg-[#121221]">
       {/* Header */}
-      <header className="fixed top-0 w-full z-40 bg-[#f8f9ff]/90 backdrop-blur-xl border-b border-[#e4e5f1] px-6 py-4 md:px-10">
+      <header className="fixed top-0 w-full z-40 bg-[#f8f9ff]/90 backdrop-blur-xl border-b border-[#e4e5f1] px-6 py-4 dark:border-white/10 dark:bg-[#121221]/90 md:px-10">
         <div className="max-w-7xl mx-auto flex items-center justify-between">
-          <h1 className="text-2xl font-bold text-[#121221]">Your Goals</h1>
-          <button
-            onClick={handleAddGoal}
-            className="flex items-center gap-2 bg-primary text-white px-4 py-2 rounded-xl font-semibold hover:bg-primary/90 transition-all active:scale-95"
-          >
-            <Plus className="w-5 h-5" />
-            <span className="hidden sm:inline">Add Goal</span>
-          </button>
+          <h1 className="text-2xl font-bold text-[#121221] dark:text-white">Your Goals</h1>
+          <div className="flex items-center gap-3">
+            <ThemeToggle className="size-10 bg-white/80 dark:bg-white/10" />
+            <button
+              onClick={handleAddGoal}
+              className="flex items-center gap-2 bg-primary text-white px-4 py-2 rounded-xl font-semibold hover:bg-primary/90 transition-all active:scale-95"
+            >
+              <Plus className="w-5 h-5" />
+              <span className="hidden sm:inline">Add Goal</span>
+            </button>
+          </div>
         </div>
       </header>
 

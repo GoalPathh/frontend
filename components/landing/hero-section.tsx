@@ -29,19 +29,19 @@ export function HeroSection() {
           </div>
         </div>
 
-        <div className="relative mx-auto w-full max-w-xl">
+        <div className="relative mx-auto w-full max-w-xl pb-10 sm:pb-24">
           <PhoneMockup />
-          <div className="mt-6 grid grid-cols-2 gap-3 sm:absolute sm:inset-x-0 sm:top-4 sm:mt-0 sm:block">
+          <div className="mt-8 grid grid-cols-2 gap-3 sm:absolute sm:inset-x-0 sm:top-4 sm:mt-0 sm:block">
             {stats.map((stat, index) => (
               <div
                 key={stat.label}
                 className={cn(
                   "glass-surface rounded-card border-l-4 p-4 shadow-card sm:absolute sm:w-48",
                   stat.tone,
-                  index === 0 && "sm:left-0 sm:top-8 float-soft",
-                  index === 1 && "sm:bottom-12 sm:left-2 float-soft-delay",
-                  index === 2 && "sm:right-0 sm:top-16 float-soft-delay",
-                  index === 3 && "sm:bottom-4 sm:right-2 float-soft",
+                  index === 0 && "sm:left-0 sm:top-64 lg:top-72 float-soft",
+                  index === 1 && "sm:-bottom-4 sm:left-8 lg:-bottom-6 float-soft-delay",
+                  index === 2 && "sm:right-0 sm:top-64 lg:top-72 float-soft-delay",
+                  index === 3 && "sm:-bottom-16 sm:right-8 lg:-bottom-20 float-soft",
                 )}
               >
                 <div className="flex items-center gap-3">
@@ -59,4 +59,3 @@ export function HeroSection() {
     </section>
   );
 }
-

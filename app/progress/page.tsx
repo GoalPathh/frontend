@@ -11,6 +11,7 @@ import { ActivityHeatmap } from "@/components/progress/activity-heatmap";
 import { AchievementCard } from "@/components/progress/achievement-card";
 import { AIInsightCard } from "@/components/progress/ai-insight-card";
 import { BottomNavigation } from "@/components/bottom-navigation";
+import { ThemeToggle } from "@/components/theme-toggle";
 import { progressService } from "@/lib/progressService";
 import type { DateRange, GoalProgress, HabitPerformance, Insight, ProgressStats, Achievement } from "@/lib/types";
 
@@ -39,14 +40,17 @@ export default function ProgressPage() {
   const emptyState = !stats && goals.length === 0 && series.length === 0 && habits.length === 0 && heatmap.length === 0;
 
   return (
-    <div className="min-h-screen bg-[#f8f9ff] text-[#121221] pb-20">
+    <div className="min-h-screen bg-[#f8f9ff] text-[#121221] pb-20 dark:bg-[#121221] dark:text-white">
       <div className="max-w-7xl mx-auto px-6 py-8 md:px-10">
         <div className="mb-10 flex flex-col gap-5 md:flex-row md:items-end md:justify-between">
           <div className="max-w-2xl">
             <p className="text-sm font-semibold uppercase tracking-[0.28em] text-[#9288F8] mb-3">Progress</p>
             <h1 className="text-4xl font-bold tracking-tight text-[#121221]">Track your growth and stay motivated.</h1>
           </div>
-          <DateRangeSelector selectedRange={range} onChange={setRange} />
+          <div className="flex items-center gap-3">
+            <ThemeToggle className="bg-white/80 dark:bg-white/10" />
+            <DateRangeSelector selectedRange={range} onChange={setRange} />
+          </div>
         </div>
 
         {emptyState ? (

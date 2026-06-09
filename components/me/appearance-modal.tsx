@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import type { ReactNode } from "react";
 import { Check, Moon, Monitor, Sun } from "lucide-react";
+import { applyAppearance } from "@/lib/theme";
 import type { AppearancePreference } from "@/lib/types";
 
 interface AppearanceModalProps {
@@ -62,7 +63,10 @@ export function AppearanceModal({ open, currentPreference, onClose, onSave }: Ap
 
         <button
           type="button"
-          onClick={() => onSave(selection)}
+          onClick={() => {
+            applyAppearance(selection);
+            onSave(selection);
+          }}
           className="mt-6 w-full rounded-2xl bg-[#9288F8] px-6 py-3 text-sm font-bold uppercase tracking-[0.24em] text-white shadow-lg shadow-[#9288F8]/20 transition hover:bg-[#7a6de4]"
         >
           Save Preference

@@ -14,9 +14,9 @@ const accentClasses: Record<Insight["accent"], string> = {
 
 export function AIInsightCard({ insight }: AIInsightCardProps) {
   return (
-    <div className={`rounded-[28px] border border-border bg-surface p-5 shadow-sm ${accentClasses[insight.accent]}`}>
-      <p className="text-sm font-semibold">AI Insight</p>
-      <p className="mt-4 text-base font-bold text-foreground">{insight.message}</p>
+    <div className={`rounded-[18px] border border-border bg-surface p-4 shadow-card ${accentClasses[insight.accent]}`}>
+      <p className="text-[10px] font-extrabold uppercase tracking-[0.2em]">AI Insight</p>
+      <p className="mt-3 text-sm font-bold leading-6 text-foreground">{insight.message}</p>
     </div>
   );
 }

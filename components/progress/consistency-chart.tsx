@@ -23,20 +23,20 @@ export function ConsistencyChart({ series }: ConsistencyChartProps) {
     .join(" ");
 
   return (
-    <div className="rounded-[28px] border border-border bg-surface p-5 shadow-sm">
+    <div className="rounded-[20px] border border-border bg-surface p-5 shadow-card">
       <div className="flex items-center justify-between gap-4 mb-6">
         <div>
-          <p className="text-sm font-semibold text-foreground/60">Consistency Analytics</p>
-          <h3 className="text-xl font-bold text-foreground">Daily completion rate</h3>
+          <p className="text-[10px] font-extrabold uppercase tracking-[0.22em] text-primary">Consistency Analytics</p>
+          <h3 className="mt-2 text-xl font-extrabold text-foreground">Daily completion rate</h3>
         </div>
-        <div className="text-right text-sm text-foreground/60">
+        <div className="hidden text-right text-sm text-foreground/60 sm:block">
           <p>Completion %</p>
           <p className="font-semibold text-foreground">Habits Completed</p>
         </div>
       </div>
 
       <div className="overflow-x-auto">
-        <svg viewBox="0 0 100 50" className="w-full h-56">
+        <svg viewBox="0 0 100 50" className="w-full h-48 sm:h-56">
           <defs>
             <linearGradient id="lineGradient" x1="0%" y1="0%" x2="100%" y2="0%">
               <stop offset="0%" stopColor="rgb(var(--primary))" />
@@ -55,7 +55,7 @@ export function ConsistencyChart({ series }: ConsistencyChartProps) {
 
       <div className="grid grid-cols-2 gap-3 mt-4 text-sm text-foreground/60">
         {points.slice(-4).map((point, index) => (
-          <div key={index} className="rounded-2xl bg-background p-3">
+          <div key={index} className="rounded-[14px] border border-border bg-background p-3">
             <p className="font-semibold text-foreground">{point.label}</p>
             <p>{point.value}% • {point.habits} habits</p>
           </div>

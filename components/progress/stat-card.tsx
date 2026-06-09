@@ -9,12 +9,12 @@ interface StatCardProps {
 
 export function StatCard({ title, value, icon, accentClass }: StatCardProps) {
   return (
-    <div className="rounded-[28px] border border-border bg-surface p-5 shadow-sm">
-      <div className={`inline-flex items-center justify-center rounded-2xl p-3 ${accentClass} bg-opacity-10 text-opacity-100 mb-4`}>
+    <div className="group rounded-[20px] border border-border bg-surface p-5 shadow-card transition hover:-translate-y-1 hover:shadow-soft">
+      <div className={`inline-flex items-center justify-center rounded-[14px] p-3 ${accentClass} mb-5`}>
         {icon}
       </div>
-      <p className="text-sm font-semibold uppercase tracking-[0.2em] text-foreground/60 mb-3">{title}</p>
-      <h3 className="text-3xl font-bold text-foreground">{value}</h3>
+      <p className="text-[10px] font-extrabold uppercase tracking-[0.22em] text-foreground/50 mb-2">{title}</p>
+      <h3 className="text-3xl font-extrabold text-foreground">{value}</h3>
     </div>
   );
 }

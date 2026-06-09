@@ -1,4 +1,4 @@
-import { ChevronDown } from "lucide-react";
+import { CalendarDays } from "lucide-react";
 import type { DateRange } from "@/lib/types";
 
 interface DateRangeSelectorProps {
@@ -6,32 +6,52 @@ interface DateRangeSelectorProps {
   onChange: (value: DateRange) => void;
 }
 
-const OPTIONS: { label: string; value: DateRange }[] = [
-  { label: "Last 7 Days", value: "last-7-days" },
-  { label: "Last 30 Days", value: "last-30-days" },
-  { label: "Last 3 Months", value: "last-3-months" },
-  { label: "Last 6 Months", value: "last-6-months" },
-  { label: "Last Year", value: "last-year" },
-  { label: "Custom Range", value: "custom" },
+const OPTIONS: { label: string; shortLabel: string; value: DateRange }[] = [
+  { label: "Last 7 Days", shortLabel: "7D", value: "last-7-days" },
+  { label: "Last 30 Days", shortLabel: "30D", value: "last-30-days" },
+  { label: "Last 3 Months", shortLabel: "3M", value: "last-3-months" },
+  { label: "Last 6 Months", shortLabel: "6M", value: "last-6-months" },
+  { label: "Last Year", shortLabel: "1Y", value: "last-year" },
+  { label: "Custom Range", shortLabel: "Custom", value: "custom" },
 ];
 
 export function DateRangeSelector({ selectedRange, onChange }: DateRangeSelectorProps) {
+  const selectedLabel = OPTIONS.find((option) => option.value === selectedRange)?.label ?? "Last 7 Days";
+
   return (
-    <div className="inline-flex items-center gap-2 rounded-3xl border border-border bg-surface px-4 py-3 shadow-sm">
-      <span className="text-sm font-semibold text-foreground/60">Range</span>
-      <div className="relative">
-        <select
-          className="appearance-none pr-8 bg-transparent text-sm font-semibold text-foreground focus:outline-none"
-          value={selectedRange}
-          onChange={(event) => onChange(event.target.value as DateRange)}
-        >
-          {OPTIONS.map((option) => (
-            <option key={option.value} value={option.value}>
-              {option.label}
-            </option>
-          ))}
-        </select>
-        <ChevronDown className="pointer-events-none absolute right-0 top-1/2 h-4 w-4 -translate-y-1/2 text-foreground/60" />
+    <div className="rounded-[20px] border border-border bg-surface p-3 shadow-card">
+      <div className="mb-3 flex items-center justify-between gap-3">
+        <div className="flex items-center gap-2 text-sm font-extrabold text-foreground">
+          <span className="flex h-9 w-9 items-center justify-center rounded-[12px] bg-primary/10 text-primary">
+            <CalendarDays className="h-4 w-4" />
+          </span>
+          Date Range
+        </div>
+        <span className="hidden rounded-full bg-muted px-3 py-1 text-xs font-bold text-foreground/60 sm:inline-flex">
+          {selectedLabel}
+        </span>
+      </div>
+      <div className="grid grid-cols-3 gap-2 sm:grid-cols-6">
+        {OPTIONS.map((option) => {
+          const isActive = selectedRange === option.value;
+
+          return (
+            <button
+              key={option.value}
+              type="button"
+              onClick={() => onChange(option.value)}
+              className={`rounded-full px-3 py-2 text-xs font-extrabold transition ${
+                isActive
+                  ? "bg-primary text-white shadow-lg shadow-primary/20"
+                  : "bg-background text-foreground/60 hover:bg-muted hover:text-foreground"
+              }`}
+              aria-pressed={isActive}
+            >
+              <span className="sm:hidden">{option.shortLabel}</span>
+              <span className="hidden sm:inline">{option.shortLabel}</span>
+            </button>
+          );
+        })}
       </div>
     </div>
   );

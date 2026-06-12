@@ -11,6 +11,7 @@ import { HabitSuggestionCard } from "@/components/goals/habit-suggestion-card";
 import { HabitSettingsCard } from "@/components/goals/habit-settings-card";
 import { ReviewGoalCard } from "@/components/goals/review-goal-card";
 import { SuccessModal } from "@/components/goals/success-modal";
+import { AppSidebar } from "@/components/app-sidebar";
 
 const GOAL_SUGGESTIONS = [
   "Speak English Fluently",
@@ -118,7 +119,7 @@ export default function AddGoalPage() {
     setCurrentStep(4);
   };
 
-  const handleSaveGoal = () => {
+  const handleSaveGoal = async () => {
     if (reviewData) {
       const formData: GoalFormData = {
         title: reviewData.title,
@@ -129,7 +130,11 @@ export default function AddGoalPage() {
         reminderEnabled: reviewData.reminderEnabled,
         notificationPreference: reviewData.notificationPreference,
       };
-      goalService.saveGoal(formData);
+      try {
+        await goalService.saveGoalToApi(formData);
+      } catch {
+        goalService.saveGoal(formData);
+      }
       setShowSuccess(true);
     }
   };
@@ -145,9 +150,10 @@ export default function AddGoalPage() {
   const steps = ["Goal", "Habits", "Schedule", "Review"];
 
   return (
-    <div className="min-h-screen bg-background pb-20">
+    <div className="min-h-screen bg-background pb-20 lg:pl-[272px]">
+      <AppSidebar active="goals" className="fixed inset-y-0 left-0 z-50 hidden lg:flex" />
       {/* Header */}
-      <header className="fixed top-0 w-full z-40 bg-background/90 backdrop-blur-xl border-b border-border px-6 py-4 md:px-10">
+      <header className="fixed top-0 z-40 w-full border-b border-border bg-background/90 px-6 py-4 backdrop-blur-xl md:px-10 lg:left-[272px] lg:w-[calc(100%-272px)]">
         <div className="max-w-3xl mx-auto flex items-center gap-4">
           <button
             onClick={() => {

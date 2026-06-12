@@ -30,7 +30,9 @@ export function GoalCard({ goal, onClick }: GoalCardProps) {
   return (
     <div
       onClick={onClick}
-      className="relative overflow-hidden bg-surface border border-border rounded-[20px] p-5 shadow-card hover:-translate-y-1 hover:shadow-soft transition-all cursor-pointer group"
+      className={`relative overflow-hidden bg-surface border border-border rounded-[20px] p-5 shadow-card transition-all group ${
+        onClick ? "cursor-pointer hover:-translate-y-1 hover:shadow-soft" : "cursor-default"
+      }`}
     >
       <div className="absolute -right-12 -top-14 h-32 w-32 rounded-full bg-primary/10 blur-3xl" />
 

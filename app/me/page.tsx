@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { useRouter } from "next/navigation";
 import {
   Award,
   BarChart3,
@@ -22,6 +23,7 @@ import {
   Zap,
 } from "lucide-react";
 import { BottomNavigation } from "@/components/bottom-navigation";
+import { AppSidebar } from "@/components/app-sidebar";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { ProfileHeader } from "@/components/me/profile-header";
 import { StatCard } from "@/components/me/stat-card";
@@ -29,6 +31,7 @@ import { PreferenceCard } from "@/components/me/preference-card";
 import { AppearanceModal } from "@/components/me/appearance-modal";
 import { AccountCard } from "@/components/me/account-card";
 import { userService } from "@/lib/userService";
+import { authService } from "@/lib/authService";
 import type {
   AppearancePreference,
   NotificationPreference,
@@ -37,6 +40,7 @@ import type {
 } from "@/lib/types";
 
 export default function MePage() {
+  const router = useRouter();
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [stats, setStats] = useState<UserStats | null>(null);
   const [appearance, setAppearance] = useState<AppearancePreference>("light");
@@ -64,7 +68,8 @@ export default function MePage() {
   const enabledNotifications = notifications.filter((item) => item.enabled).length;
 
   return (
-    <div className="min-h-screen bg-background text-foreground pb-32 dark:bg-background dark:text-white">
+    <div className="min-h-screen bg-background pb-32 text-foreground dark:bg-background dark:text-white lg:pl-[272px] lg:pb-10">
+      <AppSidebar active="me" className="fixed inset-y-0 left-0 z-50 hidden lg:flex" />
       <div className="max-w-7xl mx-auto px-6 py-8 md:px-10">
         <div className="mb-8 flex items-center justify-between gap-4">
           <div>
@@ -75,7 +80,7 @@ export default function MePage() {
         </div>
 
         {profile && (
-          <ProfileHeader profile={profile} onEdit={() => alert("Edit profile flow coming soon.")} />
+          <ProfileHeader profile={profile} onEdit={scrollToSettings} />
         )}
 
         <section className="mt-8 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
@@ -164,7 +169,7 @@ export default function MePage() {
           </div>
         </section>
 
-        <section ref={settingsRef} className="mt-10 space-y-6">
+        <section id="settings" ref={settingsRef} className="mt-10 scroll-mt-8 space-y-6">
           <div className="flex items-center justify-between gap-4">
             <div>
               <p className="text-sm font-semibold uppercase tracking-[0.22em] text-primary">Settings</p>
@@ -183,15 +188,15 @@ export default function MePage() {
               icon={<Bell className="h-5 w-5" />}
               title="Notifications"
               current={`${enabledNotifications} active`}
-              actionLabel="Manage later"
-              onAction={() => alert("Notification settings flow coming soon.")}
+              actionLabel="Review settings"
+              onAction={scrollToSettings}
             />
-            <AccountCard icon={<User className="h-5 w-5" />} title="Edit Profile" subtitle="Name, photo, username" href="#" />
-            <AccountCard icon={<Lock className="h-5 w-5" />} title="Password" subtitle="Update account security" href="#" />
-            <AccountCard icon={<Mail className="h-5 w-5" />} title="Email" subtitle="Control email updates" href="#" />
-            <AccountCard icon={<ShieldCheck className="h-5 w-5" />} title="Privacy" subtitle="Review data options" href="#" />
-            <AccountCard icon={<FileText className="h-5 w-5" />} title="Policy" subtitle="Read privacy policy" href="#" />
-            <AccountCard icon={<HelpCircle className="h-5 w-5" />} title="Help" subtitle="Support and resources" href="#" />
+            <AccountCard icon={<User className="h-5 w-5" />} title="Edit Profile" subtitle="Name, photo, username" href="/me#settings" />
+            <AccountCard icon={<Lock className="h-5 w-5" />} title="Password" subtitle="Update account security" href="/me#settings" />
+            <AccountCard icon={<Mail className="h-5 w-5" />} title="Email" subtitle="Control email updates" href="/me#settings" />
+            <AccountCard icon={<ShieldCheck className="h-5 w-5" />} title="Privacy" subtitle="Review data options" href="/me#settings" />
+            <AccountCard icon={<FileText className="h-5 w-5" />} title="Policy" subtitle="Read privacy policy" href="/" />
+            <AccountCard icon={<HelpCircle className="h-5 w-5" />} title="Help" subtitle="Support and resources" href="/coach" />
           </div>
         </section>
 
@@ -201,7 +206,7 @@ export default function MePage() {
               <p className="text-sm font-semibold uppercase tracking-[0.22em] text-[#fb7185]">Danger Zone</p>
               <h2 className="mt-2 text-xl font-bold text-[#b91c1c]">Logout</h2>
             </div>
-            <button type="button" className="inline-flex items-center gap-2 rounded-2xl border border-[#fca5a5] bg-[#fef2f2] px-5 py-3 text-sm font-semibold text-[#b91c1c] transition hover:bg-[#fee2e2]">
+            <button type="button" onClick={() => { authService.logout(); router.push("/login"); }} className="inline-flex items-center gap-2 rounded-2xl border border-[#fca5a5] bg-[#fef2f2] px-5 py-3 text-sm font-semibold text-[#b91c1c] transition hover:bg-[#fee2e2]">
               <LogOut className="h-4 w-4" />
               Logout
             </button>

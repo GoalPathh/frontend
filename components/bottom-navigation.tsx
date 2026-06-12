@@ -14,7 +14,7 @@ const items = [
 
 export function BottomNavigation({ active }: BottomNavigationProps) {
   return (
-    <nav className="fixed bottom-0 w-full z-50 rounded-t-[24px] glass-surface border-t border-[#e4e5f1] shadow-lg flex justify-around items-center px-6 pb-8 pt-4">
+    <nav className="fixed bottom-0 z-50 flex w-full items-center justify-around rounded-t-[24px] border-t border-[#e4e5f1] px-6 pb-8 pt-4 shadow-lg glass-surface lg:hidden">
       {items.map(({ key, label, href, Icon }) => {
         const isActive = active === key;
 

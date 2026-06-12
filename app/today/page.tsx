@@ -22,6 +22,7 @@ import {
   Zap,
 } from "lucide-react";
 import { BottomNavigation } from "@/components/bottom-navigation";
+import { AppSidebar } from "@/components/app-sidebar";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { NotificationsPanel } from "@/components/notifications-panel";
 
@@ -29,13 +30,14 @@ export default function TodayPage() {
   const [showNotifications, setShowNotifications] = useState(false);
 
   return (
-  <div className="min-h-screen bg-background text-foreground antialiased dark:bg-background dark:text-white">
-      <nav className="fixed top-0 w-full z-50 bg-background/80 backdrop-blur-xl border-b border-border px-6 py-3 dark:border-surface/10 dark:bg-background/80 md:px-10">
+  <div className="min-h-screen bg-background text-foreground antialiased dark:bg-background dark:text-white lg:pl-[272px]">
+      <AppSidebar active="today" className="fixed inset-y-0 left-0 z-50 hidden lg:flex" />
+      <nav className="fixed top-0 z-40 w-full border-b border-border bg-background/80 px-6 py-3 backdrop-blur-xl dark:border-surface/10 dark:bg-background/80 md:px-10 lg:left-[272px] lg:w-[calc(100%-272px)]">
         <div className="mx-auto flex max-w-7xl items-center justify-between">
           <div className="flex items-center gap-4">
-            <button className="text-primary active:scale-95 duration-200">
+            <a href="/me" className="text-primary active:scale-95 duration-200 lg:hidden" aria-label="Open profile">
               <Menu className="h-6 w-6" />
-            </button>
+            </a>
             <h1 className="text-xl font-bold text-primary tracking-tight">Today</h1>
           </div>
           <div className="flex items-center gap-3">
@@ -72,13 +74,13 @@ export default function TodayPage() {
                 Keep today simple: finish the next small habit, protect your streak, and let the plan stay realistic.
               </p>
               <div className="mt-6 flex flex-col gap-3 sm:flex-row">
-                <button className="inline-flex items-center justify-center gap-2 rounded-full bg-primary px-5 py-3 text-sm font-extrabold text-white shadow-lg shadow-primary/20 transition hover:-translate-y-0.5 hover:bg-primary/90 active:translate-y-0">
+                <a href="/coach" className="inline-flex items-center justify-center gap-2 rounded-full bg-primary px-5 py-3 text-sm font-extrabold text-white shadow-lg shadow-primary/20 transition hover:-translate-y-0.5 hover:bg-primary/90 active:translate-y-0">
                   Start Focus
                   <ArrowRight className="h-4 w-4" />
-                </button>
-                <button className="inline-flex items-center justify-center gap-2 rounded-full border border-border bg-background px-5 py-3 text-sm font-extrabold text-foreground transition hover:-translate-y-0.5 hover:border-primary hover:text-primary active:translate-y-0">
+                </a>
+                <a href="/goals" className="inline-flex items-center justify-center gap-2 rounded-full border border-border bg-background px-5 py-3 text-sm font-extrabold text-foreground transition hover:-translate-y-0.5 hover:border-primary hover:text-primary active:translate-y-0">
                   Adjust Plan
-                </button>
+                </a>
               </div>
             </div>
 
@@ -147,9 +149,9 @@ export default function TodayPage() {
                 </div>
               </div>
             </div>
-            <button className="w-full rounded-xl gradient-btn py-3 text-xs font-bold uppercase tracking-[0.24em] text-white shadow-md transition active:scale-[0.98]">
+            <a href="/goals" className="block w-full rounded-xl gradient-btn py-3 text-center text-xs font-bold uppercase tracking-[0.24em] text-white shadow-md transition active:scale-[0.98]">
               View Strategy
-            </button>
+            </a>
           </div>
         </section>
 

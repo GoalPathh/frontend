@@ -7,6 +7,7 @@ import { Goal } from "@/lib/types";
 import { goalService } from "@/lib/goalService";
 import { GoalCard } from "@/components/goals/goal-card";
 import { BottomNavigation } from "@/components/bottom-navigation";
+import { AppSidebar } from "@/components/app-sidebar";
 import { ThemeToggle } from "@/components/theme-toggle";
 
 export default function GoalsPage() {
@@ -14,8 +15,12 @@ export default function GoalsPage() {
   const [goals, setGoals] = useState<Goal[]>([]);
 
   useEffect(() => {
-    goalService.initializeMockData();
-    setGoals(goalService.getAllGoals());
+    goalService.getGoalsFromApi()
+      .then(setGoals)
+      .catch(() => {
+        goalService.initializeMockData();
+        setGoals(goalService.getAllGoals());
+      });
   }, []);
 
   const handleAddGoal = () => {
@@ -35,8 +40,9 @@ export default function GoalsPage() {
   ];
 
   return (
-    <div className="min-h-screen bg-background pb-32 text-foreground dark:bg-background">
-      <header className="fixed top-0 w-full z-40 bg-background/90 backdrop-blur-xl border-b border-border px-6 py-4 dark:border-surface/10 dark:bg-background/90 md:px-10">
+    <div className="min-h-screen bg-background pb-32 text-foreground dark:bg-background lg:pl-[272px] lg:pb-10">
+      <AppSidebar active="goals" className="fixed inset-y-0 left-0 z-50 hidden lg:flex" />
+      <header className="fixed top-0 z-40 w-full border-b border-border bg-background/90 px-6 py-4 backdrop-blur-xl dark:border-surface/10 dark:bg-background/90 md:px-10 lg:left-[272px] lg:w-[calc(100%-272px)]">
         <div className="max-w-7xl mx-auto flex items-center justify-between">
           <h1 className="text-2xl font-bold text-foreground">Goals</h1>
           <div className="flex items-center gap-3">

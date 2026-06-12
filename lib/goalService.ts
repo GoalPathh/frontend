@@ -1,4 +1,5 @@
 import { Goal, Habit, HabitSchedule, GoalFormData } from "./types";
+import { apiRequest } from "./api";
 
 const STORAGE_KEY = "goalpath_goals";
 
@@ -121,6 +122,18 @@ const habitSuggestions: Record<string, Habit[]> = {
 };
 
 export const goalService = {
+  getGoalsFromApi: async (): Promise<Goal[]> => {
+    const rows = await apiRequest<any[]>("/goals");
+    return rows.map(mapApiGoal);
+  },
+
+  saveGoalToApi: async (formData: GoalFormData): Promise<Goal> => {
+    const row = await apiRequest<any>("/goals", {
+      method: "POST",
+      body: JSON.stringify({ ...formData, category: "other", progress: 0 }),
+    });
+    return mapApiGoal(row);
+  },
   // Get all goals from localStorage
   getAllGoals: (): Goal[] => {
     if (typeof window === "undefined") return [];
@@ -260,3 +273,32 @@ export const goalService = {
     }
   },
 };
+
+function mapApiGoal(row: any): Goal {
+  return {
+    id: row.id,
+    title: row.title,
+    category: row.category,
+    period: row.period,
+    progress: Number(row.progress),
+    habits: (row.habits ?? []).map((habit: any) => ({
+      id: habit.id,
+      title: habit.title,
+      duration: habit.duration,
+      difficulty: habit.difficulty,
+      schedule: {
+        timeRange: habit.time_range,
+        reminderTime: habit.reminder_time ?? undefined,
+        activeDays: habit.active_days ?? [],
+        priority: habit.priority,
+      },
+      createdAt: habit.created_at,
+    })),
+    startDate: row.start_date,
+    targetDate: row.target_date,
+    reminderEnabled: row.reminder_enabled,
+    notificationPreference: row.notification_preference,
+    createdAt: row.created_at,
+    updatedAt: row.updated_at,
+  };
+}

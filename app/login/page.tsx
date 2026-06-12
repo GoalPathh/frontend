@@ -1,11 +1,35 @@
+"use client";
+
 import Link from "next/link";
+import { FormEvent, useState } from "react";
+import { useRouter } from "next/navigation";
 import { ArrowRight, Lock, Mail } from "lucide-react";
 import { AuthField } from "@/components/auth/auth-field";
 import { AuthShell } from "@/components/auth/auth-shell";
 import { GoogleButton } from "@/components/auth/google-button";
 import { LoginPreview } from "@/components/auth/login-preview";
+import { authService } from "@/lib/authService";
 
 export default function LoginPage() {
+  const router = useRouter();
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
+
+  const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    setLoading(true);
+    setError("");
+    const form = new FormData(event.currentTarget);
+    try {
+      await authService.login(String(form.get("email")), String(form.get("password")));
+      router.push("/today");
+    } catch (caught) {
+      setError(caught instanceof Error ? caught.message : "Unable to sign in.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <AuthShell aside={<LoginPreview />}>
       <div className="mb-9">
@@ -18,7 +42,7 @@ export default function LoginPage() {
         </p>
       </div>
 
-      <form className="space-y-5">
+      <form className="space-y-5" onSubmit={handleSubmit}>
         <AuthField
           id="email"
           label="Email Address"
@@ -26,6 +50,8 @@ export default function LoginPage() {
           placeholder="name@example.com"
           type="email"
           autoComplete="email"
+          name="email"
+          required
         />
         <AuthField
           id="password"
@@ -34,6 +60,8 @@ export default function LoginPage() {
           placeholder="Enter your password"
           type="password"
           autoComplete="current-password"
+          name="password"
+          required
         />
 
         <div className="flex flex-col gap-3 text-sm font-bold text-[#6b7280] sm:flex-row sm:items-center sm:justify-between">
@@ -44,16 +72,17 @@ export default function LoginPage() {
             />
             Remember me
           </label>
-          <a href="#" className="text-primary transition hover:underline">
+          <Link href="/register" className="text-primary transition hover:underline">
             Forgot Password?
-          </a>
+          </Link>
         </div>
 
         <button
           type="submit"
+          disabled={loading}
           className="flex h-[52px] w-full items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-primary to-primarySoft px-4 py-3 text-base font-extrabold text-white shadow-lg shadow-primary/25 transition hover:-translate-y-0.5 hover:shadow-xl focus:outline-none focus:ring-4 focus:ring-primary/20 active:translate-y-0"
         >
-          Sign In
+          {loading ? "Signing In..." : "Sign In"}
           <ArrowRight className="size-5" aria-hidden="true" />
         </button>
 
@@ -67,6 +96,7 @@ export default function LoginPage() {
 
         <GoogleButton label="Continue with Google" />
       </form>
+      {error && <p className="mt-4 rounded-xl bg-coral/10 px-4 py-3 text-sm font-semibold text-coral">{error}</p>}
 
       <p className="mt-8 text-center text-sm font-semibold text-[#6b7280]">
         Don&apos;t have an account?{" "}

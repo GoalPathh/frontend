@@ -11,6 +11,7 @@ import { ActivityHeatmap } from "@/components/progress/activity-heatmap";
 import { AchievementCard } from "@/components/progress/achievement-card";
 import { AIInsightCard } from "@/components/progress/ai-insight-card";
 import { BottomNavigation } from "@/components/bottom-navigation";
+import { AppSidebar } from "@/components/app-sidebar";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { progressService } from "@/lib/progressService";
 import type { DateRange, GoalProgress, HabitPerformance, Insight, ProgressStats, Achievement } from "@/lib/types";
@@ -40,7 +41,8 @@ export default function ProgressPage() {
   const emptyState = !stats && goals.length === 0 && series.length === 0 && habits.length === 0 && heatmap.length === 0;
 
   return (
-    <div className="min-h-screen bg-background text-foreground pb-32 dark:bg-background dark:text-white">
+    <div className="min-h-screen bg-background pb-32 text-foreground dark:bg-background dark:text-white lg:pl-[272px] lg:pb-10">
+      <AppSidebar active="progress" className="fixed inset-y-0 left-0 z-50 hidden lg:flex" />
       <div className="max-w-7xl mx-auto px-5 py-8 md:px-10">
         <div className="mb-8 flex justify-end">
           <ThemeToggle className="bg-surface/80 dark:bg-surface/10" />
@@ -53,9 +55,9 @@ export default function ProgressPage() {
             </div>
             <h2 className="text-2xl font-bold text-foreground mb-3">No progress data yet.</h2>
             <p className="text-foreground/60 mb-6">Start your first goal to unlock personalized analytics and streak tracking.</p>
-            <button className="rounded-full bg-primary px-6 py-3 text-sm font-bold text-white shadow-sm hover:bg-primary/90 transition-colors">
+            <a href="/goals/add" className="inline-flex rounded-full bg-primary px-6 py-3 text-sm font-bold text-white shadow-sm hover:bg-primary/90 transition-colors">
               Start Your First Goal
-            </button>
+            </a>
           </section>
         ) : (
           <>

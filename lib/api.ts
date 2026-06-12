@@ -1,5 +1,6 @@
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:4000/api/v1";
 const TOKEN_KEY = "goalpath_access_token";
+const REFRESH_TOKEN_KEY = "goalpath_refresh_token";
 
 type ApiResponse<T> = { data: T };
 
@@ -12,11 +13,16 @@ export function setAccessToken(token: string) {
   window.localStorage.setItem(TOKEN_KEY, token);
 }
 
-export function clearAccessToken() {
-  window.localStorage.removeItem(TOKEN_KEY);
+export function setRefreshToken(token: string) {
+  window.localStorage.setItem(REFRESH_TOKEN_KEY, token);
 }
 
-export async function apiRequest<T>(path: string, options: RequestInit = {}): Promise<T> {
+export function clearAccessToken() {
+  window.localStorage.removeItem(TOKEN_KEY);
+  window.localStorage.removeItem(REFRESH_TOKEN_KEY);
+}
+
+async function request<T>(path: string, options: RequestInit, retryOnUnauthorized: boolean): Promise<T> {
   const token = getAccessToken();
   const response = await fetch(`${API_URL}${path}`, {
     ...options,
@@ -27,6 +33,27 @@ export async function apiRequest<T>(path: string, options: RequestInit = {}): Pr
     },
   });
 
+  if (response.status === 401 && retryOnUnauthorized && typeof window !== "undefined") {
+    const refreshToken = window.localStorage.getItem(REFRESH_TOKEN_KEY);
+    if (refreshToken) {
+      const refreshResponse = await fetch(`${API_URL}/auth/refresh`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ refreshToken }),
+      });
+      if (refreshResponse.ok) {
+        const payload = await refreshResponse.json();
+        const session = payload.data?.session;
+        if (session?.access_token && session?.refresh_token) {
+          setAccessToken(session.access_token);
+          setRefreshToken(session.refresh_token);
+          return request<T>(path, options, false);
+        }
+      }
+      clearAccessToken();
+    }
+  }
+
   if (!response.ok) {
     const payload = await response.json().catch(() => null);
     throw new Error(payload?.error?.message ?? `Request failed with status ${response.status}.`);
@@ -34,4 +61,8 @@ export async function apiRequest<T>(path: string, options: RequestInit = {}): Pr
 
   if (response.status === 204) return undefined as T;
   return ((await response.json()) as ApiResponse<T>).data;
+}
+
+export function apiRequest<T>(path: string, options: RequestInit = {}): Promise<T> {
+  return request<T>(path, options, true);
 }

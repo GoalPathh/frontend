@@ -33,6 +33,8 @@ export default function AddGoalPage() {
   const router = useRouter();
   const [currentStep, setCurrentStep] = useState(1);
   const [showSuccess, setShowSuccess] = useState(false);
+  const [saveError, setSaveError] = useState("");
+  const [saving, setSaving] = useState(false);
 
   // Step 1 state
   const [customGoal, setCustomGoal] = useState("");
@@ -121,6 +123,8 @@ export default function AddGoalPage() {
 
   const handleSaveGoal = async () => {
     if (reviewData) {
+      setSaving(true);
+      setSaveError("");
       const formData: GoalFormData = {
         title: reviewData.title,
         period: reviewData.period,
@@ -132,10 +136,12 @@ export default function AddGoalPage() {
       };
       try {
         await goalService.saveGoalToApi(formData);
-      } catch {
-        goalService.saveGoal(formData);
+        setShowSuccess(true);
+      } catch (error) {
+        setSaveError(error instanceof Error ? error.message : "Unable to save goal.");
+      } finally {
+        setSaving(false);
       }
-      setShowSuccess(true);
     }
   };
 
@@ -477,11 +483,13 @@ export default function AddGoalPage() {
               >
                 Back
               </button>
+              {saveError && <p className="rounded-xl bg-coral/10 px-4 py-3 text-sm font-semibold text-coral">{saveError}</p>}
               <button
                 onClick={handleSaveGoal}
-                className="flex-1 px-4 py-3 rounded-xl bg-primary text-white font-bold hover:bg-primary/90 transition-all"
+                disabled={saving}
+                className="flex-1 px-4 py-3 rounded-xl bg-primary text-white font-bold hover:bg-primary/90 transition-all disabled:cursor-wait disabled:opacity-60"
               >
-                Save Goal
+                {saving ? "Saving..." : "Save Goal"}
               </button>
             </div>
           </div>

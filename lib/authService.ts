@@ -1,7 +1,7 @@
-import { apiRequest, clearAccessToken, setAccessToken } from "./api";
+import { apiRequest, clearAccessToken, setAccessToken, setRefreshToken } from "./api";
 
 type AuthResult = {
-  session: { access_token: string } | null;
+  session: { access_token: string; refresh_token: string } | null;
   user: { id: string; email?: string } | null;
 };
 
@@ -11,7 +11,10 @@ export const authService = {
       method: "POST",
       body: JSON.stringify({ email, password }),
     });
-    if (result.session?.access_token) setAccessToken(result.session.access_token);
+    if (result.session) {
+      setAccessToken(result.session.access_token);
+      setRefreshToken(result.session.refresh_token);
+    }
     return result;
   },
   async register(name: string, email: string, password: string) {
@@ -19,7 +22,10 @@ export const authService = {
       method: "POST",
       body: JSON.stringify({ name, email, password }),
     });
-    if (result.session?.access_token) setAccessToken(result.session.access_token);
+    if (result.session) {
+      setAccessToken(result.session.access_token);
+      setRefreshToken(result.session.refresh_token);
+    }
     return result;
   },
   logout() {

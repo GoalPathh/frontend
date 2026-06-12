@@ -13,14 +13,12 @@ import { ThemeToggle } from "@/components/theme-toggle";
 export default function GoalsPage() {
   const router = useRouter();
   const [goals, setGoals] = useState<Goal[]>([]);
+  const [loadError, setLoadError] = useState("");
 
   useEffect(() => {
     goalService.getGoalsFromApi()
       .then(setGoals)
-      .catch(() => {
-        goalService.initializeMockData();
-        setGoals(goalService.getAllGoals());
-      });
+      .catch((error) => setLoadError(error instanceof Error ? error.message : "Unable to load goals."));
   }, []);
 
   const handleAddGoal = () => {
@@ -59,6 +57,11 @@ export default function GoalsPage() {
       </header>
 
       <main className="mt-24 px-5 md:px-10 max-w-7xl mx-auto space-y-8">
+        {loadError && (
+          <div className="rounded-2xl border border-coral/20 bg-coral/10 px-5 py-4 text-sm font-semibold text-coral">
+            Goals could not be loaded: {loadError}
+          </div>
+        )}
         <section className="relative overflow-hidden rounded-[24px] border border-border bg-surface p-5 shadow-card sm:p-7 lg:p-8">
           <div className="absolute -right-20 -top-24 h-64 w-64 rounded-full bg-primary/12 blur-3xl" />
           <div className="absolute -bottom-24 left-1/4 h-64 w-64 rounded-full bg-gold/14 blur-3xl" />

@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { ArrowLeft, Plus } from "lucide-react";
+import { ArrowLeft, Plus, Sparkles } from "lucide-react";
 import { Goal, Habit, GoalFormData, GoalPeriod } from "@/lib/types";
 import { goalService } from "@/lib/goalService";
 import { StepIndicator } from "@/components/goals/step-indicator";
@@ -228,6 +228,26 @@ export default function AddGoalPage() {
                   />
                 ))}
               </div>
+            </div>
+
+            {/* AI Coach Option */}
+            <div className="rounded-[20px] border-2 border-primary/20 bg-primary/5 p-6 shadow-sm">
+              <div className="flex items-center gap-3 mb-4">
+                <div className="flex size-10 items-center justify-center rounded-xl bg-primary text-white shadow-md">
+                  <Sparkles className="h-5 w-5" />
+                </div>
+                <div>
+                  <h3 className="font-bold text-foreground">Talk to AI Coach</h3>
+                  <p className="text-xs text-foreground/60 leading-relaxed">Don&apos;t know what goals or habits fit you? Discuss with our AI Coach.</p>
+                </div>
+              </div>
+              <button
+                onClick={() => router.push("/coach?intent=create_goal")}
+                className="w-full inline-flex items-center justify-center gap-2 rounded-xl bg-white border border-primary/20 px-4 py-3 text-sm font-bold text-primary shadow-sm transition hover:bg-primary/5 active:scale-[0.98]"
+              >
+                Discuss with AI Coach
+                <Plus className="h-4 w-4" />
+              </button>
             </div>
 
             {/* Period Selector */}

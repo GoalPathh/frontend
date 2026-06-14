@@ -133,6 +133,32 @@ export interface NotificationPreference {
 
 export type AppearancePreference = "light" | "dark" | "system";
 
+export type WizardDay = "mon" | "tue" | "wed" | "thu" | "fri" | "sat" | "sun";
+
+export type WizardStep = "idle" | "duration" | "habits" | "schedule" | "milestones" | "review";
+
+export interface WizardHabit {
+  title: string;
+  difficulty: "easy" | "medium" | "hard";
+  duration: number; // minutes
+}
+
+export interface WizardSchedule {
+  activeDays: WizardDay[];
+  reminderTime?: string; // HH:mm
+}
+
+export interface GoalWizardDraft {
+  step: WizardStep;
+  duration?: GoalPeriod;
+  habits: WizardHabit[];
+  schedule: WizardSchedule;
+  notifications: "all" | "important" | "none";
+  milestones: { title: string; target_date?: string }[];
+}
+
+export const GOAL_WIZARD_TAG = "[goal_finalized]";
+
 export interface JourneyStep {
   id: string;
   title: string;

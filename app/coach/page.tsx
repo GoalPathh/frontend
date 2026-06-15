@@ -145,7 +145,7 @@ function CoachPageContent() {
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages, isLoading]);
+  }, [messages, isLoading, wizard.draft.step]);
 
   useEffect(() => {
     if (initialized.current) return;
@@ -433,7 +433,69 @@ function CoachPageContent() {
                   </div>
                 ))}
 
-                {/* Wizard render path: now mounted as floating panel above the chat input (see below). */}
+                {wizard.draft.step !== "idle" && (
+                  <div role="region" aria-label="Wizard goal" className="mx-auto w-full max-w-xl py-1">
+                    {wizard.draft.step === "duration" && (
+                      <DurationBubble onPick={wizard.setDuration} onCancel={cancelWizardCallback} />
+                    )}
+                    {wizard.draft.step === "habits" && (
+                      <HabitBubble
+                        habits={wizard.draft.habits}
+                        onAdd={wizard.addHabit}
+                        onUpdate={wizard.updateHabit}
+                        onRemove={wizard.removeHabit}
+                        onNext={wizard.goToSchedule}
+                        onCancel={cancelWizardCallback}
+                      />
+                    )}
+                    {wizard.draft.step === "schedule" && (
+                      <ScheduleBubble
+                        activeDays={wizard.draft.schedule.activeDays}
+                        reminderTime={wizard.draft.schedule.reminderTime}
+                        onToggleDay={wizard.toggleDay}
+                        onSetReminderTime={wizard.setReminderTime}
+                        onNext={wizard.goToMilestones}
+                        onCancel={cancelWizardCallback}
+                      />
+                    )}
+                    {wizard.draft.step === "milestones" && (
+                      <MilestoneFlow
+                        goalTitle={wizardMeta.title || wizard.draft.habits[0]?.title || "Goal"}
+                        category={wizardMeta.category}
+                        duration={wizard.draft.duration}
+                        habits={wizard.draft.habits}
+                        initial={wizard.draft.milestones}
+                        loader={async (input) => {
+                          const result = await milestoneService.suggest(input);
+                          return result.milestones;
+                        }}
+                        onAccept={(list) => {
+                          wizard.setMilestones(list);
+                          wizard.goToReview();
+                        }}
+                        onSkip={() => {
+                          wizard.setMilestones([]);
+                          wizard.goToReview();
+                        }}
+                        onCancel={cancelWizardCallback}
+                        onUpdateTitle={(idx, patch) => wizard.updateMilestone(idx, patch)}
+                        onRemove={(idx) => wizard.removeMilestone(idx)}
+                      />
+                    )}
+                    {wizard.draft.step === "review" && (
+                      <ReviewBubble
+                        goalTitle={wizardMeta.title}
+                        category={wizardMeta.category}
+                        draft={wizard.draft}
+                        onTitleChange={(title) => setWizardMeta((m) => ({ ...m, title }))}
+                        onCategoryChange={(category) => setWizardMeta((m) => ({ ...m, category }))}
+                        onBack={() => wizard.setStep("schedule")}
+                        onCancel={cancelWizardCallback}
+                        onConfirm={submitGoal}
+                      />
+                    )}
+                  </div>
+                )}
 
                 {/* Trigger button when wizard idle */}
                 {wizard.draft.step === "idle" && messages.length > 0 && !isLoading && (
@@ -512,9 +574,20 @@ function CoachPageContent() {
         </div>
 
         {/* ── Goal Wizard bubbles (re-rendered inline per step) ── */}
-        {wizard.draft.step !== "idle" && (
-          <div className="absolute inset-x-0 bottom-24 z-40 flex justify-center px-3 pointer-events-none">
-            <div className="pointer-events-auto w-full max-w-2xl">
+        {false && (
+          <div className="fixed inset-0 z-[60] flex items-end justify-center bg-foreground/15 px-3 pb-[calc(5.75rem+env(safe-area-inset-bottom))] pt-20 backdrop-blur-[2px] sm:px-5 lg:left-[272px] lg:items-center lg:p-8">
+            <button
+              type="button"
+              className="absolute inset-0 cursor-default"
+              onClick={cancelWizardCallback}
+              aria-label="Tutup wizard goal"
+            />
+            <div
+              role="dialog"
+              aria-modal="true"
+              aria-label="Wizard goal"
+              className="relative z-10 w-full max-w-xl overflow-y-auto overscroll-contain rounded-[24px] bg-transparent shadow-2xl [max-height:min(76dvh,720px)] lg:[max-height:min(86dvh,760px)]"
+            >
             {wizard.draft.step === "duration" && (
               <DurationBubble
                 onPick={wizard.setDuration}

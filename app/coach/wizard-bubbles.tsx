@@ -57,13 +57,16 @@ const BubbleShell = ({
   const idx = getStepIndex(step);
   const total = WIZARD_STEPS.length;
   return (
-    <div className="flex max-w-[92%] items-start gap-2.5 animate-in fade-in slide-in-from-bottom-2 sm:max-w-md">
-      <div className="flex size-8 shrink-0 items-center justify-center rounded-xl bg-primary text-white shadow-sm shadow-primary/20 sm:size-9">
+    <div className="flex w-full items-start gap-2.5 animate-in fade-in slide-in-from-bottom-2">
+      <div className="mt-3 hidden size-9 shrink-0 items-center justify-center rounded-xl bg-primary text-white shadow-sm shadow-primary/20 sm:flex">
         <Icon className="h-4 w-4 sm:h-5 sm:w-5" />
       </div>
-      <div className="min-w-0 flex-1 rounded-2xl rounded-tl-sm border border-border bg-surface shadow-sm overflow-hidden">
-        <div className="flex items-center justify-between gap-2 border-b border-border/60 bg-primary/5 px-3 py-2">
+      <div className="min-w-0 flex-1 overflow-hidden rounded-[22px] border border-border bg-surface shadow-card">
+        <div className="flex items-center justify-between gap-2 border-b border-border/60 bg-primary/5 px-4 py-3">
           <div className="flex items-center gap-2">
+            <span className="flex size-7 items-center justify-center rounded-lg bg-primary text-white sm:hidden">
+              <Icon className="h-4 w-4" />
+            </span>
             <span className="text-[9px] font-extrabold uppercase tracking-[0.12em] text-primary">
               Wizard Goal ✓
             </span>
@@ -82,7 +85,7 @@ const BubbleShell = ({
             </button>
           )}
         </div>
-        <div className="px-3.5 py-3.5">{children}</div>
+        <div className="px-4 py-4 sm:px-5 sm:py-5">{children}</div>
       </div>
     </div>
   );
@@ -383,11 +386,11 @@ export function ReviewBubble({
   onCancel?: () => void;
 }) {
   return (
-    <div className="flex max-w-[92%] items-start gap-3 animate-in fade-in slide-in-from-bottom-2 sm:max-w-[85%]">
-      <div className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-primary text-white shadow-md shadow-primary/20 sm:size-10">
+    <div className="flex w-full items-start gap-3 animate-in fade-in slide-in-from-bottom-2">
+      <div className="mt-3 hidden size-10 shrink-0 items-center justify-center rounded-xl bg-primary text-white shadow-md shadow-primary/20 sm:flex">
         <CheckCircle2 className="h-5 w-5" />
       </div>
-      <div className="flex-1 rounded-2xl rounded-tl-sm border border-border bg-surface px-4 py-4 shadow-card">
+      <div className="min-w-0 flex-1 rounded-[22px] border border-border bg-surface px-4 py-4 shadow-card sm:px-5 sm:py-5">
         <p className="mb-3 text-sm font-semibold leading-6 text-foreground">
           Konfirmasi goal kamu
         </p>
@@ -460,8 +463,8 @@ export function ReviewBubble({
           )}
         </div>
 
-        <div className="mt-4 flex items-center justify-between gap-2">
-          <div className="flex items-center gap-3">
+        <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex flex-wrap items-center gap-3">
             <button
               onClick={onBack}
               className="text-xs font-bold text-foreground/55 hover:text-foreground"
@@ -480,7 +483,7 @@ export function ReviewBubble({
           <button
             onClick={onConfirm}
             disabled={!goalTitle.trim()}
-            className="inline-flex items-center gap-1.5 rounded-full bg-primary px-5 py-2 text-xs font-extrabold text-white shadow-lg shadow-primary/30 transition hover:bg-primary/90 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
+            className="inline-flex w-full items-center justify-center gap-1.5 rounded-full bg-primary px-5 py-2 text-xs font-extrabold text-white shadow-lg shadow-primary/30 transition hover:bg-primary/90 active:scale-95 disabled:cursor-not-allowed disabled:opacity-50 sm:w-auto"
           >
             <CheckCircle2 className="h-4 w-4" />
             Konfirmasi & Simpan
@@ -511,11 +514,11 @@ export function MilestoneSuggestionBubble({
   onSkip: () => void;
 }) {
   return (
-    <div className="flex max-w-[92%] items-start gap-3 animate-in fade-in slide-in-from-bottom-2 sm:max-w-[85%]">
-      <div className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-primary text-white shadow-md shadow-primary/20 sm:size-10">
+    <div className="flex w-full items-start gap-3 animate-in fade-in slide-in-from-bottom-2">
+      <div className="mt-3 hidden size-10 shrink-0 items-center justify-center rounded-xl bg-primary text-white shadow-md shadow-primary/20 sm:flex">
         <Sparkles className="h-5 w-5" />
       </div>
-      <div className="flex-1 rounded-2xl rounded-tl-sm border border-border bg-surface px-4 py-4 shadow-card">
+      <div className="min-w-0 flex-1 rounded-[22px] border border-border bg-surface px-4 py-4 shadow-card sm:px-5 sm:py-5">
         <p className="mb-1 text-sm font-semibold leading-6 text-foreground">
           Rekomendasi milestone Progress kamu
         </p>
@@ -561,7 +564,7 @@ export function MilestoneSuggestionBubble({
           </p>
         )}
 
-        <div className="mt-4 flex items-center justify-between gap-2">
+        <div className="mt-4 flex flex-col-reverse gap-2 sm:flex-row sm:items-center sm:justify-between">
           <button
             onClick={onSkip}
             className="text-xs font-bold text-foreground/55 hover:text-foreground"

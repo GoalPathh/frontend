@@ -22,21 +22,66 @@ export default function ProgressPage() {
   const [range, setRange] = useState<DateRange>(DEFAULT_RANGE);
   const [stats, setStats] = useState<ProgressStats | null>(null);
   const [goals, setGoals] = useState<GoalProgress[]>([]);
-  const [series, setSeries] = useState(progressService.getConsistencySeries(DEFAULT_RANGE));
+  const [series, setConsistencySeries] = useState<Awaited<ReturnType<typeof progressService.getConsistencySeries>>>([]);
   const [habits, setHabits] = useState<HabitPerformance[]>([]);
-  const [heatmap, setHeatmap] = useState(progressService.getHeatmapData(DEFAULT_RANGE));
+  const [heatmap, setHeatmapArr] = useState<Awaited<ReturnType<typeof progressService.getHeatmapData>>>([]);
   const [achievements, setAchievements] = useState<Achievement[]>([]);
   const [insights, setInsights] = useState<Insight[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [fetchStatus, setFetchStatus] = useState<"idle" | "ok" | "error">("idle");
+  const [reloadKey, setReloadKey] = useState(0);
+
+  async function fetchAll(signal?: { cancelled: boolean }) {
+    setLoading(true);
+    setFetchStatus("idle");
+    try {
+      const [s, g, ser, h, hm, ach, ins] = await Promise.all([
+        progressService.getProgressStats(range),
+        progressService.getGoalPerformance(range),
+        progressService.getConsistencySeries(range),
+        progressService.getHabitPerformance(range),
+        progressService.getHeatmapData(range),
+        progressService.getAchievements(range),
+        progressService.getInsights(range),
+      ]);
+      if (signal?.cancelled) return;
+      // Only commit non-error fallbacks as last-resort.
+      setStats(s);
+      setGoals(g);
+      setConsistencySeries(ser);
+      setHabits(h);
+      setHeatmapArr(hm);
+      setAchievements(ach);
+      setInsights(ins);
+      const anyActivity =
+        (g && g.length > 0) ||
+        (s && s.habitsCompleted && s.habitsCompleted !== "0");
+      setFetchStatus(anyActivity ? "ok" : "ok");
+    } catch (e) {
+      console.error("[progress-page] fetch failed:", e);
+      if (!signal?.cancelled) setFetchStatus("error");
+    } finally {
+      if (!signal?.cancelled) setLoading(false);
+    }
+  }
 
   useEffect(() => {
-    setStats(progressService.getProgressStats(range));
-    setGoals(progressService.getGoalPerformance(range));
-    setSeries(progressService.getConsistencySeries(range));
-    setHabits(progressService.getHabitPerformance(range));
-    setHeatmap(progressService.getHeatmapData(range));
-    setAchievements(progressService.getAchievements(range));
-    setInsights(progressService.getInsights(range));
-  }, [range]);
+    const signal = { cancelled: false };
+    fetchAll(signal);
+    return () => { signal.cancelled = true; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [range, reloadKey]);
+
+  // Refetch when the tab regains focus (handles transient "Failed to fetch" cleanly)
+  useEffect(() => {
+    function onFocus() {
+      setReloadKey((k) => k + 1);
+    }
+    if (typeof window !== "undefined") {
+      window.addEventListener("focus", onFocus);
+      return () => window.removeEventListener("focus", onFocus);
+    }
+  }, []);
 
   const emptyState = !stats && goals.length === 0 && series.length === 0 && habits.length === 0 && heatmap.length === 0;
 
@@ -61,6 +106,19 @@ export default function ProgressPage() {
           </section>
         ) : (
           <>
+            {fetchStatus === "error" && goals.length === 0 && (
+              <div className="mb-4 flex items-center justify-between gap-3 rounded-2xl border border-coral/30 bg-coral/5 px-4 py-3 text-sm text-coral">
+                <span>
+                  Backend tidak terjangkau — menampilkan data kosong.
+                </span>
+                <button
+                  onClick={() => setReloadKey((k) => k + 1)}
+                  className="inline-flex items-center gap-1.5 rounded-full bg-coral px-3 py-1.5 text-[11px] font-extrabold text-white"
+                >
+                  Coba lagi
+                </button>
+              </div>
+            )}
             <section className="relative mb-6 overflow-hidden rounded-[24px] border border-border bg-surface p-5 shadow-card sm:p-7 lg:p-8">
               <div className="absolute -right-20 -top-24 h-64 w-64 rounded-full bg-primary/12 blur-3xl" />
               <div className="absolute -bottom-28 left-1/4 h-64 w-64 rounded-full bg-sky/12 blur-3xl" />

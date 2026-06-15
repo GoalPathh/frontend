@@ -1,8 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { FormEvent, useState } from "react";
-import { useRouter } from "next/navigation";
+import { FormEvent, Suspense, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { ArrowRight, Lock, Mail } from "lucide-react";
 import { AuthField } from "@/components/auth/auth-field";
 import { AuthShell } from "@/components/auth/auth-shell";
@@ -10,10 +10,12 @@ import { GoogleButton } from "@/components/auth/google-button";
 import { LoginPreview } from "@/components/auth/login-preview";
 import { authService } from "@/lib/authService";
 
-export default function LoginPage() {
+function LoginPageContent() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [googleLoading, setGoogleLoading] = useState(false);
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -22,7 +24,8 @@ export default function LoginPage() {
     const form = new FormData(event.currentTarget);
     try {
       await authService.login(String(form.get("email")), String(form.get("password")));
-      router.push("/today");
+      const next = searchParams.get("next");
+      router.push(next && /^\/(?!\/)/.test(next) ? next : "/today");
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : "Unable to sign in.");
     } finally {
@@ -94,7 +97,21 @@ export default function LoginPage() {
           <span className="h-px flex-1 bg-border" />
         </div>
 
-        <GoogleButton label="Continue with Google" />
+        <GoogleButton
+          label="Continue with Google"
+          loading={googleLoading}
+          onClick={async () => {
+            setGoogleLoading(true);
+            setError("");
+            try {
+              const next = searchParams.get("next");
+              await authService.loginWithGoogle(next && /^\/(?!\/)/.test(next) ? next : "/today");
+            } catch (caught) {
+              setError(caught instanceof Error ? caught.message : "Unable to connect to Google.");
+              setGoogleLoading(false);
+            }
+          }}
+        />
       </form>
       {error && <p className="mt-4 rounded-xl bg-coral/10 px-4 py-3 text-sm font-semibold text-coral">{error}</p>}
 
@@ -105,5 +122,13 @@ export default function LoginPage() {
         </Link>
       </p>
     </AuthShell>
+  );
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense>
+      <LoginPageContent />
+    </Suspense>
   );
 }

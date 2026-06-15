@@ -4,9 +4,23 @@ const REFRESH_TOKEN_KEY = "goalpath_refresh_token";
 
 type ApiResponse<T> = { data: T };
 
+export class ApiError extends Error {
+  constructor(message: string, public readonly status: number) {
+    super(message);
+  }
+}
+
 export function getAccessToken() {
   if (typeof window === "undefined") return null;
   return window.localStorage.getItem(TOKEN_KEY);
+}
+
+export function hasAuthSession() {
+  if (typeof window === "undefined") return false;
+  return Boolean(
+    window.localStorage.getItem(TOKEN_KEY) ||
+    window.localStorage.getItem(REFRESH_TOKEN_KEY),
+  );
 }
 
 export function setAccessToken(token: string) {
@@ -56,7 +70,10 @@ async function request<T>(path: string, options: RequestInit, retryOnUnauthorize
 
   if (!response.ok) {
     const payload = await response.json().catch(() => null);
-    throw new Error(payload?.error?.message ?? `Request failed with status ${response.status}.`);
+    throw new ApiError(
+      payload?.error?.message ?? `Request failed with status ${response.status}.`,
+      response.status,
+    );
   }
 
   if (response.status === 204) return undefined as T;

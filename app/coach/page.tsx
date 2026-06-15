@@ -1,7 +1,7 @@
 "use client";
 
 import { Suspense, useState, useEffect, useRef } from "react";
-import { useSearchParams } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import {
   Cpu,
   Flame,
@@ -19,7 +19,7 @@ import {
 import { AppSidebar } from "@/components/app-sidebar";
 import { BottomNavigation } from "@/components/bottom-navigation";
 import { ThemeToggle } from "@/components/theme-toggle";
-import { apiRequest } from "@/lib/api";
+import { ApiError, apiRequest, hasAuthSession } from "@/lib/api";
 import {
   DurationBubble,
   HabitBubble,
@@ -127,6 +127,7 @@ function stripAssistantTags(raw: string): { displayText: string; wizardPrefill: 
 }
 
 function CoachPageContent() {
+  const router = useRouter();
   const searchParams = useSearchParams();
   const [showHistory, setShowHistory] = useState(false);
   const [messages, setMessages] = useState<AnyMessage[]>([]);
@@ -151,6 +152,11 @@ function CoachPageContent() {
     initialized.current = true;
 
     async function loadOrCreateSession() {
+      if (!hasAuthSession()) {
+        router.replace("/login?next=/coach");
+        return;
+      }
+
       try {
         let sid: string | null = null;
         
@@ -179,12 +185,16 @@ function CoachPageContent() {
           }
         }
       } catch (err) {
+        if (err instanceof ApiError && err.status === 401) {
+          router.replace("/login?next=/coach");
+          return;
+        }
         console.error("Failed to load coach session", err);
       }
     }
 
     loadOrCreateSession();
-  }, [searchParams]);
+  }, [router, searchParams]);
 
   async function handleSendMessage(overrideInput?: string, overrideSessionId?: string) {
     const textToSend = overrideInput ?? input;

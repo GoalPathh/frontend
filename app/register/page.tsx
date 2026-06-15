@@ -14,6 +14,7 @@ export default function RegisterPage() {
   const router = useRouter();
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [googleLoading, setGoogleLoading] = useState(false);
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -120,7 +121,20 @@ export default function RegisterPage() {
           <span className="h-px flex-1 bg-border" />
         </div>
 
-        <GoogleButton label="Continue with Google" />
+        <GoogleButton
+          label="Continue with Google"
+          loading={googleLoading}
+          onClick={async () => {
+            setGoogleLoading(true);
+            setError("");
+            try {
+              await authService.loginWithGoogle("/today");
+            } catch (caught) {
+              setError(caught instanceof Error ? caught.message : "Unable to connect to Google.");
+              setGoogleLoading(false);
+            }
+          }}
+        />
       </form>
       {error && <p className="mt-4 rounded-xl bg-coral/10 px-4 py-3 text-sm font-semibold text-coral">{error}</p>}
 

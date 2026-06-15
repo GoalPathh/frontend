@@ -28,6 +28,13 @@ export const authService = {
     }
     return result;
   },
+  async loginWithGoogle(next = "/today") {
+    const result = await apiRequest<{ url: string }>("/auth/google", {
+      method: "POST",
+      body: JSON.stringify({ next }),
+    });
+    window.location.assign(result.url);
+  },
   logout() {
     clearAccessToken();
   },

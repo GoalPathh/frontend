@@ -165,3 +165,56 @@ export interface JourneyStep {
   date: string;
   completed: boolean;
 }
+
+export type PersonaArchetype =
+  | "Steady Builder"
+  | "Comeback Captain"
+  | "Momentum Maker"
+  | "Streak Hunter"
+  | "Marathon Runner"
+  | "GoalPath Apprentice";
+
+export type DifficultyAdvice = "easier" | "maintain" | "harder";
+
+export interface PersonaFeatures {
+  consistency: number;
+  recovery: number;
+  completionist: number;
+  streak_hunter: number;
+  momentum: number;
+}
+
+export interface PersonaEvidence {
+  streaksRecovered: number;
+  longestStreak: number;
+  completedLast7: number;
+  missedLast7: number;
+  completionRate: number;
+  avgDifficulty: "easy" | "medium" | "hard";
+  goalCount: number;
+  habitCount: number;
+  newHabitsLast30: number;
+  windowDays: number;
+}
+
+export interface PersonaMilestoneSuggestion {
+  title: string;
+  reason: string;
+}
+
+export interface PersonaAdvice {
+  tone: string;
+  difficulty: DifficultyAdvice;
+  habit: string[];
+  suggestedMilestone: PersonaMilestoneSuggestion | null;
+}
+
+export interface PersonaResponse {
+  archetype: PersonaArchetype;
+  headline: string;
+  traits: PersonaFeatures;
+  evidence: PersonaEvidence;
+  advice: PersonaAdvice;
+  generatedAt: string;
+  windowDays: number;
+}

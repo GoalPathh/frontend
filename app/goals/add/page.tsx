@@ -3,8 +3,8 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { ArrowLeft, Plus, Sparkles } from "lucide-react";
-import { Goal, Habit, GoalFormData, GoalPeriod } from "@/lib/types";
-import { goalService } from "@/lib/goalService";
+import { Goal, GoalCategory, Habit, GoalFormData, GoalPeriod } from "@/lib/types";
+import { goalCategories, goalService } from "@/lib/goalService";
 import { StepIndicator } from "@/components/goals/step-indicator";
 import { GoalSuggestionChip } from "@/components/goals/goal-suggestion-chip";
 import { HabitSuggestionCard } from "@/components/goals/habit-suggestion-card";
@@ -39,6 +39,7 @@ export default function AddGoalPage() {
   // Step 1 state
   const [customGoal, setCustomGoal] = useState("");
   const [selectedGoal, setSelectedGoal] = useState<string | null>(null);
+  const [selectedCategory, setSelectedCategory] = useState<GoalCategory>("other");
   const [selectedPeriod, setSelectedPeriod] = useState<GoalPeriod | null>(null);
 
   // Step 2 state
@@ -106,7 +107,7 @@ export default function AddGoalPage() {
     const review: Goal = {
       id: Date.now().toString(),
       title: goalTitle,
-      category: "other",
+      category: selectedCategory,
       period: selectedPeriod!,
       progress: 0,
       habits: Object.values(habitSettings),
@@ -127,6 +128,7 @@ export default function AddGoalPage() {
       setSaveError("");
       const formData: GoalFormData = {
         title: reviewData.title,
+        category: reviewData.category,
         period: reviewData.period,
         selectedHabits: reviewData.habits,
         startDate: reviewData.startDate,
@@ -230,6 +232,28 @@ export default function AddGoalPage() {
               </div>
             </div>
 
+            <div>
+              <p className="mb-3 text-sm font-semibold text-foreground/60">
+                Goal category
+              </p>
+              <div className="grid grid-cols-2 gap-3 md:grid-cols-3">
+                {goalCategories.map((category) => (
+                  <button
+                    key={category.value}
+                    type="button"
+                    onClick={() => setSelectedCategory(category.value)}
+                    className={`rounded-xl border px-4 py-3 text-left text-sm font-semibold transition-all ${
+                      selectedCategory === category.value
+                        ? "border-primary bg-primary/10 text-primary"
+                        : "border-border bg-surface text-foreground hover:border-primary/40"
+                    }`}
+                  >
+                    {category.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+
             {/* AI Coach Option */}
             <div className="rounded-[20px] border-2 border-primary/20 bg-primary/5 p-6 shadow-sm">
               <div className="flex items-center gap-3 mb-4">
@@ -310,6 +334,9 @@ export default function AddGoalPage() {
               <div className="mt-4 p-4 bg-surface border border-border rounded-lg">
                 <p className="font-semibold text-foreground">
                   {selectedGoal || customGoal}
+                </p>
+                <p className="mt-1 text-xs font-medium uppercase tracking-[0.16em] text-primary/80">
+                  {selectedCategory}
                 </p>
               </div>
             </div>

@@ -25,6 +25,7 @@ export function NotificationSettings({ preferences, onToggle }: NotificationSett
               <button
                 type="button"
                 onClick={() => onToggle(item.id)}
+                aria-pressed={item.enabled}
                 className={`relative inline-flex h-9 w-16 items-center rounded-full transition ${item.enabled ? "bg-[#60a5fa]" : "bg-[#d1d5db]"}`}
               >
                 <span

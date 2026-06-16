@@ -1,287 +1,189 @@
-import { Goal, Habit, HabitSchedule, GoalFormData } from "./types";
 import { apiRequest } from "./api";
+import { Goal, GoalCategory, GoalFormData, Habit } from "./types";
 
-const STORAGE_KEY = "goalpath_goals";
+type ApiHabit = {
+  id: string;
+  title: string;
+  duration: number;
+  difficulty: Habit["difficulty"];
+  time_range: Habit["schedule"]["timeRange"];
+  reminder_time: string | null;
+  active_days: string[] | null;
+  priority: Habit["schedule"]["priority"];
+  created_at: string;
+};
 
-// Mock data for AI habit suggestions
-const habitSuggestions: Record<string, Habit[]> = {
+type ApiGoal = {
+  id: string;
+  title: string;
+  category: Goal["category"];
+  period: Goal["period"];
+  progress: number | string;
+  habits?: ApiHabit[];
+  start_date: string;
+  target_date: string;
+  reminder_enabled: boolean;
+  notification_preference: Goal["notificationPreference"];
+  created_at: string;
+  updated_at: string;
+};
+
+type ApiGoalDashboardGoal = ApiGoal & {
+  totalMinutes?: number;
+  status?: "On Track" | "Behind Schedule" | "At Risk";
+  daysLeft?: number | null;
+  milestoneCount?: number;
+  completedMilestoneCount?: number;
+};
+
+type ApiGoalDashboardResponse = {
+  summary: GoalDashboard["summary"];
+  strongestGoal: ApiGoalDashboardGoal | null;
+  goals: ApiGoalDashboardGoal[];
+};
+
+export type GoalDashboardGoal = Goal & {
+  totalMinutes: number;
+  status: "On Track" | "Behind Schedule" | "At Risk";
+  daysLeft: number | null;
+  milestoneCount: number;
+  completedMilestoneCount: number;
+};
+
+export type GoalDashboard = {
+  summary: {
+    activeGoals: number;
+    totalHabits: number;
+    totalMinutes: number;
+    averageProgress: number;
+    atRiskGoals: number;
+    completedMilestones: number;
+  };
+  strongestGoal: GoalDashboardGoal | null;
+  goals: GoalDashboardGoal[];
+};
+
+const starterHabitSuggestions: Record<string, Habit[]> = {
   speak: [
     {
-      id: "habit-1",
+      id: "starter-habit-1",
       title: "Learn 5 new vocabulary words",
       duration: 15,
       difficulty: "easy",
-      schedule: {
-        timeRange: "anytime",
-        activeDays: ["mon", "tue", "wed", "thu", "fri"],
-        priority: "high",
-      },
+      schedule: { timeRange: "anytime", activeDays: ["mon", "tue", "wed", "thu", "fri"], priority: "high" },
       createdAt: new Date().toISOString(),
     },
     {
-      id: "habit-2",
+      id: "starter-habit-2",
       title: "Practice speaking for 10 minutes",
       duration: 10,
       difficulty: "medium",
-      schedule: {
-        timeRange: "anytime",
-        activeDays: ["mon", "tue", "wed", "thu", "fri", "sat", "sun"],
-        priority: "high",
-      },
+      schedule: { timeRange: "anytime", activeDays: ["mon", "tue", "wed", "thu", "fri", "sat", "sun"], priority: "high" },
       createdAt: new Date().toISOString(),
     },
     {
-      id: "habit-3",
+      id: "starter-habit-3",
       title: "Listen to an English podcast",
       duration: 30,
       difficulty: "easy",
-      schedule: {
-        timeRange: "anytime",
-        activeDays: ["mon", "tue", "wed", "thu", "fri"],
-        priority: "medium",
-      },
+      schedule: { timeRange: "anytime", activeDays: ["mon", "tue", "wed", "thu", "fri"], priority: "medium" },
       createdAt: new Date().toISOString(),
     },
   ],
   lose: [
     {
-      id: "habit-1",
+      id: "starter-habit-4",
       title: "Walk 20 minutes",
       duration: 20,
       difficulty: "easy",
-      schedule: {
-        timeRange: "morning",
-        activeDays: ["mon", "tue", "wed", "thu", "fri", "sat", "sun"],
-        priority: "high",
-      },
+      schedule: { timeRange: "morning", activeDays: ["mon", "tue", "wed", "thu", "fri", "sat", "sun"], priority: "high" },
       createdAt: new Date().toISOString(),
     },
     {
-      id: "habit-2",
+      id: "starter-habit-5",
       title: "Drink 2L water",
       duration: 5,
       difficulty: "easy",
-      schedule: {
-        timeRange: "anytime",
-        activeDays: ["mon", "tue", "wed", "thu", "fri", "sat", "sun"],
-        priority: "high",
-      },
+      schedule: { timeRange: "anytime", activeDays: ["mon", "tue", "wed", "thu", "fri", "sat", "sun"], priority: "high" },
       createdAt: new Date().toISOString(),
     },
     {
-      id: "habit-3",
+      id: "starter-habit-6",
       title: "Track daily meals",
       duration: 10,
       difficulty: "medium",
-      schedule: {
-        timeRange: "evening",
-        activeDays: ["mon", "tue", "wed", "thu", "fri", "sat", "sun"],
-        priority: "medium",
-      },
+      schedule: { timeRange: "evening", activeDays: ["mon", "tue", "wed", "thu", "fri", "sat", "sun"], priority: "medium" },
       createdAt: new Date().toISOString(),
     },
   ],
   coding: [
     {
-      id: "habit-1",
+      id: "starter-habit-7",
       title: "Code for 30 minutes",
       duration: 30,
       difficulty: "hard",
-      schedule: {
-        timeRange: "afternoon",
-        activeDays: ["mon", "tue", "wed", "thu", "fri"],
-        priority: "high",
-      },
+      schedule: { timeRange: "afternoon", activeDays: ["mon", "tue", "wed", "thu", "fri"], priority: "high" },
       createdAt: new Date().toISOString(),
     },
     {
-      id: "habit-2",
+      id: "starter-habit-8",
       title: "Solve 1 coding problem",
       duration: 25,
       difficulty: "medium",
-      schedule: {
-        timeRange: "afternoon",
-        activeDays: ["mon", "tue", "wed", "thu", "fri"],
-        priority: "high",
-      },
+      schedule: { timeRange: "afternoon", activeDays: ["mon", "tue", "wed", "thu", "fri"], priority: "high" },
       createdAt: new Date().toISOString(),
     },
     {
-      id: "habit-3",
+      id: "starter-habit-9",
       title: "Review yesterday's notes",
       duration: 15,
       difficulty: "easy",
-      schedule: {
-        timeRange: "morning",
-        activeDays: ["mon", "tue", "wed", "thu", "fri"],
-        priority: "medium",
-      },
+      schedule: { timeRange: "morning", activeDays: ["mon", "tue", "wed", "thu", "fri"], priority: "medium" },
       createdAt: new Date().toISOString(),
     },
   ],
 };
 
-export const goalService = {
-  getGoalsFromApi: async (): Promise<Goal[]> => {
-    const rows = await apiRequest<any[]>("/goals");
-    return rows.map(mapApiGoal);
-  },
+function buildGenericHabitSuggestions(goalTitle: string): Habit[] {
+  const normalizedTitle = goalTitle.trim() || "your goal";
+  const now = new Date().toISOString();
 
-  saveGoalToApi: async (formData: GoalFormData): Promise<Goal> => {
-    const row = await apiRequest<any>("/goals", {
-      method: "POST",
-      body: JSON.stringify({ ...formData, category: "other", progress: 0 }),
-    });
-    return mapApiGoal(row);
-  },
-  // Get all goals from localStorage
-  getAllGoals: (): Goal[] => {
-    if (typeof window === "undefined") return [];
-    const stored = localStorage.getItem(STORAGE_KEY);
-    return stored ? JSON.parse(stored) : [];
-  },
+  return [
+    {
+      id: "starter-generic-1",
+      title: `Work on ${normalizedTitle} for 15 minutes`,
+      duration: 15,
+      difficulty: "easy",
+      schedule: { timeRange: "anytime", activeDays: ["mon", "tue", "wed", "thu", "fri"], priority: "high" },
+      createdAt: now,
+    },
+    {
+      id: "starter-generic-2",
+      title: `Review progress for ${normalizedTitle}`,
+      duration: 10,
+      difficulty: "easy",
+      schedule: { timeRange: "evening", activeDays: ["mon", "wed", "fri", "sun"], priority: "medium" },
+      createdAt: now,
+    },
+    {
+      id: "starter-generic-3",
+      title: `Prepare the next small step for ${normalizedTitle}`,
+      duration: 10,
+      difficulty: "medium",
+      schedule: { timeRange: "morning", activeDays: ["mon", "tue", "thu", "sat"], priority: "medium" },
+      createdAt: now,
+    },
+  ];
+}
 
-  // Get single goal by ID
-  getGoalById: (id: string): Goal | null => {
-    const goals = goalService.getAllGoals();
-    return goals.find((g) => g.id === id) || null;
-  },
-
-  // Save new goal
-  saveGoal: (formData: GoalFormData): Goal => {
-    const goals = goalService.getAllGoals();
-    const newGoal: Goal = {
-      id: `goal-${Date.now()}`,
-      title: formData.title,
-      category: "other",
-      period: formData.period,
-      progress: 0,
-      habits: formData.selectedHabits,
-      startDate: formData.startDate,
-      targetDate: formData.targetDate,
-      reminderEnabled: formData.reminderEnabled,
-      notificationPreference: formData.notificationPreference,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-    };
-
-    goals.push(newGoal);
-    if (typeof window !== "undefined") {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(goals));
-    }
-    return newGoal;
-  },
-
-  // Update goal
-  updateGoal: (id: string, updates: Partial<Goal>): Goal | null => {
-    const goals = goalService.getAllGoals();
-    const index = goals.findIndex((g) => g.id === id);
-
-    if (index === -1) return null;
-
-    goals[index] = {
-      ...goals[index],
-      ...updates,
-      updatedAt: new Date().toISOString(),
-    };
-
-    if (typeof window !== "undefined") {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(goals));
-    }
-    return goals[index];
-  },
-
-  // Delete goal
-  deleteGoal: (id: string): boolean => {
-    const goals = goalService.getAllGoals();
-    const filtered = goals.filter((g) => g.id !== id);
-
-    if (filtered.length === goals.length) return false;
-
-    if (typeof window !== "undefined") {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(filtered));
-    }
-    return true;
-  },
-
-  // Get habit suggestions based on goal title
-  getHabitSuggestions: (goalTitle: string): Habit[] => {
-    const lower = goalTitle.toLowerCase();
-
-    if (lower.includes("english") || lower.includes("speak")) {
-      return habitSuggestions.speak;
-    }
-    if (lower.includes("lose") || lower.includes("weight")) {
-      return habitSuggestions.lose;
-    }
-    if (lower.includes("code") || lower.includes("coding")) {
-      return habitSuggestions.coding;
-    }
-
-    return [];
-  },
-
-  // Initialize with mock data if empty
-  initializeMockData: () => {
-    const goals = goalService.getAllGoals();
-    if (goals.length === 0 && typeof window !== "undefined") {
-      const mockGoals: Goal[] = [
-        {
-          id: "goal-1",
-          title: "Speak English Fluently",
-          category: "language",
-          period: "6months",
-          progress: 68,
-          habits: habitSuggestions.speak.slice(0, 2),
-          startDate: new Date().toISOString(),
-          targetDate: new Date(Date.now() + 180 * 24 * 60 * 60 * 1000).toISOString(),
-          reminderEnabled: true,
-          notificationPreference: "all",
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString(),
-        },
-        {
-          id: "goal-2",
-          title: "Lose 5kg",
-          category: "fitness",
-          period: "3months",
-          progress: 42,
-          habits: habitSuggestions.lose.slice(0, 2),
-          startDate: new Date().toISOString(),
-          targetDate: new Date(Date.now() + 90 * 24 * 60 * 60 * 1000).toISOString(),
-          reminderEnabled: true,
-          notificationPreference: "all",
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString(),
-        },
-        {
-          id: "goal-3",
-          title: "Improve Coding Skills",
-          category: "skills",
-          period: "6months",
-          progress: 55,
-          habits: habitSuggestions.coding.slice(0, 2),
-          startDate: new Date().toISOString(),
-          targetDate: new Date(Date.now() + 180 * 24 * 60 * 60 * 1000).toISOString(),
-          reminderEnabled: true,
-          notificationPreference: "all",
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString(),
-        },
-      ];
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(mockGoals));
-    }
-  },
-};
-
-function mapApiGoal(row: any): Goal {
+function mapApiGoal(row: ApiGoal): Goal {
   return {
     id: row.id,
     title: row.title,
     category: row.category,
     period: row.period,
-    progress: Number(row.progress),
-    habits: (row.habits ?? []).map((habit: any) => ({
+    progress: Number(row.progress) || 0,
+    habits: (row.habits ?? []).map((habit) => ({
       id: habit.id,
       title: habit.title,
       duration: habit.duration,
@@ -302,3 +204,60 @@ function mapApiGoal(row: any): Goal {
     updatedAt: row.updated_at,
   };
 }
+
+function mapDashboardGoal(row: ApiGoalDashboardGoal): GoalDashboardGoal {
+  return {
+    ...mapApiGoal(row),
+    totalMinutes: Number(row.totalMinutes ?? 0),
+    status: row.status ?? "On Track",
+    daysLeft: typeof row.daysLeft === "number" ? row.daysLeft : null,
+    milestoneCount: Number(row.milestoneCount ?? 0),
+    completedMilestoneCount: Number(row.completedMilestoneCount ?? 0),
+  };
+}
+
+export const goalCategories: Array<{ label: string; value: GoalCategory }> = [
+  { label: "Language", value: "language" },
+  { label: "Fitness", value: "fitness" },
+  { label: "Skills", value: "skills" },
+  { label: "Creativity", value: "creativity" },
+  { label: "Learning", value: "learning" },
+  { label: "Other", value: "other" },
+];
+
+export const goalService = {
+  async getGoalsFromApi(): Promise<Goal[]> {
+    const rows = await apiRequest<ApiGoal[]>("/goals");
+    return rows.map(mapApiGoal);
+  },
+
+  async getDashboard(): Promise<GoalDashboard> {
+    const data = await apiRequest<ApiGoalDashboardResponse>("/goals/dashboard");
+
+    return {
+      summary: data.summary,
+      strongestGoal: data.strongestGoal ? mapDashboardGoal(data.strongestGoal) : null,
+      goals: (data.goals ?? []).map(mapDashboardGoal),
+    };
+  },
+
+  async saveGoalToApi(formData: GoalFormData): Promise<Goal> {
+    const row = await apiRequest<ApiGoal>("/goals", {
+      method: "POST",
+      body: JSON.stringify({ ...formData, progress: 0 }),
+    });
+    return mapApiGoal(row);
+  },
+
+  async deleteGoalFromApi(id: string) {
+    return apiRequest<void>(`/goals/${id}`, { method: "DELETE" });
+  },
+
+  getHabitSuggestions(goalTitle: string): Habit[] {
+    const lower = goalTitle.toLowerCase();
+    if (lower.includes("english") || lower.includes("speak") || lower.includes("language")) return starterHabitSuggestions.speak;
+    if (lower.includes("lose") || lower.includes("weight") || lower.includes("fitness")) return starterHabitSuggestions.lose;
+    if (lower.includes("code") || lower.includes("coding") || lower.includes("developer")) return starterHabitSuggestions.coding;
+    return buildGenericHabitSuggestions(goalTitle);
+  },
+};

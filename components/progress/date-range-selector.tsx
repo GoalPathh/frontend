@@ -12,7 +12,6 @@ const OPTIONS: { label: string; shortLabel: string; value: DateRange }[] = [
   { label: "Last 3 Months", shortLabel: "3M", value: "last-3-months" },
   { label: "Last 6 Months", shortLabel: "6M", value: "last-6-months" },
   { label: "Last Year", shortLabel: "1Y", value: "last-year" },
-  { label: "Custom Range", shortLabel: "Custom", value: "custom" },
 ];
 
 export function DateRangeSelector({ selectedRange, onChange }: DateRangeSelectorProps) {
@@ -31,7 +30,7 @@ export function DateRangeSelector({ selectedRange, onChange }: DateRangeSelector
           {selectedLabel}
         </span>
       </div>
-      <div className="grid grid-cols-3 gap-2 sm:grid-cols-6">
+      <div className="grid grid-cols-3 gap-2 sm:grid-cols-5">
         {OPTIONS.map((option) => {
           const isActive = selectedRange === option.value;
 

@@ -33,30 +33,53 @@ export type TodayCompletion = {
   completed: boolean;
 };
 
+export type TodayHabit = Habit & {
+  goalId: string;
+  goalTitle: string;
+  completed: boolean;
+};
+
+export type TodayGoal = Goal & {
+  todayCompletedHabits: number;
+  todayTotalHabits: number;
+};
+
 export type TodayPlan = {
   date: string;
-  goals: Goal[];
-  completions: TodayCompletion[];
+  profile: TodayProfile;
+  summary: TodaySummary;
+  goals: TodayGoal[];
+  habits: TodayHabit[];
+  focusQueue: TodayHabit[];
+  motivation: TodayMotivation;
 };
 
 export type TodayProfile = {
   name?: string | null;
   username?: string | null;
   avatar_url?: string | null;
+  xp?: number;
+  streak_days?: number;
+  level?: number;
 };
 
-export type TodayStats = {
-  habitsCompleted7d: number;
-  habitsMissed7d: number;
-  totalCompletions: number;
+export type TodaySummary = {
+  activeGoals: number;
+  totalHabits: number;
+  completedHabits: number;
+  completionRate: number;
   currentStreak: number;
   totalXp: number;
-  completionRate: number;
-  profile?: {
-    xp?: number;
-    streak_days?: number;
-    level?: number;
-  };
+  level: number;
+  habitsCompleted7d: number;
+  habitsMissed7d: number;
+  message: string;
+};
+
+export type TodayMotivation = {
+  title: string;
+  body: string;
+  emphasis: string;
 };
 
 function mapApiGoal(row: ApiGoal): Goal {
@@ -90,20 +113,29 @@ function mapApiGoal(row: ApiGoal): Goal {
 
 export const todayService = {
   async getToday(): Promise<TodayPlan> {
-    const data = await apiRequest<{ date: string; goals: ApiGoal[]; completions: TodayCompletion[] }>("/today");
+    const data = await apiRequest<{
+      date: string;
+      profile: TodayProfile;
+      summary: TodaySummary;
+      goals: Array<ApiGoal & { todayCompletedHabits: number; todayTotalHabits: number }>;
+      habits: TodayHabit[];
+      focusQueue: TodayHabit[];
+      motivation: TodayMotivation;
+    }>("/today");
+
     return {
       date: data.date,
-      goals: data.goals.map(mapApiGoal),
-      completions: data.completions ?? [],
+      profile: data.profile,
+      summary: data.summary,
+      goals: data.goals.map((goal) => ({
+        ...mapApiGoal(goal),
+        todayCompletedHabits: goal.todayCompletedHabits,
+        todayTotalHabits: goal.todayTotalHabits,
+      })),
+      habits: data.habits ?? [],
+      focusQueue: data.focusQueue ?? [],
+      motivation: data.motivation,
     };
-  },
-
-  getProfile() {
-    return apiRequest<TodayProfile>("/me");
-  },
-
-  getStats() {
-    return apiRequest<TodayStats>("/progress/dash");
   },
 
   setHabitCompletion(habitId: string, completed: boolean, completionDate: string) {

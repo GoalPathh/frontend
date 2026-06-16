@@ -1,30 +1,29 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import Image from "next/image";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import {
   BarChart3,
-  CalendarCheck,
   CheckCircle2,
   Cpu,
   Loader2,
   MessageSquarePlus,
-  MoreHorizontal,
   Pencil,
   Plus,
   Settings,
-  Smile,
   Sparkles,
   Target,
   Trash2,
   UserCog,
-  X,
 } from "lucide-react";
 import {
   coachSessionService,
   formatRelativeTime,
   type CoachSession,
 } from "@/lib/coachSessionService";
+import { userService } from "@/lib/userService";
+import type { UserProfile } from "@/lib/types";
 
 export type AppSection = "today" | "goals" | "progress" | "coach" | "me";
 
@@ -35,9 +34,6 @@ type AppSidebarProps = {
   onNavigate?: () => void;
 };
 
-const profileImage =
-  "https://lh3.googleusercontent.com/aida-public/AB6AXuB2w4bl-LhdQY2a24NLuM-SKFio6jOZlAkPV4x2D654Th6P_tKpcS_zKUNhcVMJuqEuEbBovvJqkqijZBXF8idVU7g9_22yyjGk0NokMNfm2gMjCWFotmgA9uG4y69LevHyu-WK7YFRqyizIrKIPpfr-B5tis939-TUQ-ZaLEnUrzRUvTeQ6Kk_l9wnzFUBaC5jmf5iwnjT_JRHEgP_vj0Rxn_olwLhLPrNnWmNI1TxUJmiEehIl8uuWRvg5GwBrgZ4skhtuKuo7jvS6p0beDH";
-
 const mainMenu = [
   { key: "today", label: "Today", href: "/today", Icon: CheckCircle2 },
   { key: "goals", label: "Goals", href: "/goals", Icon: Target },
@@ -45,12 +41,53 @@ const mainMenu = [
   { key: "coach", label: "Coach", href: "/coach", Icon: UserCog },
 ] as const;
 
+function getProfileInitials(profile: UserProfile | null) {
+  const source = profile?.name?.trim() || profile?.username?.trim() || "GoalPath User";
+  return source
+    .split(/\s+/)
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((part) => part[0]?.toUpperCase() ?? "")
+    .join("");
+}
+
 export function AppSidebar({
   active,
   coachSessions = false,
   className = "",
   onNavigate,
 }: AppSidebarProps) {
+  const [profile, setProfile] = useState<UserProfile | null>(null);
+  const [avatarBroken, setAvatarBroken] = useState(false);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    void userService
+      .getOverview()
+      .then((overview) => {
+        if (cancelled) return;
+        setProfile(overview.profile);
+        setAvatarBroken(false);
+      })
+      .catch(() => {
+        if (cancelled) return;
+        setProfile(null);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const displayName = profile?.name?.trim() || "GoalPath User";
+  const profileSubtitle = profile?.username?.trim()
+    ? `@${profile.username.trim()}`
+    : profile
+      ? `Level ${profile.level} • ${profile.xp.toLocaleString("id-ID")} XP`
+      : "Account settings";
+  const initials = getProfileInitials(profile);
+
   return (
     <aside
       className={`flex h-dvh w-[272px] shrink-0 flex-col border-r border-border bg-surface ${className}`}
@@ -120,15 +157,24 @@ export function AppSidebar({
             active === "me" ? "bg-primary/10" : "hover:bg-muted"
           }`}
         >
-          <img
-            src={profileImage}
-            alt="Alex Rivera"
-            className="size-10 rounded-full border border-border object-cover"
-          />
+          <div className="relative flex size-10 shrink-0 items-center justify-center overflow-hidden rounded-full border border-border bg-primary/10 text-xs font-bold text-primary">
+            {profile?.avatarUrl && !avatarBroken ? (
+              <Image
+                src={profile.avatarUrl}
+                alt={displayName}
+                fill
+                sizes="40px"
+                className="object-cover"
+                onError={() => setAvatarBroken(true)}
+              />
+            ) : (
+              <span>{initials}</span>
+            )}
+          </div>
           <span className="min-w-0 flex-1">
-            <span className="block truncate text-sm font-bold">Alex Rivera</span>
+            <span className="block truncate text-sm font-bold">{displayName}</span>
             <span className="block truncate text-[10px] font-medium text-foreground/45">
-              Premium Member
+              {profileSubtitle}
             </span>
           </span>
           <Settings
@@ -155,10 +201,14 @@ function CoachSessionsPanel({ onNavigate }: { onNavigate?: () => void }) {
   const [confirmDelete, setConfirmDelete] = useState<CoachSession | null>(null);
   const editInputRef = useRef<HTMLInputElement>(null);
 
-  const refresh = () => coachSessionService.list().then((rows) => {
-    setSessions(rows);
-    setLoading(false);
-  });
+  const refresh = useCallback(
+    () =>
+      coachSessionService.list().then((rows) => {
+        setSessions(rows);
+        setLoading(false);
+      }),
+    [],
+  );
 
   useEffect(() => {
     void refresh();
@@ -167,8 +217,7 @@ function CoachSessionsPanel({ onNavigate }: { onNavigate?: () => void }) {
       window.addEventListener("focus", onFocus);
       return () => window.removeEventListener("focus", onFocus);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [refresh]);
 
   useEffect(() => {
     if (editingId && editInputRef.current) {
@@ -269,7 +318,7 @@ function CoachSessionsPanel({ onNavigate }: { onNavigate?: () => void }) {
           <div className="rounded-xl border border-dashed border-border bg-background/70 px-4 py-6 text-center">
             <MessageSquarePlus className="mx-auto mb-2 h-5 w-5 text-foreground/40" />
             <p className="text-[11px] font-medium leading-5 text-foreground/55">
-              Belum ada sesi. Klik "New Session" untuk mulai chat baru.
+              Belum ada sesi. Klik &quot;New Session&quot; untuk mulai chat baru.
             </p>
           </div>
         ) : (
@@ -405,7 +454,10 @@ function DeleteConfirmDialog({
           <div className="min-w-0 flex-1">
             <h3 className="text-base font-bold text-foreground">Hapus sesi chat?</h3>
             <p className="mt-1 text-sm leading-6 text-foreground/65">
-              Sesi <strong className="text-foreground">"{session.title || "Untitled"}"</strong>{" "}
+              Sesi{" "}
+              <strong className="text-foreground">
+                &quot;{session.title || "Untitled"}&quot;
+              </strong>{" "}
               akan dihapus permanen. Pesan dan histori tidak dapat dipulihkan.
             </p>
           </div>

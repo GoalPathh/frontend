@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   ArrowRight,
   Bell,
@@ -9,14 +9,12 @@ import {
   Check,
   Clock3,
   Droplet,
-  Edit3,
   Flame,
   Globe2,
   Loader2,
   Menu,
   Mic,
   Moon,
-  Quote,
   Sparkles,
   Sun,
   Target,
@@ -27,16 +25,8 @@ import { BottomNavigation } from "@/components/bottom-navigation";
 import { AppSidebar } from "@/components/app-sidebar";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { NotificationsPanel } from "@/components/notifications-panel";
-import { Goal, Habit, TimeRange } from "@/lib/types";
-import { todayService, TodayCompletion, TodayPlan, TodayProfile, TodayStats } from "@/lib/todayService";
-
-const dayMap = ["sun", "mon", "tue", "wed", "thu", "fri", "sat"];
-
-type HabitWithGoal = Habit & {
-  goalId: string;
-  goalTitle: string;
-  completed: boolean;
-};
+import { TimeRange } from "@/lib/types";
+import { todayService, TodayHabit, TodayPlan, TodayProfile } from "@/lib/todayService";
 
 const timeRangeMeta: Record<TimeRange, { label: string; Icon: typeof Sun; className: string }> = {
   morning: { label: "Morning Routine", Icon: Sun, className: "text-orange-500" },
@@ -57,35 +47,6 @@ function habitIcon(title: string, timeRange: TimeRange) {
   return Globe2;
 }
 
-function getCompletionMap(completions: TodayCompletion[]) {
-  return new Map(completions.map((completion) => [completion.habit_id, completion.completed]));
-}
-
-function getTodayHabits(plan: TodayPlan | null): HabitWithGoal[] {
-  if (!plan) return [];
-  const day = dayMap[new Date(`${plan.date}T00:00:00`).getDay()];
-  const completionMap = getCompletionMap(plan.completions);
-
-  return plan.goals.flatMap((goal) =>
-    goal.habits
-      .filter((habit) => habit.schedule.activeDays.length === 0 || habit.schedule.activeDays.includes(day))
-      .map((habit) => ({
-        ...habit,
-        goalId: goal.id,
-        goalTitle: goal.title,
-        completed: completionMap.get(habit.id) ?? false,
-      })),
-  );
-}
-
-function completionCopy(completed: number, total: number) {
-  if (total === 0) return "Add a goal and habits to build today's plan.";
-  if (completed === 0) return "Start with one small habit to build momentum today.";
-  if (completed === total) return "All habits are done for today. Keep the streak protected.";
-  const remaining = total - completed;
-  return `${completed} habit${completed === 1 ? "" : "s"} done. ${remaining} more to finish today's plan.`;
-}
-
 function greetingName(profile: TodayProfile | null) {
   const name = profile?.name?.trim();
   if (name) return name.split(" ")[0];
@@ -96,8 +57,8 @@ function greetingName(profile: TodayProfile | null) {
   return "there";
 }
 
-function groupHabitsByTime(habits: HabitWithGoal[]) {
-  return habits.reduce<Record<TimeRange, HabitWithGoal[]>>(
+function groupHabitsByTime(habits: TodayHabit[]) {
+  return habits.reduce<Record<TimeRange, TodayHabit[]>>(
     (groups, habit) => {
       groups[habit.schedule.timeRange].push(habit);
       return groups;
@@ -109,28 +70,33 @@ function groupHabitsByTime(habits: HabitWithGoal[]) {
 export default function TodayPage() {
   const [showNotifications, setShowNotifications] = useState(false);
   const [plan, setPlan] = useState<TodayPlan | null>(null);
-  const [profile, setProfile] = useState<TodayProfile | null>(null);
-  const [stats, setStats] = useState<TodayStats | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [savingHabitId, setSavingHabitId] = useState<string | null>(null);
 
+  const loadToday = useCallback(async (showLoader = true) => {
+    try {
+      if (showLoader) setLoading(true);
+      setError(null);
+      const todayData = await todayService.getToday();
+      setPlan(todayData);
+    } catch (err) {
+      setError((err as Error).message);
+    } finally {
+      if (showLoader) setLoading(false);
+    }
+  }, []);
+
   useEffect(() => {
     let cancelled = false;
 
-    async function loadToday() {
+    async function loadInitialToday() {
       try {
         setLoading(true);
         setError(null);
-        const [todayData, profileData, statsData] = await Promise.all([
-          todayService.getToday(),
-          todayService.getProfile(),
-          todayService.getStats(),
-        ]);
+        const todayData = await todayService.getToday();
         if (cancelled) return;
         setPlan(todayData);
-        setProfile(profileData);
-        setStats(statsData);
       } catch (err) {
         if (!cancelled) setError((err as Error).message);
       } finally {
@@ -138,44 +104,33 @@ export default function TodayPage() {
       }
     }
 
-    loadToday();
+    void loadInitialToday();
 
     return () => {
       cancelled = true;
     };
   }, []);
 
-  const todayHabits = useMemo(() => getTodayHabits(plan), [plan]);
+  const todayHabits = plan?.habits ?? [];
   const groupedHabits = useMemo(() => groupHabitsByTime(todayHabits), [todayHabits]);
-  const completedCount = todayHabits.filter((habit) => habit.completed).length;
-  const totalHabits = todayHabits.length;
-  const completionRate = totalHabits ? Math.round((completedCount / totalHabits) * 100) : 0;
+  const profile = plan?.profile ?? null;
+  const summary = plan?.summary;
+  const completedCount = summary?.completedHabits ?? 0;
+  const totalHabits = summary?.totalHabits ?? 0;
+  const completionRate = summary?.completionRate ?? 0;
   const activeGoals = plan?.goals ?? [];
-  const focusQueue = todayHabits.filter((habit) => !habit.completed).slice(0, 3);
-  const xp = stats?.profile?.xp ?? stats?.totalXp ?? 0;
-  const streak = stats?.profile?.streak_days ?? stats?.currentStreak ?? 0;
+  const focusQueue = plan?.focusQueue ?? [];
+  const xp = summary?.totalXp ?? profile?.xp ?? 0;
+  const streak = summary?.currentStreak ?? profile?.streak_days ?? 0;
 
-  async function toggleHabit(habit: HabitWithGoal) {
+  async function toggleHabit(habit: TodayHabit) {
     if (!plan || savingHabitId) return;
-    const nextCompleted = !habit.completed;
     setSavingHabitId(habit.id);
 
-    const previousCompletions = plan.completions;
-    const withoutHabit = previousCompletions.filter((completion) => completion.habit_id !== habit.id);
-    setPlan({
-      ...plan,
-      completions: [...withoutHabit, { habit_id: habit.id, completed: nextCompleted }],
-    });
-
     try {
-      const updated = await todayService.setHabitCompletion(habit.id, nextCompleted, plan.date);
-      setPlan((current) => {
-        if (!current) return current;
-        const next = current.completions.filter((completion) => completion.habit_id !== habit.id);
-        return { ...current, completions: [...next, updated] };
-      });
+      await todayService.setHabitCompletion(habit.id, !habit.completed, plan.date);
+      await loadToday(false);
     } catch (err) {
-      setPlan((current) => (current ? { ...current, completions: previousCompletions } : current));
       setError((err as Error).message);
     } finally {
       setSavingHabitId(null);
@@ -229,10 +184,10 @@ export default function TodayPage() {
                 Today plan
               </div>
               <h1 className="text-3xl font-extrabold tracking-tight text-foreground sm:text-4xl lg:text-5xl">
-                Hi {loading ? "..." : greetingName(profile)}
+                Hi {loading ? "..." : greetingName(plan?.profile ?? null)}
               </h1>
               <p className="mt-3 max-w-2xl text-sm font-medium leading-7 text-foreground/60 sm:text-base">
-                {completionCopy(completedCount, totalHabits)}
+                {summary?.message ?? "Loading today's plan..."}
               </p>
               <div className="mt-6 flex flex-col gap-3 sm:flex-row">
                 <a href="/coach" className="inline-flex items-center justify-center gap-2 rounded-full bg-primary px-5 py-3 text-sm font-extrabold text-white shadow-lg shadow-primary/20 transition hover:-translate-y-0.5 hover:bg-primary/90 active:translate-y-0">
@@ -258,7 +213,7 @@ export default function TodayPage() {
               <div className="mt-5 h-2 overflow-hidden rounded-full bg-muted">
                 <div className="h-full rounded-full bg-gradient-to-r from-primary via-sky to-gold transition-all" style={{ width: `${completionRate}%` }} />
               </div>
-              <p className="mt-4 text-sm font-semibold text-foreground/60">{completionCopy(completedCount, totalHabits)}</p>
+              <p className="mt-4 text-sm font-semibold text-foreground/60">{summary?.message ?? "No summary yet."}</p>
             </div>
           </div>
         </header>
@@ -288,6 +243,9 @@ export default function TodayPage() {
                         <div className="h-1.5 w-full overflow-hidden rounded-full bg-muted">
                           <div className="h-full rounded-full bg-gradient-to-r from-primary to-primary/80" style={{ width: `${Math.min(100, Math.max(0, goal.progress))}%` }} />
                         </div>
+                        <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-foreground/45">
+                          {goal.todayCompletedHabits}/{goal.todayTotalHabits} today
+                        </p>
                       </div>
                     ))}
                   </div>
@@ -367,12 +325,12 @@ export default function TodayPage() {
 
             <div className="flex gap-4 rounded-[20px] border border-primary/20 p-6 shadow-sm glass-card">
               <div className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
-                <Quote className="h-6 w-6" />
+                <Sparkles className="h-6 w-6" />
               </div>
               <div>
                 <p className="mb-1 text-[10px] font-bold uppercase tracking-[0.26em] text-primary">Daily Motivation</p>
-                <p className="text-sm font-medium italic text-foreground/60">&quot;Success is the sum of small efforts, repeated day in and day out.&quot;</p>
-                <p className="mt-2 text-[10px] font-bold uppercase tracking-[0.2em] text-primary/70">Robert Collier</p>
+                <p className="text-sm font-bold text-foreground">{plan?.motivation.title ?? "Loading motivation..."}</p>
+                <p className="mt-1 text-sm font-medium text-foreground/60">{plan?.motivation.body ?? "We are preparing today's guidance based on your real plan."}</p>
               </div>
             </div>
           </aside>
@@ -400,9 +358,9 @@ function HabitGroup({
   onToggle,
 }: {
   range: TimeRange;
-  habits: HabitWithGoal[];
+  habits: TodayHabit[];
   savingHabitId: string | null;
-  onToggle: (habit: HabitWithGoal) => void;
+  onToggle: (habit: TodayHabit) => void;
 }) {
   if (habits.length === 0) return null;
 

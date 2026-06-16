@@ -14,6 +14,9 @@ import { BottomNavigation } from "@/components/bottom-navigation";
 import { AppSidebar } from "@/components/app-sidebar";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { progressService } from "@/lib/progressService";
+import { personaService } from "@/lib/personaService";
+import { PersonaCard } from "@/components/progress/persona-card";
+import type { PersonaResponse } from "@/lib/types";
 import type { DateRange, GoalProgress, HabitPerformance, Insight, ProgressStats, Achievement } from "@/lib/types";
 
 const DEFAULT_RANGE: DateRange = "last-7-days";
@@ -27,6 +30,9 @@ export default function ProgressPage() {
   const [heatmap, setHeatmapArr] = useState<Awaited<ReturnType<typeof progressService.getHeatmapData>>>([]);
   const [achievements, setAchievements] = useState<Achievement[]>([]);
   const [insights, setInsights] = useState<Insight[]>([]);
+  const [persona, setPersona] = useState<PersonaResponse | null>(null);
+  const [personaLoading, setPersonaLoading] = useState(false);
+  const [personaWindowDays, setPersonaWindowDays] = useState<number>(14);
   const [loading, setLoading] = useState(true);
   const [fetchStatus, setFetchStatus] = useState<"idle" | "ok" | "error">("idle");
   const [reloadKey, setReloadKey] = useState(0);
@@ -34,8 +40,9 @@ export default function ProgressPage() {
   async function fetchAll(signal?: { cancelled: boolean }) {
     setLoading(true);
     setFetchStatus("idle");
+    setPersonaLoading(true);
     try {
-      const [s, g, ser, h, hm, ach, ins] = await Promise.all([
+      const [s, g, ser, h, hm, ach, ins, ps] = await Promise.all([
         progressService.getProgressStats(range),
         progressService.getGoalPerformance(range),
         progressService.getConsistencySeries(range),
@@ -43,9 +50,9 @@ export default function ProgressPage() {
         progressService.getHeatmapData(range),
         progressService.getAchievements(range),
         progressService.getInsights(range),
+        personaService.get(personaWindowDays),
       ]);
       if (signal?.cancelled) return;
-      // Only commit non-error fallbacks as last-resort.
       setStats(s);
       setGoals(g);
       setConsistencySeries(ser);
@@ -53,6 +60,7 @@ export default function ProgressPage() {
       setHeatmapArr(hm);
       setAchievements(ach);
       setInsights(ins);
+      setPersona(ps);
       const anyActivity =
         (g && g.length > 0) ||
         (s && s.habitsCompleted && s.habitsCompleted !== "0");
@@ -61,16 +69,35 @@ export default function ProgressPage() {
       console.error("[progress-page] fetch failed:", e);
       if (!signal?.cancelled) setFetchStatus("error");
     } finally {
-      if (!signal?.cancelled) setLoading(false);
+      if (!signal?.cancelled) {
+        setLoading(false);
+        setPersonaLoading(false);
+      }
     }
   }
+
+  const handleRefreshPersona = async () => {
+    setPersonaLoading(true);
+    const fresh = await personaService.refresh(personaWindowDays);
+    setPersona(fresh);
+    setPersonaLoading(false);
+  };
+
+  const handleWindowDaysChange = (n: number) => {
+    setPersonaWindowDays(n);
+    setPersonaLoading(true);
+    personaService.get(n).then((p) => {
+      setPersona(p);
+      setPersonaLoading(false);
+    });
+  };
 
   useEffect(() => {
     const signal = { cancelled: false };
     fetchAll(signal);
     return () => { signal.cancelled = true; };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [range, reloadKey]);
+  }, [range, reloadKey, personaWindowDays]);
 
   // Refetch when the tab regains focus (handles transient "Failed to fetch" cleanly)
   useEffect(() => {
@@ -151,6 +178,16 @@ export default function ProgressPage() {
 
                 <DateRangeSelector selectedRange={range} onChange={setRange} />
               </div>
+            </section>
+
+            <section className="mb-6" data-testid="persona-card">
+              <PersonaCard
+                persona={persona}
+                loading={personaLoading}
+                onRefresh={handleRefreshPersona}
+                windowDays={personaWindowDays}
+                onWindowDaysChange={handleWindowDaysChange}
+              />
             </section>
 
             <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4 mb-6">

@@ -75,7 +75,7 @@ function LoginPageContent() {
             />
             Remember me
           </label>
-          <Link href="/register" className="text-primary transition hover:underline">
+          <Link href="/forgot-password" className="text-primary transition hover:underline">
             Forgot Password?
           </Link>
         </div>

@@ -43,6 +43,7 @@ export interface Goal {
 
 export interface GoalFormData {
   title: string;
+  category: GoalCategory;
   period: GoalPeriod;
   selectedHabits: Habit[];
   startDate: string;
@@ -71,7 +72,7 @@ export interface GoalProgress {
   title: string;
   progress: number;
   targetDate: string;
-  status: "On Track" | "Behind Schedule" | "Completed";
+  status: "On Track" | "Behind Schedule" | "At Risk" | "Completed";
   color: string;
 }
 
@@ -119,9 +120,10 @@ export interface UserProfile {
 
 export interface UserStats {
   activeGoals: number;
-  longestStreak: number;
-  achievements: number;
+  currentStreak: number;
+  completedMilestones: number;
   completionRate: number;
+  totalXp: number;
 }
 
 export interface NotificationPreference {

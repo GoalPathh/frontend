@@ -8,7 +8,7 @@ export function GoalProgressCard({ goal }: GoalProgressCardProps) {
   const statusTone =
     goal.status === "Completed"
       ? "bg-gold/20 text-[#8a6100]"
-      : goal.status === "Behind Schedule"
+      : goal.status === "Behind Schedule" || goal.status === "At Risk"
         ? "bg-coral/12 text-coral"
         : "bg-primary/10 text-primary";
 

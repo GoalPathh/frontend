@@ -7,6 +7,7 @@ interface ConsistencyChartProps {
 function normalizePoints(series: ConsistencyPoint[]) {
   const maxRate = Math.max(...series.map((point) => point.completionRate), 100);
   const minRate = Math.min(...series.map((point) => point.completionRate), 0);
+
   return series.map((point, index) => ({
     x: (index / Math.max(series.length - 1, 1)) * 100,
     y: 100 - ((point.completionRate - minRate) / Math.max(maxRate - minRate, 1)) * 100,
@@ -17,16 +18,22 @@ function normalizePoints(series: ConsistencyPoint[]) {
 }
 
 export function ConsistencyChart({ series }: ConsistencyChartProps) {
-  const points = normalizePoints(series);
+  const safeSeries =
+    series.length > 0
+      ? series
+      : [{ date: "No data", completionRate: 0, habitsCompleted: 0 }];
+  const points = normalizePoints(safeSeries);
   const path = points
     .map((point, index) => `${index === 0 ? "M" : "L"} ${point.x} ${point.y}`)
     .join(" ");
 
   return (
     <div className="rounded-[20px] border border-border bg-surface p-5 shadow-card">
-      <div className="flex items-center justify-between gap-4 mb-6">
+      <div className="mb-6 flex items-center justify-between gap-4">
         <div>
-          <p className="text-[10px] font-extrabold uppercase tracking-[0.22em] text-primary">Consistency Analytics</p>
+          <p className="text-[10px] font-extrabold uppercase tracking-[0.22em] text-primary">
+            Consistency Analytics
+          </p>
           <h3 className="mt-2 text-xl font-extrabold text-foreground">Daily completion rate</h3>
         </div>
         <div className="hidden text-right text-sm text-foreground/60 sm:block">
@@ -36,7 +43,7 @@ export function ConsistencyChart({ series }: ConsistencyChartProps) {
       </div>
 
       <div className="overflow-x-auto">
-        <svg viewBox="0 0 100 50" className="w-full h-48 sm:h-56">
+        <svg viewBox="0 0 100 50" className="h-48 w-full sm:h-56">
           <defs>
             <linearGradient id="lineGradient" x1="0%" y1="0%" x2="100%" y2="0%">
               <stop offset="0%" stopColor="rgb(var(--primary))" />
@@ -53,11 +60,13 @@ export function ConsistencyChart({ series }: ConsistencyChartProps) {
         </svg>
       </div>
 
-      <div className="grid grid-cols-2 gap-3 mt-4 text-sm text-foreground/60">
+      <div className="mt-4 grid grid-cols-2 gap-3 text-sm text-foreground/60">
         {points.slice(-4).map((point, index) => (
           <div key={index} className="rounded-[14px] border border-border bg-background p-3">
             <p className="font-semibold text-foreground">{point.label}</p>
-            <p>{point.value}% • {point.habits} habits</p>
+            <p>
+              {point.value}% • {point.habits} habits
+            </p>
           </div>
         ))}
       </div>

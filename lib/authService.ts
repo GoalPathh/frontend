@@ -35,6 +35,18 @@ export const authService = {
     });
     window.location.assign(result.url);
   },
+  forgotPassword(email: string) {
+    return apiRequest<{ message: string }>("/auth/forgot-password", {
+      method: "POST",
+      body: JSON.stringify({ email }),
+    });
+  },
+  updatePassword(password: string) {
+    return apiRequest<{ user: { id: string; email?: string } | null }>("/auth/password", {
+      method: "POST",
+      body: JSON.stringify({ password }),
+    });
+  },
   logout() {
     clearAccessToken();
   },

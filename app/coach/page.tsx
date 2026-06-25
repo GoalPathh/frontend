@@ -129,11 +129,13 @@ function stripAssistantTags(raw: string): { displayText: string; wizardPrefill: 
 function CoachPageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const sessionParam = searchParams.get("session");
   const [showHistory, setShowHistory] = useState(false);
   const [messages, setMessages] = useState<AnyMessage[]>([]);
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-  const [sessionId, setSessionId] = useState<string | null>(null);
+  const [sessionId, setSessionId] = useState<string | null>(sessionParam);
+  const [sessionTitle, setSessionTitle] = useState<string>("Coach");
   const [wizardMeta, setWizardMeta] = useState<{ title: string; category: string; habitTitle: string }>({ title: "", category: "other", habitTitle: "" });
   const wizard = useGoalWizard();
   const cancelWizardCallback = () => {
@@ -145,36 +147,65 @@ function CoachPageContent() {
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages, isLoading]);
+  }, [messages, isLoading, wizard.draft.step]);
+
+  useEffect(() => {
+    // Re-sync sessionId from URL ?session= if it changed
+    if (sessionParam !== sessionId) {
+      setSessionId(sessionParam);
+      setMessages([]); // wipe stale messages from previous session
+    }
+  }, [sessionParam, sessionId]);
 
   useEffect(() => {
     if (initialized.current) return;
+    if (!hasAuthSession()) {
+      router.replace("/login?next=/coach");
+      return;
+    }
+    if (sessionParam !== null && messages.length > 0) return; // already loaded a target
     initialized.current = true;
 
     async function loadOrCreateSession() {
-      if (!hasAuthSession()) {
-        router.replace("/login?next=/coach");
-        return;
-      }
-
       try {
-        let sid: string | null = null;
-        
-        // Fetch sessions
-        const sessions = await apiRequest<any[]>("/coach/sessions");
-        if (sessions && sessions.length > 0) {
-          sid = sessions[0].id;
-        } else {
-          // Create new session
-          const newSession = await apiRequest<any>("/coach/sessions", {
-            method: "POST",
-            body: JSON.stringify({ title: "Goal Planning" })
-          });
-          sid = newSession.id;
+        let sid: string | null = sessionParam;
+        // If no session param, fall back to latest or create new
+        if (!sid) {
+          const sessions = await apiRequest<any[]>("/coach/sessions");
+          if (sessions && sessions.length > 0) {
+            sid = sessions[0].id;
+          } else {
+            const newSession = await apiRequest<any>("/coach/sessions", {
+              method: "POST",
+              body: JSON.stringify({ title: "Goal Planning" })
+            });
+            sid = newSession.id;
+          }
         }
+
+        // Verify session exists (in case user navigated to deleted-session URL)
+        if (sid) {
+          const sessionDetail = await apiRequest<{ data?: { title?: string }; title?: string } | any>(
+            `/coach/sessions/${sid}`,
+            { method: "GET" }
+          ).catch(() => null);
+          const title =
+            (sessionDetail && (sessionDetail as any).data?.title) ||
+            (sessionDetail as any)?.title ||
+            (sid === sessionParam ? "Coach" : "Goal Planning");
+          setSessionTitle(title);
+        }
+
         setSessionId(sid);
 
         if (sid) {
+          // Sync URL so refresh keeps the same session
+          if (!sessionParam && typeof window !== "undefined") {
+            const url = new URL(window.location.href);
+            url.searchParams.set("session", sid);
+            window.history.replaceState(null, "", url.toString());
+          }
+
           const hist = await apiRequest<any[]>(`/coach/sessions/${sid}/messages`);
           setMessages(hist.map((m) => ({ id: m.id, role: m.role, content: m.content })));
 
@@ -346,13 +377,12 @@ function CoachPageContent() {
               >
                 <Menu className="h-5 w-5" />
               </button>
-              <div className="min-w-0">
-                <div className="flex items-center gap-2">
-                  <h1 className="truncate text-lg font-bold tracking-tight sm:text-xl">Coach</h1>
-                  <span className="hidden rounded-full bg-primary/10 px-2 py-1 text-[9px] font-bold uppercase tracking-[0.16em] text-primary sm:inline">
-                    AI assistant
-                  </span>
-                </div>
+              <div className="min-w-0 flex-1">
+                <SessionTitleEditor
+                  sessionId={sessionId}
+                  title={sessionTitle}
+                  onTitleChange={setSessionTitle}
+                />
                 <p className="truncate text-[11px] font-medium text-foreground/45 sm:text-xs">
                   Your personal growth assistant
                 </p>
@@ -433,7 +463,69 @@ function CoachPageContent() {
                   </div>
                 ))}
 
-                {/* Wizard render path: now mounted as floating panel above the chat input (see below). */}
+                {wizard.draft.step !== "idle" && (
+                  <div role="region" aria-label="Wizard goal" className="mx-auto w-full max-w-xl py-1">
+                    {wizard.draft.step === "duration" && (
+                      <DurationBubble onPick={wizard.setDuration} onCancel={cancelWizardCallback} />
+                    )}
+                    {wizard.draft.step === "habits" && (
+                      <HabitBubble
+                        habits={wizard.draft.habits}
+                        onAdd={wizard.addHabit}
+                        onUpdate={wizard.updateHabit}
+                        onRemove={wizard.removeHabit}
+                        onNext={wizard.goToSchedule}
+                        onCancel={cancelWizardCallback}
+                      />
+                    )}
+                    {wizard.draft.step === "schedule" && (
+                      <ScheduleBubble
+                        activeDays={wizard.draft.schedule.activeDays}
+                        reminderTime={wizard.draft.schedule.reminderTime}
+                        onToggleDay={wizard.toggleDay}
+                        onSetReminderTime={wizard.setReminderTime}
+                        onNext={wizard.goToMilestones}
+                        onCancel={cancelWizardCallback}
+                      />
+                    )}
+                    {wizard.draft.step === "milestones" && (
+                      <MilestoneFlow
+                        goalTitle={wizardMeta.title || wizard.draft.habits[0]?.title || "Goal"}
+                        category={wizardMeta.category}
+                        duration={wizard.draft.duration}
+                        habits={wizard.draft.habits}
+                        initial={wizard.draft.milestones}
+                        loader={async (input) => {
+                          const result = await milestoneService.suggest(input);
+                          return result.milestones;
+                        }}
+                        onAccept={(list) => {
+                          wizard.setMilestones(list);
+                          wizard.goToReview();
+                        }}
+                        onSkip={() => {
+                          wizard.setMilestones([]);
+                          wizard.goToReview();
+                        }}
+                        onCancel={cancelWizardCallback}
+                        onUpdateTitle={(idx, patch) => wizard.updateMilestone(idx, patch)}
+                        onRemove={(idx) => wizard.removeMilestone(idx)}
+                      />
+                    )}
+                    {wizard.draft.step === "review" && (
+                      <ReviewBubble
+                        goalTitle={wizardMeta.title}
+                        category={wizardMeta.category}
+                        draft={wizard.draft}
+                        onTitleChange={(title) => setWizardMeta((m) => ({ ...m, title }))}
+                        onCategoryChange={(category) => setWizardMeta((m) => ({ ...m, category }))}
+                        onBack={() => wizard.setStep("schedule")}
+                        onCancel={cancelWizardCallback}
+                        onConfirm={submitGoal}
+                      />
+                    )}
+                  </div>
+                )}
 
                 {/* Trigger button when wizard idle */}
                 {wizard.draft.step === "idle" && messages.length > 0 && !isLoading && (
@@ -512,9 +604,20 @@ function CoachPageContent() {
         </div>
 
         {/* ── Goal Wizard bubbles (re-rendered inline per step) ── */}
-        {wizard.draft.step !== "idle" && (
-          <div className="absolute inset-x-0 bottom-24 z-40 flex justify-center px-3 pointer-events-none">
-            <div className="pointer-events-auto w-full max-w-2xl">
+        {false && (
+          <div className="fixed inset-0 z-[60] flex items-end justify-center bg-foreground/15 px-3 pb-[calc(5.75rem+env(safe-area-inset-bottom))] pt-20 backdrop-blur-[2px] sm:px-5 lg:left-[272px] lg:items-center lg:p-8">
+            <button
+              type="button"
+              className="absolute inset-0 cursor-default"
+              onClick={cancelWizardCallback}
+              aria-label="Tutup wizard goal"
+            />
+            <div
+              role="dialog"
+              aria-modal="true"
+              aria-label="Wizard goal"
+              className="relative z-10 w-full max-w-xl overflow-y-auto overscroll-contain rounded-[24px] bg-transparent shadow-2xl [max-height:min(76dvh,720px)] lg:[max-height:min(86dvh,760px)]"
+            >
             {wizard.draft.step === "duration" && (
               <DurationBubble
                 onPick={wizard.setDuration}
@@ -648,5 +751,83 @@ export default function CoachPage() {
     }>
       <CoachPageContent />
     </Suspense>
+  );
+}
+
+/**
+ * Inline-editable session title in the chat header. Click to edit, Enter/blur to
+ * PATCH, Esc to revert. Optimistic with revert on backend failure.
+ */
+function SessionTitleEditor({
+  sessionId,
+  title,
+  onTitleChange,
+}: {
+  sessionId: string | null;
+  title: string;
+  onTitleChange: (next: string) => void;
+}) {
+  const [editing, setEditing] = useState(false);
+  const [value, setValue] = useState(title);
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (!editing) setValue(title);
+  }, [title, editing]);
+
+  useEffect(() => {
+    if (editing && inputRef.current) {
+      inputRef.current.focus();
+      inputRef.current.select();
+    }
+  }, [editing]);
+
+  const commit = async () => {
+    const v = value.trim();
+    setEditing(false);
+    if (!sessionId || v.length === 0 || v === title) {
+      setValue(title);
+      return;
+    }
+    const previous = title;
+    onTitleChange(v);
+    const { coachSessionService } = await import("@/lib/coachSessionService");
+    const updated = await coachSessionService.rename(sessionId, v);
+    if (!updated) onTitleChange(previous);
+  };
+
+  return (
+    <div className="flex items-center gap-2">
+      {editing ? (
+        <input
+          ref={inputRef}
+          value={value}
+          maxLength={120}
+          onChange={(e) => setValue(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === "Enter") void commit();
+            if (e.key === "Escape") {
+              setValue(title);
+              setEditing(false);
+            }
+          }}
+          onBlur={() => void commit()}
+          className="min-w-0 max-w-xs rounded-md border border-primary/40 bg-background px-2 py-0.5 text-lg font-bold tracking-tight text-foreground outline-none focus:ring-2 focus:ring-primary/30"
+        />
+      ) : (
+        <button
+          type="button"
+          onClick={() => sessionId && setEditing(true)}
+          disabled={!sessionId}
+          className="truncate rounded-md px-1 text-left text-lg font-bold tracking-tight text-foreground transition hover:bg-muted hover:text-primary disabled:cursor-not-allowed sm:text-xl"
+          title={sessionId ? "Click to rename session" : "Loading session..."}
+        >
+          {title || "Coach"}
+        </button>
+      )}
+      <span className="hidden rounded-full bg-primary/10 px-2 py-1 text-[9px] font-bold uppercase tracking-[0.16em] text-primary sm:inline">
+        AI assistant
+      </span>
+    </div>
   );
 }

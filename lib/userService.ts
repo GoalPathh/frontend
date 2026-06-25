@@ -1,41 +1,69 @@
-import { APPEARANCE_KEY } from "@/lib/theme";
+import { apiRequest } from "@/lib/api";
+import { getStoredAppearance, setStoredAppearance } from "@/lib/theme";
+import type {
+  AppearancePreference,
+  NotificationPreference,
+  UserProfile,
+  UserStats,
+} from "@/lib/types";
 
-const NOTIFICATION_KEY = "goalpathNotifications";
-
-const defaultProfile = {
-  name: "Rahma Aulia",
-  username: "@rahma",
-  avatarUrl: "https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&w=256&q=80",
-  level: 12,
-  xp: 3250,
-  streakDays: 12,
+type ApiProfile = {
+  name?: string | null;
+  username?: string | null;
+  avatar_url?: string | null;
+  level?: number | null;
+  xp?: number | null;
+  streak_days?: number | null;
 };
 
-const defaultStats = {
-  activeGoals: 4,
-  longestStreak: 28,
-  achievements: 12,
-  completionRate: 84,
+type ApiPreferences = {
+  appearance?: AppearancePreference | null;
+  notifications?: NotificationPreference[] | null;
 };
 
-const defaultAchievements = [
-  { id: "first-habit", title: "First Habit Completed", subtitle: "Kickstarted your journey", emoji: "🏆", unlocked: true },
-  { id: "7-day-streak", title: "7 Day Streak", subtitle: "Powered through a full week", emoji: "🔥", unlocked: true },
-  { id: "30-day-consistency", title: "30 Day Consistency", subtitle: "Committed for a month", emoji: "⭐", unlocked: true },
-  { id: "goal-achiever", title: "Goal Achiever", subtitle: "Completed your first goal", emoji: "🎯", unlocked: true },
-  { id: "productivity-master", title: "Productivity Master", subtitle: "Maintained daily focus", emoji: "🏅", unlocked: false },
-  { id: "mindful-momentum", title: "Mindful Momentum", subtitle: "Built a calm routine", emoji: "🌿", unlocked: false },
-];
+type AvatarUploadSignature = {
+  cloudName: string;
+  apiKey: string;
+  timestamp: number;
+  signature: string;
+  folder: string;
+  publicId: string;
+  uploadUrl: string;
+};
 
-const defaultJourney = [
-  { id: "joined", title: "Joined GoalPath", date: "Jan 2, 2025", completed: true },
-  { id: "first-goal", title: "First Goal Created", date: "Jan 3, 2025", completed: true },
-  { id: "seven-day", title: "First 7 Day Streak", date: "Jan 10, 2025", completed: true },
-  { id: "hundred-xp", title: "100 XP Earned", date: "Jan 12, 2025", completed: true },
-  { id: "first-achievement", title: "First Goal Achieved", date: "Jan 16, 2025", completed: true },
-];
+type MeOverviewResponse = {
+  profile: ApiProfile;
+  preferences: ApiPreferences;
+  stats: {
+    activeGoals: number;
+    currentStreak: number;
+    completedMilestones: number;
+    completionRate: number;
+    totalXp: number;
+  };
+  summary: {
+    totalHabits: number;
+    totalMinutes: number;
+    averageProgress: number;
+    atRiskGoals: number;
+    unreadNotifications: number;
+  };
+};
 
-const defaultNotificationPreferences = [
+export type UserOverview = {
+  profile: UserProfile;
+  preferences: {
+    appearance: AppearancePreference;
+    notifications: NotificationPreference[];
+  };
+  stats: UserStats;
+  summary: MeOverviewResponse["summary"];
+};
+
+const fallbackAvatar =
+  "https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&w=256&q=80";
+
+const defaultNotifications: NotificationPreference[] = [
   { id: "daily-habit", title: "Daily Habit Reminders", enabled: true, description: "Stay on track with daily check-ins." },
   { id: "progress-updates", title: "Goal Progress Updates", enabled: true, description: "Get updates when goals move forward." },
   { id: "achievement-alerts", title: "Achievement Notifications", enabled: true, description: "Celebrate every badge you unlock." },
@@ -43,54 +71,125 @@ const defaultNotificationPreferences = [
   { id: "weekly-reports", title: "Weekly Reports", enabled: true, description: "Review your performance every week." },
 ];
 
-const isBrowser = typeof window !== "undefined";
+function normalizeProfile(profile: ApiProfile): UserProfile {
+  const usernameRaw = String(profile.username ?? "").trim();
+  const username = usernameRaw ? (usernameRaw.startsWith("@") ? usernameRaw : `@${usernameRaw}`) : "@goalpath";
 
-function getLocalStorageItem<T>(key: string, fallback: T): T {
-  if (!isBrowser) return fallback;
-  try {
-    const value = window.localStorage.getItem(key);
-    if (!value) return fallback;
-    return JSON.parse(value) as T;
-  } catch {
-    return fallback;
-  }
+  return {
+    name: String(profile.name ?? "GoalPath User").trim() || "GoalPath User",
+    username,
+    avatarUrl: String(profile.avatar_url ?? "").trim() || fallbackAvatar,
+    level: Number(profile.level ?? 1),
+    xp: Number(profile.xp ?? 0),
+    streakDays: Number(profile.streak_days ?? 0),
+  };
 }
 
-function setLocalStorageItem<T>(key: string, value: T) {
-  if (!isBrowser) return;
-  window.localStorage.setItem(key, JSON.stringify(value));
+function normalizePreferences(preferences?: ApiPreferences | null) {
+  return {
+    appearance: preferences?.appearance ?? getStoredAppearance(),
+    notifications:
+      preferences?.notifications && preferences.notifications.length > 0
+        ? preferences.notifications
+        : defaultNotifications,
+  };
+}
+
+function normalizeOverview(payload: MeOverviewResponse): UserOverview {
+  const preferences = normalizePreferences(payload.preferences);
+
+  return {
+    profile: normalizeProfile(payload.profile),
+    preferences,
+    stats: {
+      activeGoals: Number(payload.stats?.activeGoals ?? 0),
+      currentStreak: Number(payload.stats?.currentStreak ?? 0),
+      completedMilestones: Number(payload.stats?.completedMilestones ?? 0),
+      completionRate: Number(payload.stats?.completionRate ?? 0),
+      totalXp: Number(payload.stats?.totalXp ?? 0),
+    },
+    summary: {
+      totalHabits: Number(payload.summary?.totalHabits ?? 0),
+      totalMinutes: Number(payload.summary?.totalMinutes ?? 0),
+      averageProgress: Number(payload.summary?.averageProgress ?? 0),
+      atRiskGoals: Number(payload.summary?.atRiskGoals ?? 0),
+      unreadNotifications: Number(payload.summary?.unreadNotifications ?? 0),
+    },
+  };
 }
 
 export const userService = {
-  getUserProfile() {
-    return defaultProfile;
+  async getOverview() {
+    const response = await apiRequest<MeOverviewResponse>("/me/overview");
+    const overview = normalizeOverview(response);
+    setStoredAppearance(overview.preferences.appearance);
+    return overview;
   },
 
-  getUserStats() {
-    return defaultStats;
+  async updateProfile(input: { name?: string; username?: string; avatarUrl?: string }) {
+    const response = await apiRequest<ApiProfile>("/me", {
+      method: "PATCH",
+      body: JSON.stringify(input),
+    });
+    return normalizeProfile(response);
   },
 
-  getAchievements() {
-    return defaultAchievements;
+  async updatePreferences(input: {
+    appearance?: AppearancePreference;
+    notifications?: NotificationPreference[];
+  }) {
+    const response = await apiRequest<ApiPreferences>("/me/preferences", {
+      method: "PATCH",
+      body: JSON.stringify(input),
+    });
+    const preferences = normalizePreferences(response);
+    setStoredAppearance(preferences.appearance);
+    return preferences;
   },
 
-  getJourney() {
-    return defaultJourney;
+  async uploadAvatar(file: File) {
+    const signature = await apiRequest<AvatarUploadSignature>("/me/avatar/signature", {
+      method: "POST",
+    });
+
+    const formData = new FormData();
+    formData.append("file", file);
+    formData.append("api_key", signature.apiKey);
+    formData.append("timestamp", String(signature.timestamp));
+    formData.append("signature", signature.signature);
+    formData.append("folder", signature.folder);
+    formData.append("public_id", signature.publicId);
+
+    const response = await fetch(signature.uploadUrl, {
+      method: "POST",
+      body: formData,
+    });
+
+    if (!response.ok) {
+      const payload = await response.json().catch(() => null);
+      throw new Error(payload?.error?.message ?? "Avatar upload failed.");
+    }
+
+    const payload = (await response.json()) as {
+      secure_url?: string;
+      public_id?: string;
+    };
+
+    if (!payload.secure_url) {
+      throw new Error("Cloudinary did not return a secure URL.");
+    }
+
+    return {
+      secureUrl: payload.secure_url,
+      publicId: payload.public_id ?? signature.publicId,
+    };
   },
 
   getAppearancePreference() {
-    return getLocalStorageItem<"light" | "dark" | "system">(APPEARANCE_KEY, "light");
+    return getStoredAppearance();
   },
 
-  setAppearancePreference(value: "light" | "dark" | "system") {
-    setLocalStorageItem(APPEARANCE_KEY, value);
-  },
-
-  getNotificationPreferences() {
-    return getLocalStorageItem(NOTIFICATION_KEY, defaultNotificationPreferences);
-  },
-
-  saveNotificationPreferences(preferences: Array<{ id: string; title: string; enabled: boolean; description: string }>) {
-    setLocalStorageItem(NOTIFICATION_KEY, preferences);
+  setAppearancePreference(value: AppearancePreference) {
+    setStoredAppearance(value);
   },
 };

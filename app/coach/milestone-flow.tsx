@@ -69,7 +69,7 @@ export function MilestoneFlow({
         }}
         onSkip={() => onSkip()}
       />
-      <div className="pl-14 max-w-[92%] sm:max-w-[85%]">
+      <div className="w-full rounded-[22px] border border-border bg-surface px-5 py-6 shadow-card">
         <button
           onClick={() => onCancel()}
           className="text-[11px] font-bold text-foreground/55 hover:text-foreground"

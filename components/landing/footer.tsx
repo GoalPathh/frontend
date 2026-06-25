@@ -1,8 +1,14 @@
 import { Target } from "lucide-react";
 
 const footerLinks = [
-  { title: "Product", links: ["Features", "AI Coach", "Progress", "Gamification"] },
-  { title: "Resources", links: ["Blog", "Community", "Help Center", "Privacy"] },
+  {
+    title: "Product",
+    links: ["Features", "AI Coach", "Progress", "Gamification"],
+  },
+  {
+    title: "Resources",
+    links: ["Blog", "Community", "Help Center", "Privacy"],
+  },
 ];
 
 export function Footer() {
@@ -17,8 +23,8 @@ export function Footer() {
             <span>GoalPath</span>
           </div>
           <p className="mt-4 max-w-sm text-sm leading-6 text-[#6b7280]">
-            AI-powered habit tracking for small steps, big changes, and sustainable
-            personal growth.
+            AI-powered habit tracking for small steps, big changes, and
+            sustainable personal growth.
           </p>
         </div>
 
@@ -39,7 +45,9 @@ export function Footer() {
 
         <div>
           <h3 className="font-extrabold">Stay Updated</h3>
-          <p className="mt-4 text-sm leading-6 text-[#6b7280]">Get growth tips in your inbox.</p>
+          <p className="mt-4 text-sm leading-6 text-[#6b7280]">
+            Get growth tips in your inbox.
+          </p>
           <form className="mt-4 flex overflow-hidden rounded-full border border-border bg-muted p-1">
             <input
               className="min-w-0 flex-1 bg-transparent px-4 text-sm outline-none"
@@ -59,4 +67,3 @@ export function Footer() {
     </footer>
   );
 }
-

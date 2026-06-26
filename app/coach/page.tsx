@@ -1,6 +1,6 @@
 "use client";
 
-import { Suspense, useState, useEffect, useRef } from "react";
+import { Suspense, useCallback, useEffect, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import {
   Cpu,
@@ -15,10 +15,12 @@ import {
   X,
   Loader2,
 } from "lucide-react";
+import { UserAvatar } from "@/components/user-avatar";
 import { AppSidebar } from "@/components/app-sidebar";
 import { BottomNavigation } from "@/components/bottom-navigation";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { ApiError, apiRequest, hasAuthSession } from "@/lib/api";
+import { userService } from "@/lib/userService";
 import {
   DurationBubble,
   HabitBubble,
@@ -30,10 +32,12 @@ import {
 import { useGoalWizard } from "./use-goal-wizard";
 import { milestoneService } from "@/lib/milestoneService";
 import { MilestoneFlow } from "./milestone-flow";
-import { GOAL_WIZARD_TAG, type GoalCategory, type GoalPeriod } from "@/lib/types";
-
-const profileImage =
-  "https://lh3.googleusercontent.com/aida-public/AB6AXuB2w4bl-LhdQY2a24NLuM-SKFio6jOZlAkPV4x2D654Th6P_tKpcS_zKUNhcVMJuqEuEbBovvJqkqijZBXF8idVU7g9_22yyjGk0NokMNfm2gMjCWFotmgA9uG4y69LevHyu-WK7YFRqyizIrKIPpfr-B5tis939-TUQ-ZaLEnUrzRUvTeQ6Kk_l9wnzFUBaC5jmf5iwnjT_JRHEgP_vj0Rxn_olwLhLPrNnWmNI1TxUJmiEehIl8uuWRvg5GwBrgZ4skhtuKuo7jvS6p0beDH";
+import {
+  GOAL_WIZARD_TAG,
+  type GoalCategory,
+  type GoalPeriod,
+  type UserProfile,
+} from "@/lib/types";
 
 const insightItems = [
   { title: "Today's Goal", Icon: Target },
@@ -54,13 +58,24 @@ function CoachMessage({ children }: { children: React.ReactNode }) {
   );
 }
 
-function UserMessage({ children }: { children: React.ReactNode }) {
+function UserMessage({
+  children,
+  profile,
+}: {
+  children: React.ReactNode;
+  profile: UserProfile | null;
+}) {
   return (
     <div className="flex items-end justify-end gap-3">
       <div className="max-w-[78%] rounded-2xl rounded-br-sm bg-primary px-4 py-3.5 text-sm font-semibold leading-6 text-white shadow-md shadow-primary/20 sm:px-5 sm:py-4 sm:text-[15px] whitespace-pre-wrap">
         {children}
       </div>
-      <img src={profileImage} alt="User" className="size-9 rounded-full border border-border object-cover sm:size-10" />
+      <UserAvatar
+        avatarUrl={profile?.avatarUrl}
+        name={profile?.name ?? "User"}
+        className="size-9 sm:size-10"
+        imageSizes="40px"
+      />
     </div>
   );
 }
@@ -257,6 +272,7 @@ function CoachPageContent() {
   const [isLoading, setIsLoading] = useState(false);
   const [sessionId, setSessionId] = useState<string | null>(sessionParam);
   const [sessionTitle, setSessionTitle] = useState<string>("Coach");
+  const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
   const [wizardMeta, setWizardMeta] = useState<WizardMeta>(DEFAULT_WIZARD_META);
   const wizard = useGoalWizard();
   const cancelWizardCallback = () => {
@@ -269,6 +285,28 @@ function CoachPageContent() {
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages, isLoading, wizard.draft.step]);
+
+  const loadUserProfile = useCallback(async () => {
+    if (!hasAuthSession()) return;
+
+    try {
+      const overview = await userService.getOverview();
+      setUserProfile(overview.profile);
+    } catch {
+      setUserProfile(null);
+    }
+  }, []);
+
+  useEffect(() => {
+    void loadUserProfile();
+
+    if (typeof window === "undefined") return;
+    window.addEventListener("focus", loadUserProfile);
+
+    return () => {
+      window.removeEventListener("focus", loadUserProfile);
+    };
+  }, [loadUserProfile]);
 
   useEffect(() => {
     // Re-sync sessionId from URL ?session= if it changed
@@ -538,7 +576,7 @@ function CoachPageContent() {
                         onCancel={cancelWizardCallback}
                       />
                     ) : (
-                      <UserMessage>{msg.content}</UserMessage>
+                      <UserMessage profile={userProfile}>{msg.content}</UserMessage>
                     )}
                   </div>
                 ))}

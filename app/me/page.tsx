@@ -23,6 +23,7 @@ import {
 import { BottomNavigation } from "@/components/bottom-navigation";
 import { AppSidebar } from "@/components/app-sidebar";
 import { ThemeToggle } from "@/components/theme-toggle";
+import { UserAvatar } from "@/components/user-avatar";
 import { ProfileHeader } from "@/components/me/profile-header";
 import { StatCard } from "@/components/me/stat-card";
 import { PreferenceCard } from "@/components/me/preference-card";
@@ -393,6 +394,12 @@ export default function MePage() {
                       placeholder="https://..."
                     />
                     <div className="flex flex-wrap items-center gap-3">
+                      <UserAvatar
+                        avatarUrl={profileForm.avatarUrl}
+                        name={profileForm.name}
+                        className="size-12"
+                        imageSizes="48px"
+                      />
                       <input
                         ref={avatarInputRef}
                         type="file"

@@ -60,9 +60,6 @@ export type UserOverview = {
   summary: MeOverviewResponse["summary"];
 };
 
-const fallbackAvatar =
-  "https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&w=256&q=80";
-
 const defaultNotifications: NotificationPreference[] = [
   { id: "daily-habit", title: "Daily Habit Reminders", enabled: true, description: "Stay on track with daily check-ins." },
   { id: "progress-updates", title: "Goal Progress Updates", enabled: true, description: "Get updates when goals move forward." },
@@ -78,7 +75,7 @@ function normalizeProfile(profile: ApiProfile): UserProfile {
   return {
     name: String(profile.name ?? "GoalPath User").trim() || "GoalPath User",
     username,
-    avatarUrl: String(profile.avatar_url ?? "").trim() || fallbackAvatar,
+    avatarUrl: String(profile.avatar_url ?? "").trim(),
     level: Number(profile.level ?? 1),
     xp: Number(profile.xp ?? 0),
     streakDays: Number(profile.streak_days ?? 0),

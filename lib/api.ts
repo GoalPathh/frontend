@@ -3,6 +3,7 @@ const TOKEN_KEY = "goalpath_access_token";
 const REFRESH_TOKEN_KEY = "goalpath_refresh_token";
 
 type ApiResponse<T> = { data: T };
+export type MaybeApiData<T> = T | ApiResponse<T>;
 
 export class ApiError extends Error {
   constructor(message: string, public readonly status: number) {
@@ -34,6 +35,19 @@ export function setRefreshToken(token: string) {
 export function clearAccessToken() {
   window.localStorage.removeItem(TOKEN_KEY);
   window.localStorage.removeItem(REFRESH_TOKEN_KEY);
+}
+
+export function unwrapApiData<T>(payload: MaybeApiData<T>): T {
+  if (
+    payload &&
+    typeof payload === "object" &&
+    !Array.isArray(payload) &&
+    "data" in payload
+  ) {
+    return payload.data as T;
+  }
+
+  return payload as T;
 }
 
 async function request<T>(path: string, options: RequestInit, retryOnUnauthorized: boolean): Promise<T> {

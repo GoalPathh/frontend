@@ -14,7 +14,6 @@ import {
   Target,
   X,
   Loader2,
-  MessageSquarePlus
 } from "lucide-react";
 import { AppSidebar } from "@/components/app-sidebar";
 import { BottomNavigation } from "@/components/bottom-navigation";
@@ -25,17 +24,13 @@ import {
   HabitBubble,
   ScheduleBubble,
   ReviewBubble,
-  MilestoneSuggestionBubble,
   WizardIntentBubble,
   type WizardPrefill,
 } from "./wizard-bubbles";
-import {
-  buildWizardMessageContent,
-  useGoalWizard,
-} from "./use-goal-wizard";
-import type { SuggestedMilestone } from "@/lib/milestoneService";
+import { useGoalWizard } from "./use-goal-wizard";
 import { milestoneService } from "@/lib/milestoneService";
 import { MilestoneFlow } from "./milestone-flow";
+import { GOAL_WIZARD_TAG, type GoalCategory, type GoalPeriod } from "@/lib/types";
 
 const profileImage =
   "https://lh3.googleusercontent.com/aida-public/AB6AXuB2w4bl-LhdQY2a24NLuM-SKFio6jOZlAkPV4x2D654Th6P_tKpcS_zKUNhcVMJuqEuEbBovvJqkqijZBXF8idVU7g9_22yyjGk0NokMNfm2gMjCWFotmgA9uG4y69LevHyu-WK7YFRqyizIrKIPpfr-B5tis939-TUQ-ZaLEnUrzRUvTeQ6Kk_l9wnzFUBaC5jmf5iwnjT_JRHEgP_vj0Rxn_olwLhLPrNnWmNI1TxUJmiEehIl8uuWRvg5GwBrgZ4skhtuKuo7jvS6p0beDH";
@@ -104,26 +99,152 @@ interface IntentMessage extends BaseMessage {
 }
 type AnyMessage = Message | IntentMessage;
 
-/**
- * Parse assistant reply for [wizard_started]<json> tag emitted when LLM calls
- * start_goal_wizard tool. Strip the tag from display text but expose the
- * structured prefill payload so the frontend can render WizardIntentBubble inline.
- */
+interface CoachSessionSummary {
+  id: string;
+  title?: string;
+}
+
+interface CoachSessionDetail {
+  title?: string;
+  data?: {
+    title?: string;
+  };
+}
+
+interface CoachMessageResponse {
+  id?: string;
+  role?: Message["role"];
+  content?: string;
+}
+
+interface WizardMeta {
+  title: string;
+  category: GoalCategory;
+  habitTitle: string;
+}
+
+interface GoalFinalizationPayload {
+  title: string;
+  category: GoalCategory;
+  duration?: GoalPeriod;
+  habits: Array<{
+    title: string;
+    difficulty: "easy" | "medium" | "hard";
+    duration_minutes: number;
+  }>;
+  schedule: {
+    activeDays: string[];
+    reminderTime?: string;
+  };
+  notifications: "all" | "important" | "none";
+  milestones: Array<{ title: string; target_date?: string }>;
+}
+
+const THINK_BLOCK_PATTERN = /<think>[\s\S]*?<\/think>/gi;
+const WIZARD_STARTED_PATTERN = /^\[wizard_started\]\s*([\s\S]*?)(?:\n\n|$)/;
+const UI_DATA_PATTERN = /\[UI_DATA:[^\]]*\]/g;
+
+const DEFAULT_WIZARD_META: WizardMeta = {
+  title: "",
+  category: "other",
+  habitTitle: "",
+};
+const GOAL_CATEGORY_VALUES: readonly GoalCategory[] = [
+  "language",
+  "fitness",
+  "skills",
+  "creativity",
+  "learning",
+  "other",
+];
+
+function createMessageId(prefix: string): string {
+  return `${prefix}-${Date.now()}`;
+}
+
+function sanitizeAssistantContent(content?: string, fallback = "I've updated your goals based on your request!"): string {
+  return (content || fallback).replace(THINK_BLOCK_PATTERN, "").trim();
+}
+
+function getSessionTitle(
+  sessionDetail: CoachSessionDetail | null,
+  fallbackTitle: string,
+): string {
+  return sessionDetail?.data?.title ?? sessionDetail?.title ?? fallbackTitle;
+}
+
+function mapCoachMessage(message: CoachMessageResponse): Message {
+  return {
+    id: message.id ?? createMessageId("message"),
+    role: message.role ?? "assistant",
+    content: message.content ?? "",
+  };
+}
+
+function isGoalCategory(value: string | null): value is GoalCategory {
+  return value !== null && GOAL_CATEGORY_VALUES.includes(value as GoalCategory);
+}
+
 function stripAssistantTags(raw: string): { displayText: string; wizardPrefill: WizardPrefill | null } {
   if (!raw) return { displayText: "", wizardPrefill: null };
-  const tagRe = /^\[wizard_started\]\s*([\s\S]*?)(?:\n\n|$)/;
-  const m = raw.match(tagRe);
+  const m = raw.match(WIZARD_STARTED_PATTERN);
   if (!m) return { displayText: raw.trim(), wizardPrefill: null };
   let prefill: WizardPrefill | null = null;
   try {
     prefill = JSON.parse(m[1]!.trim()) as WizardPrefill;
   } catch {
-    console.warn("[stripAssistantTags] Failed to parse wizard prefill");
+    prefill = null;
   }
-  const displayText = raw.replace(tagRe, "").trim();
-  // If LLM also sent [UI_DATA: ...] followed by conversational text after our tag, keep both minus tags
-  const cleaned = displayText.replace(/\[UI_DATA:[^\]]*\]/g, "").trim();
+  const displayText = raw.replace(WIZARD_STARTED_PATTERN, "").trim();
+  const cleaned = displayText.replace(UI_DATA_PATTERN, "").trim();
   return { displayText: cleaned, wizardPrefill: prefill };
+}
+
+function buildGoalFinalizationPayload(
+  wizardMeta: WizardMeta,
+  draft: ReturnType<typeof useGoalWizard>["draft"],
+): GoalFinalizationPayload {
+  return {
+    title: wizardMeta.title.trim(),
+    category: wizardMeta.category,
+    duration: draft.duration,
+    habits: draft.habits.map((habit) => ({
+      title: habit.title,
+      difficulty: habit.difficulty,
+      duration_minutes: habit.duration,
+    })),
+    schedule: {
+      activeDays: draft.schedule.activeDays,
+      reminderTime: draft.schedule.reminderTime,
+    },
+    notifications: draft.notifications,
+    milestones: draft.milestones,
+  };
+}
+
+function AssistantMessageBlock({
+  content,
+  onWizardAccept,
+  onWizardCancel,
+}: {
+  content: string;
+  onWizardAccept: (prefill: WizardPrefill) => void;
+  onWizardCancel: () => void;
+}) {
+  const { displayText, wizardPrefill } = stripAssistantTags(content);
+
+  return (
+    <>
+      {displayText && <CoachMessage>{displayText}</CoachMessage>}
+      {wizardPrefill && (
+        <WizardIntentBubble
+          prefill={wizardPrefill}
+          onAccept={() => onWizardAccept(wizardPrefill)}
+          onCancel={onWizardCancel}
+        />
+      )}
+    </>
+  );
 }
 
 function CoachPageContent() {
@@ -136,11 +257,11 @@ function CoachPageContent() {
   const [isLoading, setIsLoading] = useState(false);
   const [sessionId, setSessionId] = useState<string | null>(sessionParam);
   const [sessionTitle, setSessionTitle] = useState<string>("Coach");
-  const [wizardMeta, setWizardMeta] = useState<{ title: string; category: string; habitTitle: string }>({ title: "", category: "other", habitTitle: "" });
+  const [wizardMeta, setWizardMeta] = useState<WizardMeta>(DEFAULT_WIZARD_META);
   const wizard = useGoalWizard();
   const cancelWizardCallback = () => {
     wizard.cancelWizard();
-    setWizardMeta({ title: "", category: "other", habitTitle: "" });
+    setWizardMeta(DEFAULT_WIZARD_META);
   };
   const bottomRef = useRef<HTMLDivElement>(null);
   const initialized = useRef(false);
@@ -169,13 +290,12 @@ function CoachPageContent() {
     async function loadOrCreateSession() {
       try {
         let sid: string | null = sessionParam;
-        // If no session param, fall back to latest or create new
         if (!sid) {
-          const sessions = await apiRequest<any[]>("/coach/sessions");
+          const sessions = await apiRequest<CoachSessionSummary[]>("/coach/sessions");
           if (sessions && sessions.length > 0) {
             sid = sessions[0].id;
           } else {
-            const newSession = await apiRequest<any>("/coach/sessions", {
+            const newSession = await apiRequest<CoachSessionSummary>("/coach/sessions", {
               method: "POST",
               body: JSON.stringify({ title: "Goal Planning" })
             });
@@ -183,35 +303,33 @@ function CoachPageContent() {
           }
         }
 
-        // Verify session exists (in case user navigated to deleted-session URL)
         if (sid) {
-          const sessionDetail = await apiRequest<{ data?: { title?: string }; title?: string } | any>(
+          const sessionDetail = await apiRequest<CoachSessionDetail>(
             `/coach/sessions/${sid}`,
             { method: "GET" }
           ).catch(() => null);
-          const title =
-            (sessionDetail && (sessionDetail as any).data?.title) ||
-            (sessionDetail as any)?.title ||
-            (sid === sessionParam ? "Coach" : "Goal Planning");
-          setSessionTitle(title);
+          setSessionTitle(
+            getSessionTitle(
+              sessionDetail,
+              sid === sessionParam ? "Coach" : "Goal Planning",
+            ),
+          );
         }
 
         setSessionId(sid);
 
         if (sid) {
-          // Sync URL so refresh keeps the same session
           if (!sessionParam && typeof window !== "undefined") {
             const url = new URL(window.location.href);
             url.searchParams.set("session", sid);
             window.history.replaceState(null, "", url.toString());
           }
 
-          const hist = await apiRequest<any[]>(`/coach/sessions/${sid}/messages`);
-          setMessages(hist.map((m) => ({ id: m.id, role: m.role, content: m.content })));
+          const history = await apiRequest<CoachMessageResponse[]>(`/coach/sessions/${sid}/messages`);
+          setMessages(history.map(mapCoachMessage));
 
-          // Handle intent query parameter
           const intent = searchParams.get("intent");
-          if (intent === "create_goal" && hist.length === 0) {
+          if (intent === "create_goal" && history.length === 0) {
             handleSendMessage("I want to create a new goal. Can you help me brainstorm some habits?", sid);
           }
         }
@@ -237,10 +355,10 @@ function CoachPageContent() {
     // ── Cancel wizard via chat (button + chat work; same hook) ──
     if (wizard.draft.step !== "idle" && wizard.isCancelMessage(textToSend)) {
       wizard.cancelWizard();
-      setWizardMeta({ title: "", category: "other", habitTitle: "" });
-      const cancelMsg: Message = { id: `cancel-${Date.now()}`, role: "user", content: textToSend };
+      setWizardMeta(DEFAULT_WIZARD_META);
+      const cancelMsg: Message = { id: createMessageId("cancel"), role: "user", content: textToSend };
       setMessages((prev) => [...prev, cancelMsg, {
-        id: `cancel-resp-${Date.now()}`,
+        id: createMessageId("cancel-response"),
         role: "assistant",
         content: "Siap, wizard saya tutup. Mau mulai baru dengan cara lain?",
       }]);
@@ -248,14 +366,13 @@ function CoachPageContent() {
       return;
     }
 
-    const newMsg: Message = { id: Date.now().toString(), role: "user", content: textToSend };
-    // Optimistic UI update
+    const newMsg: Message = { id: createMessageId("user"), role: "user", content: textToSend };
     setMessages((prev) => [...prev, newMsg]);
     if (!overrideInput) setInput("");
     setIsLoading(true);
 
     try {
-      const responseMsg = await apiRequest<any>(`/coach/sessions/${currentSessionId}/messages`, {
+      const responseMsg = await apiRequest<CoachMessageResponse>(`/coach/sessions/${currentSessionId}/messages`, {
         method: "POST",
         body: JSON.stringify({ role: "user", content: textToSend })
       });
@@ -263,54 +380,35 @@ function CoachPageContent() {
       setMessages((prev) => [
         ...prev, 
         { 
-          id: responseMsg.id || Date.now().toString(), 
-          role: responseMsg.role || "assistant", 
-          // Strip out <think> blocks in case any leaked through the backend
-          content: (responseMsg.content || "I've updated your goals based on your request!").replace(/<think>[\s\S]*?<\/think>/gi, "").trim()
+          id: responseMsg.id ?? createMessageId("assistant"),
+          role: responseMsg.role ?? "assistant",
+          content: sanitizeAssistantContent(responseMsg.content),
         }
       ]);
     } catch (err) {
       console.error("Failed to send message", err);
-      // Revert optimistic update on failure to prevent UI/DB desync
       setMessages((prev) => prev.filter(m => m.id !== newMsg.id));
     } finally {
       setIsLoading(false);
     }
   }
 
-  // ── Goal Wizard submit (called from each wizard step's confirm button) ──
   async function submitGoal() {
     if (!sessionId) return;
     const finalTitle = wizardMeta.title.trim();
     if (!finalTitle) return;
 
-    const payload = {
-      title: finalTitle,
-      category: wizardMeta.category,
-      duration: wizard.draft.duration,
-      habits: wizard.draft.habits.map((h) => ({
-        title: h.title,
-        difficulty: h.difficulty,
-        duration_minutes: h.duration,
-      })),
-      schedule: {
-        activeDays: wizard.draft.schedule.activeDays,
-        reminderTime: wizard.draft.schedule.reminderTime,
-      },
-      notifications: wizard.draft.notifications,
-      milestones: wizard.draft.milestones,
-    };
-
-    const enrichedContent = `[goal_finalized] ${JSON.stringify(payload)}`;
+    const payload = buildGoalFinalizationPayload(wizardMeta, wizard.draft);
+    const enrichedContent = `${GOAL_WIZARD_TAG} ${JSON.stringify(payload)}`;
     const newMsg: Message = {
-      id: Date.now().toString(),
+      id: createMessageId("user"),
       role: "user",
       content: "Saya konfirmasi goal: " + finalTitle,
     };
     setMessages((prev) => [...prev, newMsg]);
     setIsLoading(true);
     try {
-      const responseMsg = await apiRequest<any>(
+      const responseMsg = await apiRequest<CoachMessageResponse>(
         `/coach/sessions/${sessionId}/messages`,
         {
           method: "POST",
@@ -320,15 +418,13 @@ function CoachPageContent() {
       setMessages((prev) => [
         ...prev,
         {
-          id: responseMsg.id || `${Date.now()}-assistant`,
-          role: responseMsg.role || "assistant",
-          content: (responseMsg.content || "Goal berhasil dibuat! 🎉")
-            .replace(/<think>[\s\S]*?<\/think>/gi, "")
-            .trim(),
+          id: responseMsg.id ?? createMessageId("assistant"),
+          role: responseMsg.role ?? "assistant",
+          content: sanitizeAssistantContent(responseMsg.content, "Goal berhasil dibuat!"),
         },
       ]);
       wizard.resetWizard();
-      setWizardMeta({ title: "", category: "other", habitTitle: "" });
+      setWizardMeta(DEFAULT_WIZARD_META);
     } catch (err) {
       console.error("Wizard submit failed", err);
       setMessages((prev) => prev.filter((m) => m.id !== newMsg.id));
@@ -336,6 +432,17 @@ function CoachPageContent() {
       setIsLoading(false);
     }
   }
+
+  const startWizardFromPrefill = (prefill: WizardPrefill) => {
+    setWizardMeta((currentMeta) => ({
+      ...currentMeta,
+      category: isGoalCategory(prefill.category)
+        ? prefill.category
+        : currentMeta.category,
+      title: prefill.title ?? currentMeta.title,
+    }));
+    wizard.startWizard(prefill);
+  };
 
   return (
     <div className="flex h-dvh max-w-full overflow-hidden bg-background text-foreground dark:bg-background dark:text-white">
@@ -419,43 +526,16 @@ function CoachPageContent() {
                 {messages.map((msg) => (
                   <div key={msg.id}>
                     {msg.role === "assistant" ? (
-                      <>
-                        <CoachMessage>
-                          {stripAssistantTags(msg.content).displayText}
-                        </CoachMessage>
-                        {stripAssistantTags(msg.content).wizardPrefill && (
-                          <WizardIntentBubble
-                            prefill={stripAssistantTags(msg.content).wizardPrefill!}
-                            onAccept={(...args: unknown[]) => {
-                              const p = stripAssistantTags(msg.content).wizardPrefill!;
-                              if (p.category) {
-                                setWizardMeta((m) => ({ ...m, category: p.category! }));
-                              }
-                              if (p.title) {
-                                setWizardMeta((m) => ({ ...m, title: p.title! }));
-                              }
-                              wizard.startWizard(p);
-                            }}
-                            onCancel={() => {
-                              wizard.cancelWizard();
-                              setWizardMeta({ title: "", category: "other", habitTitle: "" });
-                            }}
-                          />
-                        )}
-                      </>
+                      <AssistantMessageBlock
+                        content={msg.content}
+                        onWizardAccept={startWizardFromPrefill}
+                        onWizardCancel={cancelWizardCallback}
+                      />
                     ) : msg.role === "wizard_intent" ? (
                       <WizardIntentBubble
                         prefill={msg.prefill}
-                        onAccept={() => {
-                          if (msg.prefill.category) {
-                            setWizardMeta((m) => ({ ...m, category: msg.prefill.category! }));
-                          }
-                          if (msg.prefill.title) {
-                            setWizardMeta((m) => ({ ...m, title: msg.prefill.title! }));
-                          }
-                          wizard.startWizard(msg.prefill);
-                        }}
-                        onCancel={() => wizard.cancelWizard()}
+                        onAccept={() => startWizardFromPrefill(msg.prefill)}
+                        onCancel={cancelWizardCallback}
                       />
                     ) : (
                       <UserMessage>{msg.content}</UserMessage>
@@ -532,7 +612,7 @@ function CoachPageContent() {
                   <div className="flex max-w-[92%] items-start gap-3 sm:max-w-[85%]">
                     <button
                       onClick={() => {
-                        setWizardMeta({ title: "", category: "other", habitTitle: "" });
+                        setWizardMeta(DEFAULT_WIZARD_META);
                         wizard.startWizard();
                       }}
                       className="inline-flex items-center gap-1.5 rounded-full border border-primary/30 bg-primary/5 px-4 py-2 text-xs font-bold text-primary transition hover:bg-primary/10 active:scale-95"
@@ -603,140 +683,6 @@ function CoachPageContent() {
           <BottomNavigation active="coach" />
         </div>
 
-        {/* ── Goal Wizard bubbles (re-rendered inline per step) ── */}
-        {false && (
-          <div className="fixed inset-0 z-[60] flex items-end justify-center bg-foreground/15 px-3 pb-[calc(5.75rem+env(safe-area-inset-bottom))] pt-20 backdrop-blur-[2px] sm:px-5 lg:left-[272px] lg:items-center lg:p-8">
-            <button
-              type="button"
-              className="absolute inset-0 cursor-default"
-              onClick={cancelWizardCallback}
-              aria-label="Tutup wizard goal"
-            />
-            <div
-              role="dialog"
-              aria-modal="true"
-              aria-label="Wizard goal"
-              className="relative z-10 w-full max-w-xl overflow-y-auto overscroll-contain rounded-[24px] bg-transparent shadow-2xl [max-height:min(76dvh,720px)] lg:[max-height:min(86dvh,760px)]"
-            >
-            {wizard.draft.step === "duration" && (
-              <DurationBubble
-                onPick={wizard.setDuration}
-                onCancel={cancelWizardCallback}
-              />
-            )}
-            {wizard.draft.step === "habits" && (
-              <HabitBubble
-                habits={wizard.draft.habits}
-                onAdd={wizard.addHabit}
-                onUpdate={wizard.updateHabit}
-                onRemove={wizard.removeHabit}
-                onNext={wizard.goToSchedule}
-                onCancel={cancelWizardCallback}
-              />
-            )}
-            {wizard.draft.step === "schedule" && (
-              <ScheduleBubble
-                activeDays={wizard.draft.schedule.activeDays}
-                reminderTime={wizard.draft.schedule.reminderTime}
-                onToggleDay={wizard.toggleDay}
-                onSetReminderTime={wizard.setReminderTime}
-                onNext={wizard.goToMilestones}
-                onCancel={cancelWizardCallback}
-              />
-            )}
-            {wizard.draft.step === "milestones" && (
-              <MilestoneFlow
-                goalTitle={wizardMeta.title || wizard.draft.habits[0]?.title || "Goal"}
-                category={wizardMeta.category}
-                duration={wizard.draft.duration}
-                habits={wizard.draft.habits}
-                initial={wizard.draft.milestones}
-                loader={async (input) => {
-                  const result = await milestoneService.suggest(input);
-                  return result.milestones;
-                }}
-                onAccept={(list) => {
-                  wizard.setMilestones(list);
-                  wizard.goToReview();
-                }}
-                onSkip={() => {
-                  wizard.setMilestones([]);
-                  wizard.goToReview();
-                }}
-                onCancel={() => cancelWizardCallback()}
-                onUpdateTitle={(idx, patch) => wizard.updateMilestone(idx, patch)}
-                onRemove={(idx) => wizard.removeMilestone(idx)}
-              />
-            )}
-            {wizard.draft.step === "review" && (
-              <ReviewBubble
-                goalTitle={wizardMeta.title}
-                category={wizardMeta.category}
-                draft={wizard.draft}
-                onTitleChange={(title) => setWizardMeta((m) => ({ ...m, title }))}
-                onCategoryChange={(category) => setWizardMeta((m) => ({ ...m, category }))}
-                onBack={() => wizard.setStep("schedule")}
-                onCancel={() => cancelWizardCallback()}
-                onConfirm={() => {
-                  if (!sessionId) return;
-                  const finalTitle = wizardMeta.title.trim();
-                  if (!finalTitle) return;
-                  const payload: any = {
-                    title: finalTitle,
-                    category: wizardMeta.category,
-                    duration: wizard.draft.duration,
-                    habits: wizard.draft.habits.map((h) => ({
-                      title: h.title,
-                      difficulty: h.difficulty,
-                      duration_minutes: h.duration,
-                    })),
-                    schedule: {
-                      activeDays: wizard.draft.schedule.activeDays,
-                      reminderTime: wizard.draft.schedule.reminderTime,
-                    },
-                    notifications: wizard.draft.notifications,
-                    milestones: wizard.draft.milestones,
-                  };
-                  const enrichedContent = `[goal_finalized] ${JSON.stringify(payload)}`;
-                  const newMsg: Message = {
-                    id: Date.now().toString(),
-                    role: "user",
-                    content: "Saya konfirmasi goal: " + finalTitle,
-                  };
-                  setMessages((prev) => [...prev, newMsg]);
-                  setIsLoading(true);
-                  apiRequest<any>(
-                    `/coach/sessions/${sessionId}/messages`,
-                    {
-                      method: "POST",
-                      body: JSON.stringify({ role: "user", content: enrichedContent }),
-                    }
-                  )
-                    .then((responseMsg) => {
-                      setMessages((prev) => [
-                        ...prev,
-                        {
-                          id: responseMsg.id || `${Date.now()}-assistant`,
-                          role: responseMsg.role || "assistant",
-                          content: (responseMsg.content || "Goal berhasil dibuat! 🎉")
-                            .replace(/<think>[\s\S]*?<\/think>/gi, "")
-                            .trim(),
-                        },
-                      ]);
-                      wizard.resetWizard();
-                      setWizardMeta({ title: "", category: "other", habitTitle: "" });
-                    })
-                    .catch((err) => {
-                      console.error("Wizard submit failed", err);
-                      setMessages((prev) => prev.filter((m) => m.id !== newMsg.id));
-                    })
-                    .finally(() => setIsLoading(false));
-                }}
-              />
-            )}
-            </div>
-          </div>
-        )}
       </main>
     </div>
   );

@@ -31,6 +31,9 @@ type ApiGoal = {
 export type TodayCompletion = {
   habit_id: string;
   completed: boolean;
+  completion_date?: string;
+  xp_delta?: number;
+  total_xp?: number;
 };
 
 export type TodayHabit = Habit & {

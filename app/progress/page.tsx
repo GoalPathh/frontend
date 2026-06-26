@@ -268,40 +268,10 @@ export default function ProgressPage() {
               </div>
             </section>
 
-            <section className="mb-6 grid gap-6 xl:grid-cols-[1.35fr_0.85fr]">
-              <ConsistencyChart series={series} />
-
+            <section className="mb-6 grid gap-6 xl:grid-cols-[1.35fr_0.85fr] xl:items-start">
               <div className="grid gap-6">
-                <div className="rounded-[20px] border border-border bg-surface p-5 shadow-card">
-                  <div className="mb-5 flex items-center justify-between gap-4">
-                    <div>
-                      <p className="text-[10px] font-extrabold uppercase tracking-[0.24em] text-primary">
-                        Top Performing Habits
-                      </p>
-                      <h3 className="mt-2 text-xl font-extrabold text-foreground">Your best habits</h3>
-                    </div>
-                    <Sparkles className="h-6 w-6 text-primary" />
-                  </div>
+                <ConsistencyChart series={series} />
 
-                  <div className="space-y-4">
-                    {habits.length === 0 ? (
-                      <div className="rounded-[18px] border border-dashed border-border bg-background p-4 text-sm text-foreground/60">
-                        No completed habit pattern yet in this range.
-                      </div>
-                    ) : (
-                      habits.map((habit, index) => (
-                        <HabitRankingCard key={habit.id} rank={index + 1} habit={habit} />
-                      ))
-                    )}
-                  </div>
-                </div>
-
-                <ActivityHeatmap days={heatmap} />
-              </div>
-            </section>
-
-            <section className="grid gap-6 xl:grid-cols-[1.2fr_0.8fr]">
-              <div className="grid gap-6">
                 <div className="rounded-[20px] border border-border bg-surface p-5 shadow-card">
                   <div className="mb-5 flex items-center justify-between gap-4">
                     <div>
@@ -333,6 +303,34 @@ export default function ProgressPage() {
                     ))}
                   </div>
                 </div>
+              </div>
+
+              <div className="grid gap-6">
+                <div className="rounded-[20px] border border-border bg-surface p-5 shadow-card">
+                  <div className="mb-5 flex items-center justify-between gap-4">
+                    <div>
+                      <p className="text-[10px] font-extrabold uppercase tracking-[0.24em] text-primary">
+                        Top Performing Habits
+                      </p>
+                      <h3 className="mt-2 text-xl font-extrabold text-foreground">Your best habits</h3>
+                    </div>
+                    <Sparkles className="h-6 w-6 text-primary" />
+                  </div>
+
+                  <div className="space-y-4">
+                    {habits.length === 0 ? (
+                      <div className="rounded-[18px] border border-dashed border-border bg-background p-4 text-sm text-foreground/60">
+                        No completed habit pattern yet in this range.
+                      </div>
+                    ) : (
+                      habits.map((habit, index) => (
+                        <HabitRankingCard key={habit.id} rank={index + 1} habit={habit} />
+                      ))
+                    )}
+                  </div>
+                </div>
+
+                <ActivityHeatmap days={heatmap} />
               </div>
             </section>
           </>

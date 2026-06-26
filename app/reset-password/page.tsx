@@ -8,7 +8,6 @@ import { AuthField } from "@/components/auth/auth-field";
 import { AuthShell } from "@/components/auth/auth-shell";
 import { LoginPreview } from "@/components/auth/login-preview";
 import { authService } from "@/lib/authService";
-import { clearAccessToken, setAccessToken, setRefreshToken } from "@/lib/api";
 
 function ResetPasswordContent() {
   const router = useRouter();
@@ -34,9 +33,17 @@ function ResetPasswordContent() {
       return;
     }
 
-    setAccessToken(accessToken);
-    setRefreshToken(refreshToken);
-    setReady(true);
+    // Call our internal Next.js API route to set the HTTP-only cookies
+    fetch("/api/auth/cookies", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ accessToken, refreshToken }),
+    })
+      .then((res) => {
+        if (!res.ok) throw new Error("Failed to set cookies");
+        setReady(true);
+      })
+      .catch((err) => setError(err.message));
   }, [searchParams]);
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
@@ -53,7 +60,7 @@ function ResetPasswordContent() {
     setError("");
     try {
       await authService.updatePassword(password);
-      clearAccessToken();
+      await fetch("/api/auth/logout", { method: "POST" });
       setSuccess(true);
       setTimeout(() => router.replace("/login"), 1200);
     } catch (caught) {

@@ -1,4 +1,7 @@
+"use client";
+
 import Image from "next/image";
+import { useEffect, useMemo, useState } from "react";
 import { Edit3, Flame, Sparkles, Trophy } from "lucide-react";
 import type { UserProfile } from "@/lib/types";
 
@@ -8,13 +11,41 @@ interface ProfileHeaderProps {
 }
 
 export function ProfileHeader({ profile, onEdit }: ProfileHeaderProps) {
+  const [avatarBroken, setAvatarBroken] = useState(false);
+
+  useEffect(() => {
+    setAvatarBroken(false);
+  }, [profile.avatarUrl]);
+
+  const initials = useMemo(
+    () =>
+      (profile.name || "GoalPath User")
+        .split(/\s+/)
+        .filter(Boolean)
+        .slice(0, 2)
+        .map((part) => part[0]?.toUpperCase() ?? "")
+        .join(""),
+    [profile.name],
+  );
+
   return (
     <section className="relative overflow-hidden rounded-[28px] border border-border bg-surface p-6 shadow-sm">
       <div className="absolute -right-8 -top-10 h-44 w-44 rounded-full bg-primary/10 blur-3xl" />
       <div className="relative z-10 grid gap-6 lg:grid-cols-[0.9fr_0.5fr] items-center">
         <div className="flex items-center gap-4">
-          <div className="relative h-24 w-24 overflow-hidden rounded-[28px] border border-border bg-primary/10 shadow-sm">
-            <Image src={profile.avatarUrl} alt={profile.name} fill sizes="96px" className="object-cover" />
+          <div className="relative flex h-24 w-24 items-center justify-center overflow-hidden rounded-[28px] border border-border bg-primary/10 text-2xl font-bold text-primary shadow-sm">
+            {profile.avatarUrl && !avatarBroken ? (
+              <Image
+                src={profile.avatarUrl}
+                alt={profile.name}
+                fill
+                sizes="96px"
+                className="object-cover"
+                onError={() => setAvatarBroken(true)}
+              />
+            ) : (
+              <span>{initials}</span>
+            )}
           </div>
           <div>
             <p className="text-sm font-semibold uppercase tracking-[0.22em] text-primary">Profile</p>

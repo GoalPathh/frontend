@@ -27,6 +27,7 @@ import { AppSidebar } from "@/components/app-sidebar";
 import { BottomNavigation } from "@/components/bottom-navigation";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { ApiError, apiRequest, hasAuthSession } from "@/lib/api";
+import { isSubscriptionGateError } from "@/lib/subscriptionService";
 import { userService } from "@/lib/userService";
 import {
   DurationBubble,
@@ -832,8 +833,19 @@ function CoachPageContent() {
       }
       
     } catch (err) {
-      console.error("Failed to send message", err);
       setMessages((prev) => prev.filter(m => m.id !== newMsg.id));
+      if (isSubscriptionGateError(err)) {
+        setMessages((prev) => [
+          ...prev,
+          {
+            id: createMessageId("subscription-gate"),
+            role: "assistant",
+            content: `${err instanceof Error ? err.message : "Batas plan Free tercapai."}\n\nBuka halaman Pricing untuk upgrade ke Premium, atau hapus goal yang sudah tidak aktif.`,
+          },
+        ]);
+      } else {
+        console.error("Failed to send message", err);
+      }
     } finally {
       setIsLoading(false);
     }
@@ -872,8 +884,19 @@ function CoachPageContent() {
       wizard.resetWizard();
       setWizardMeta(DEFAULT_WIZARD_META);
     } catch (err) {
-      console.error("Wizard submit failed", err);
       setMessages((prev) => prev.filter((m) => m.id !== newMsg.id));
+      if (isSubscriptionGateError(err)) {
+        setMessages((prev) => [
+          ...prev,
+          {
+            id: createMessageId("subscription-gate"),
+            role: "assistant",
+            content: `${err instanceof Error ? err.message : "Batas plan Free tercapai."}\n\nBuka halaman Pricing untuk upgrade ke Premium, atau hapus goal yang sudah tidak aktif.`,
+          },
+        ]);
+      } else {
+        console.error("Wizard submit failed", err);
+      }
     } finally {
       setIsLoading(false);
     }

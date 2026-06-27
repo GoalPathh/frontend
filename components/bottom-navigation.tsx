@@ -1,7 +1,7 @@
-import { Award, BarChart3, CheckCircle2, User, UserCog } from "lucide-react";
+import { Award, BarChart3, CheckCircle2, Crown, User, UserCog } from "lucide-react";
 
 type BottomNavigationProps = {
-  active: "today" | "goals" | "progress" | "coach" | "me";
+  active: "today" | "goals" | "progress" | "coach" | "me" | "pricing";
 };
 
 const items = [
@@ -9,6 +9,7 @@ const items = [
   { key: "goals", label: "Goals", href: "/goals", Icon: Award },
   { key: "progress", label: "Progress", href: "/progress", Icon: BarChart3 },
   { key: "coach", label: "Coach", href: "/coach", Icon: UserCog },
+  { key: "pricing", label: "Pricing", href: "/pricing", Icon: Crown },
   { key: "me", label: "Me", href: "/me", Icon: User },
 ] as const;
 

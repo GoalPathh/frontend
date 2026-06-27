@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Bell, Check, Loader2, Droplet, BookOpen, Mic, Utensils, Sun, Moon, Target, Globe2 } from "lucide-react";
+import { Bell, Check, Loader2, Droplet, BookOpen, Mic, Utensils, Sun, Moon, Target, Globe2, X } from "lucide-react";
 import { NotificationsPanel } from "@/components/notifications-panel";
 import { todayService, TodayHabit } from "@/lib/todayService";
 import { TimeRange } from "@/lib/types";
@@ -24,15 +24,28 @@ export function TodayInteractiveClient({ planDate, habit }: { planDate?: string,
   const router = useRouter();
   const [showNotifications, setShowNotifications] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const [habitPopup, setHabitPopup] = useState<{
+    completed: boolean;
+    title: string;
+    xpDelta: number;
+  } | null>(null);
 
   if (habit && planDate) {
     const Icon = getHabitIcon(habit.title, habit.schedule.timeRange);
+    const XP_PER_HABIT_COMPLETION = 30;
+    const nextCompleted = !habit.completed;
+    const xpDelta = habit.completed ? -XP_PER_HABIT_COMPLETION : XP_PER_HABIT_COMPLETION;
 
     const handleToggle = async () => {
       if (isSaving) return;
       setIsSaving(true);
       try {
-        await todayService.setHabitCompletion(habit.id, !habit.completed, planDate);
+        await todayService.setHabitCompletion(habit.id, nextCompleted, planDate);
+        setHabitPopup({
+          completed: nextCompleted,
+          title: habit.title,
+          xpDelta,
+        });
         router.refresh();
       } catch (err) {
         console.error("Failed to toggle habit:", err);
@@ -41,33 +54,46 @@ export function TodayInteractiveClient({ planDate, habit }: { planDate?: string,
       }
     };
 
-    const XP_PER_HABIT_COMPLETION = 30;
-    const xpDelta = habit.completed ? -XP_PER_HABIT_COMPLETION : XP_PER_HABIT_COMPLETION;
-
     return (
-      <button
-        type="button"
-        disabled={isSaving}
-        onClick={handleToggle}
-        className={`w-full rounded-[18px] border border-border p-4 text-left transition-transform active:scale-[0.99] sm:p-5 ${
-          habit.completed ? "glass-panel" : "shadow-sm hover:border-primary/40 glass-card"
-        } disabled:cursor-not-allowed disabled:opacity-70`}
-      >
-        <div className="flex items-center justify-between gap-4">
-          <div className="flex min-w-0 items-center gap-4">
-            <div className={`flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-full ${habit.completed ? "bg-primary text-white shadow-md" : "border-2 border-foreground/30"}`}>
-              {isSaving ? <Loader2 className="h-4 w-4 animate-spin" /> : habit.completed ? <Check className="h-4 w-4" /> : null}
+      <>
+        <button
+          type="button"
+          disabled={isSaving}
+          onClick={handleToggle}
+          className={`w-full rounded-[18px] border border-border p-4 text-left transition-transform active:scale-[0.99] sm:p-5 ${
+            habit.completed ? "glass-panel" : "shadow-sm hover:border-primary/40 glass-card"
+          } disabled:cursor-not-allowed disabled:opacity-70`}
+        >
+          <div className="flex items-center justify-between gap-4">
+            <div className="flex min-w-0 items-center gap-4">
+              <div className={`flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-full ${habit.completed ? "bg-primary text-white shadow-md" : "border-2 border-foreground/30"}`}>
+                {isSaving ? <Loader2 className="h-4 w-4 animate-spin" /> : habit.completed ? <Check className="h-4 w-4" /> : null}
+              </div>
+              <div className="min-w-0">
+                <span className={`block truncate text-base ${habit.completed ? "font-medium text-foreground/60 line-through opacity-70" : "font-semibold text-foreground"}`}>
+                  {habit.title}
+                </span>
+                <span className="mt-0.5 block truncate text-xs font-semibold text-foreground/45">{habit.goalTitle}</span>
+              </div>
             </div>
-            <div className="min-w-0">
-              <span className={`block truncate text-base ${habit.completed ? "font-medium text-foreground/60 line-through opacity-70" : "font-semibold text-foreground"}`}>
-                {habit.title}
+            <div className="flex flex-shrink-0 items-center gap-2 text-foreground/60">
+              <span
+                className={`hidden rounded-full px-2.5 py-1 text-xs font-extrabold sm:inline-flex ${
+                  habit.completed
+                    ? "bg-coral/10 text-coral"
+                    : "bg-primary/10 text-primary"
+                }`}
+              >
+                {xpDelta > 0 ? "+" : ""}
+                {xpDelta} XP
               </span>
-              <span className="mt-0.5 block truncate text-xs font-semibold text-foreground/45">{habit.goalTitle}</span>
+              <span className="hidden rounded-full bg-primary/10 px-2.5 py-1 text-xs font-extrabold text-primary sm:inline-flex">{habit.duration} min</span>
+              <Icon className="h-5 w-5" />
             </div>
           </div>
-          <div className="flex flex-shrink-0 items-center gap-2 text-foreground/60">
+          <div className="mt-3 flex items-center gap-2 sm:hidden">
             <span
-              className={`hidden rounded-full px-2.5 py-1 text-xs font-extrabold sm:inline-flex ${
+              className={`rounded-full px-2.5 py-1 text-xs font-extrabold ${
                 habit.completed
                   ? "bg-coral/10 text-coral"
                   : "bg-primary/10 text-primary"
@@ -76,24 +102,58 @@ export function TodayInteractiveClient({ planDate, habit }: { planDate?: string,
               {xpDelta > 0 ? "+" : ""}
               {xpDelta} XP
             </span>
-            <span className="hidden rounded-full bg-primary/10 px-2.5 py-1 text-xs font-extrabold text-primary sm:inline-flex">{habit.duration} min</span>
-            <Icon className="h-5 w-5" />
+            <span className="rounded-full bg-primary/10 px-2.5 py-1 text-xs font-extrabold text-primary">{habit.duration} min</span>
           </div>
-        </div>
-        <div className="mt-3 flex items-center gap-2 sm:hidden">
-          <span
-            className={`rounded-full px-2.5 py-1 text-xs font-extrabold ${
-              habit.completed
-                ? "bg-coral/10 text-coral"
-                : "bg-primary/10 text-primary"
-            }`}
+        </button>
+
+        {habitPopup && (
+          <div
+            className="fixed inset-0 z-[80] flex items-center justify-center bg-black/35 px-5 backdrop-blur-sm"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="habit-popup-title"
+            onClick={() => setHabitPopup(null)}
           >
-            {xpDelta > 0 ? "+" : ""}
-            {xpDelta} XP
-          </span>
-          <span className="rounded-full bg-primary/10 px-2.5 py-1 text-xs font-extrabold text-primary">{habit.duration} min</span>
-        </div>
-      </button>
+            <div
+              className="w-full max-w-sm rounded-[20px] border border-border bg-surface p-5 text-center shadow-2xl"
+              onClick={(event) => event.stopPropagation()}
+            >
+              <button
+                type="button"
+                onClick={() => setHabitPopup(null)}
+                className="ml-auto flex h-9 w-9 items-center justify-center rounded-full border border-border bg-background text-foreground/60 transition hover:text-foreground"
+                aria-label="Close habit popup"
+              >
+                <X className="h-4 w-4" />
+              </button>
+              <div className="mx-auto mt-1 flex h-14 w-14 items-center justify-center rounded-full bg-primary text-white shadow-lg shadow-primary/20">
+                <Check className="h-7 w-7" />
+              </div>
+              <h3 id="habit-popup-title" className="mt-4 text-xl font-extrabold tracking-tight text-foreground">
+                {habitPopup.completed ? "Habit completed" : "Habit unchecked"}
+              </h3>
+              <p className="mt-2 text-sm font-semibold leading-6 text-foreground/60">
+                {habitPopup.title}
+              </p>
+              <div
+                className={`mx-auto mt-4 inline-flex rounded-full px-3 py-1 text-xs font-extrabold ${
+                  habitPopup.xpDelta > 0 ? "bg-primary/10 text-primary" : "bg-coral/10 text-coral"
+                }`}
+              >
+                {habitPopup.xpDelta > 0 ? "+" : ""}
+                {habitPopup.xpDelta} XP
+              </div>
+              <button
+                type="button"
+                onClick={() => setHabitPopup(null)}
+                className="mt-5 w-full rounded-full bg-primary px-5 py-3 text-sm font-extrabold text-white shadow-lg shadow-primary/20 transition hover:bg-primary/90 active:scale-[0.98]"
+              >
+                Done
+              </button>
+            </div>
+          </div>
+        )}
+      </>
     );
   }
 

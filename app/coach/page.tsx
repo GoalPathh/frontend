@@ -1,8 +1,12 @@
 "use client";
 
-import { Suspense, useCallback, useEffect, useRef, useState } from "react";
+import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import {
+  Check,
+  CheckCircle2,
+  ChevronDown,
+  Copy,
   Cpu,
   Flame,
   Menu,
@@ -14,10 +18,10 @@ import {
   Target,
   X,
   Loader2,
-  MessageSquarePlus,
   Zap,
   AlertCircle
 } from "lucide-react";
+import { AnimatePresence, motion } from "framer-motion";
 import { UserAvatar } from "@/components/user-avatar";
 import { AppSidebar } from "@/components/app-sidebar";
 import { BottomNavigation } from "@/components/bottom-navigation";
@@ -55,7 +59,7 @@ function CoachMessage({ children }: { children: React.ReactNode }) {
       <div className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-primary text-white shadow-md shadow-primary/20 sm:size-10">
         <Cpu className="h-5 w-5" />
       </div>
-      <div className="rounded-2xl rounded-tl-sm border border-border bg-surface px-4 py-3.5 text-sm font-medium leading-6 shadow-sm sm:px-5 sm:py-4 sm:text-[15px] sm:leading-7 whitespace-pre-wrap">
+      <div className="rounded-2xl rounded-tl-sm border border-border bg-surface px-4 py-3.5 text-sm font-medium leading-6 shadow-sm sm:px-5 sm:py-4 sm:text-[15px] sm:leading-7">
         {children}
       </div>
     </div>
@@ -219,6 +223,372 @@ function stripAssistantTags(raw: string): { displayText: string; wizardPrefill: 
   return { displayText: cleaned, wizardPrefill: prefill };
 }
 
+interface RichListItem {
+  text: string;
+  checked: boolean;
+}
+
+type RichBlock =
+  | { type: "heading"; depth: number; text: string }
+  | { type: "paragraph"; text: string }
+  | { type: "list"; ordered: boolean; items: RichListItem[] }
+  | { type: "quote"; text: string }
+  | { type: "code"; language: string; code: string };
+
+interface RichSection {
+  title: string;
+  depth: number;
+  blocks: RichBlock[];
+}
+
+function isRichBlockStart(line: string): boolean {
+  const trimmed = line.trim();
+  return (
+    /^#{1,4}\s+/.test(trimmed) ||
+    /^```/.test(trimmed) ||
+    /^>\s?/.test(trimmed) ||
+    /^((?:[-*•])|\d+[.)])\s+/.test(trimmed)
+  );
+}
+
+function parseRichBlocks(content: string): RichBlock[] {
+  const lines = content.replace(/\r\n/g, "\n").split("\n");
+  const blocks: RichBlock[] = [];
+  let index = 0;
+
+  while (index < lines.length) {
+    const line = lines[index] ?? "";
+    const trimmed = line.trim();
+
+    if (!trimmed) {
+      index += 1;
+      continue;
+    }
+
+    const codeStart = trimmed.match(/^```(\w+)?/);
+    if (codeStart) {
+      const codeLines: string[] = [];
+      index += 1;
+      while (index < lines.length && !(lines[index] ?? "").trim().startsWith("```")) {
+        codeLines.push(lines[index] ?? "");
+        index += 1;
+      }
+      if (index < lines.length) index += 1;
+      blocks.push({
+        type: "code",
+        language: codeStart[1] ?? "",
+        code: codeLines.join("\n").trimEnd(),
+      });
+      continue;
+    }
+
+    const heading = trimmed.match(/^(#{1,4})\s+(.+)$/);
+    if (heading) {
+      blocks.push({
+        type: "heading",
+        depth: heading[1]!.length,
+        text: heading[2]!.trim(),
+      });
+      index += 1;
+      continue;
+    }
+
+    if (trimmed.startsWith(">")) {
+      const quoteLines: string[] = [];
+      while (index < lines.length && (lines[index] ?? "").trim().startsWith(">")) {
+        quoteLines.push((lines[index] ?? "").trim().replace(/^>\s?/, ""));
+        index += 1;
+      }
+      blocks.push({ type: "quote", text: quoteLines.join(" ").trim() });
+      continue;
+    }
+
+    const listMatch = trimmed.match(/^((?:[-*•])|\d+[.)])\s+(?:\[( |x|X)\]\s+)?(.+)$/);
+    if (listMatch) {
+      const ordered = /^\d/.test(listMatch[1]!);
+      const items: RichListItem[] = [];
+      while (index < lines.length) {
+        const current = (lines[index] ?? "").trim();
+        const currentMatch = current.match(/^((?:[-*•])|\d+[.)])\s+(?:\[( |x|X)\]\s+)?(.+)$/);
+        if (!currentMatch || /^\d/.test(currentMatch[1]!) !== ordered) break;
+        items.push({
+          text: currentMatch[3]!.trim(),
+          checked: (currentMatch[2] ?? "").toLowerCase() === "x",
+        });
+        index += 1;
+      }
+      blocks.push({ type: "list", ordered, items });
+      continue;
+    }
+
+    const paragraphLines: string[] = [];
+    while (index < lines.length) {
+      const current = lines[index] ?? "";
+      if (!current.trim()) break;
+      if (paragraphLines.length > 0 && isRichBlockStart(current)) break;
+      paragraphLines.push(current.trim());
+      index += 1;
+    }
+    blocks.push({ type: "paragraph", text: paragraphLines.join(" ").trim() });
+  }
+
+  return blocks.filter((block) => block.type !== "paragraph" || block.text.length > 0);
+}
+
+function splitRichSections(blocks: RichBlock[]): { intro: RichBlock[]; sections: RichSection[] } {
+  const intro: RichBlock[] = [];
+  const sections: RichSection[] = [];
+  let current: RichSection | null = null;
+
+  for (const block of blocks) {
+    if (block.type === "heading") {
+      if (current) sections.push(current);
+      current = { title: block.text, depth: block.depth, blocks: [] };
+      continue;
+    }
+
+    if (current) {
+      current.blocks.push(block);
+    } else {
+      intro.push(block);
+    }
+  }
+
+  if (current) sections.push(current);
+  return { intro, sections };
+}
+
+function renderInlineMarkdown(text: string): React.ReactNode[] {
+  return text.split(/(\*\*[^*]+\*\*|`[^`]+`)/g).map((part, index) => {
+    if (!part) return null;
+    if (part.startsWith("**") && part.endsWith("**")) {
+      return (
+        <strong key={index} className="font-extrabold text-foreground">
+          {part.slice(2, -2)}
+        </strong>
+      );
+    }
+    if (part.startsWith("`") && part.endsWith("`")) {
+      return (
+        <code key={index} className="rounded-md bg-muted px-1.5 py-0.5 text-[0.92em] font-bold text-primary">
+          {part.slice(1, -1)}
+        </code>
+      );
+    }
+    return part;
+  });
+}
+
+function RichBlockView({
+  block,
+  blockKey,
+  checkedItems,
+  copiedCodeKey,
+  onToggleItem,
+  onCopyCode,
+}: {
+  block: RichBlock;
+  blockKey: string;
+  checkedItems: Record<string, boolean>;
+  copiedCodeKey: string | null;
+  onToggleItem: (key: string, fallback: boolean) => void;
+  onCopyCode: (key: string, code: string) => void;
+}) {
+  if (block.type === "paragraph") {
+    return <p className="text-foreground/82">{renderInlineMarkdown(block.text)}</p>;
+  }
+
+  if (block.type === "quote") {
+    return (
+      <div className="border-l-2 border-primary/40 bg-primary/5 px-3 py-2 text-sm font-semibold text-foreground/70">
+        {renderInlineMarkdown(block.text)}
+      </div>
+    );
+  }
+
+  if (block.type === "code") {
+    const copied = copiedCodeKey === blockKey;
+    return (
+      <div className="overflow-hidden rounded-xl border border-border bg-background/80">
+        <div className="flex items-center justify-between border-b border-border px-3 py-2">
+          <span className="text-[10px] font-bold uppercase tracking-wider text-foreground/45">
+            {block.language || "snippet"}
+          </span>
+          <button
+            type="button"
+            onClick={() => onCopyCode(blockKey, block.code)}
+            className="inline-flex items-center gap-1.5 rounded-lg px-2 py-1 text-[10px] font-bold uppercase tracking-wider text-foreground/50 transition hover:bg-muted hover:text-primary"
+          >
+            {copied ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />}
+            {copied ? "Copied" : "Copy"}
+          </button>
+        </div>
+        <pre className="max-h-72 overflow-auto p-3 text-xs leading-5 text-foreground/80">
+          <code>{block.code}</code>
+        </pre>
+      </div>
+    );
+  }
+
+  if (block.type === "list") {
+    const ListTag = block.ordered ? "ol" : "ul";
+    return (
+      <ListTag className={block.ordered ? "space-y-2 pl-1" : "space-y-2"}>
+        {block.items.map((item, index) => {
+          const key = `${blockKey}-${index}`;
+          const checked = checkedItems[key] ?? item.checked;
+          return (
+            <li key={key} className={block.ordered ? "flex gap-2" : "flex gap-2"}>
+              <button
+                type="button"
+                onClick={() => onToggleItem(key, item.checked)}
+                className={`mt-0.5 flex size-5 shrink-0 items-center justify-center rounded-full border transition ${
+                  checked
+                    ? "border-primary bg-primary text-white"
+                    : "border-border bg-background text-foreground/35 hover:border-primary/50 hover:text-primary"
+                }`}
+                aria-label={checked ? "Mark item as open" : "Mark item as done"}
+              >
+                {block.ordered ? (
+                  <span className="text-[10px] font-extrabold">{index + 1}</span>
+                ) : checked ? (
+                  <Check className="h-3 w-3" />
+                ) : (
+                  <span className="size-1.5 rounded-full bg-current" />
+                )}
+              </button>
+              <span className={checked ? "text-foreground/45 line-through decoration-primary/50" : "text-foreground/78"}>
+                {renderInlineMarkdown(item.text)}
+              </span>
+            </li>
+          );
+        })}
+      </ListTag>
+    );
+  }
+
+  return null;
+}
+
+function RichSectionBlock({
+  section,
+  sectionKey,
+  defaultOpen,
+  checkedItems,
+  copiedCodeKey,
+  onToggleItem,
+  onCopyCode,
+}: {
+  section: RichSection;
+  sectionKey: string;
+  defaultOpen: boolean;
+  checkedItems: Record<string, boolean>;
+  copiedCodeKey: string | null;
+  onToggleItem: (key: string, fallback: boolean) => void;
+  onCopyCode: (key: string, code: string) => void;
+}) {
+  const [open, setOpen] = useState(defaultOpen);
+
+  return (
+    <div className="overflow-hidden rounded-xl border border-border bg-background/50">
+      <button
+        type="button"
+        onClick={() => setOpen((value) => !value)}
+        className="flex w-full items-center justify-between gap-3 px-3 py-2.5 text-left transition hover:bg-muted/60"
+      >
+        <span className="flex min-w-0 items-center gap-2">
+          <CheckCircle2 className="h-4 w-4 shrink-0 text-primary" />
+          <span className="truncate text-sm font-extrabold text-foreground">
+            {renderInlineMarkdown(section.title)}
+          </span>
+        </span>
+        <ChevronDown className={`h-4 w-4 shrink-0 text-foreground/45 transition ${open ? "rotate-180" : ""}`} />
+      </button>
+      <AnimatePresence initial={false}>
+        {open && (
+          <motion.div
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: "auto", opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            transition={{ duration: 0.18, ease: "easeOut" }}
+            className="overflow-hidden"
+          >
+            <div className="space-y-3 border-t border-border px-3 py-3">
+              {section.blocks.length > 0 ? (
+                section.blocks.map((block, index) => (
+                  <RichBlockView
+                    key={`${sectionKey}-block-${index}`}
+                    block={block}
+                    blockKey={`${sectionKey}-block-${index}`}
+                    checkedItems={checkedItems}
+                    copiedCodeKey={copiedCodeKey}
+                    onToggleItem={onToggleItem}
+                    onCopyCode={onCopyCode}
+                  />
+                ))
+              ) : (
+                <p className="text-foreground/60">Tidak ada detail tambahan.</p>
+              )}
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+}
+
+function RichAssistantContent({ content }: { content: string }) {
+  const blocks = useMemo(() => parseRichBlocks(content), [content]);
+  const { intro, sections } = useMemo(() => splitRichSections(blocks), [blocks]);
+  const [checkedItems, setCheckedItems] = useState<Record<string, boolean>>({});
+  const [copiedCodeKey, setCopiedCodeKey] = useState<string | null>(null);
+
+  const toggleItem = useCallback((key: string, fallback: boolean) => {
+    setCheckedItems((current) => ({ ...current, [key]: !(current[key] ?? fallback) }));
+  }, []);
+
+  const copyCode = useCallback((key: string, code: string) => {
+    if (!navigator.clipboard) return;
+    void navigator.clipboard.writeText(code).then(() => {
+      setCopiedCodeKey(key);
+      window.setTimeout(() => setCopiedCodeKey(null), 1400);
+    });
+  }, []);
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 6 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.22, ease: "easeOut" }}
+      className="space-y-3 whitespace-normal"
+    >
+      {intro.map((block, index) => (
+        <RichBlockView
+          key={`intro-${index}`}
+          block={block}
+          blockKey={`intro-${index}`}
+          checkedItems={checkedItems}
+          copiedCodeKey={copiedCodeKey}
+          onToggleItem={toggleItem}
+          onCopyCode={copyCode}
+        />
+      ))}
+      {sections.map((section, index) => (
+        <RichSectionBlock
+          key={`section-${index}`}
+          section={section}
+          sectionKey={`section-${index}`}
+          defaultOpen={index === 0}
+          checkedItems={checkedItems}
+          copiedCodeKey={copiedCodeKey}
+          onToggleItem={toggleItem}
+          onCopyCode={copyCode}
+        />
+      ))}
+    </motion.div>
+  );
+}
+
 function buildGoalFinalizationPayload(
   wizardMeta: WizardMeta,
   draft: ReturnType<typeof useGoalWizard>["draft"],
@@ -254,7 +624,11 @@ function AssistantMessageBlock({
 
   return (
     <>
-      {displayText && <CoachMessage>{displayText}</CoachMessage>}
+      {displayText && (
+        <CoachMessage>
+          <RichAssistantContent content={displayText} />
+        </CoachMessage>
+      )}
       {wizardPrefill && (
         <WizardIntentBubble
           prefill={wizardPrefill}
@@ -276,17 +650,7 @@ function CoachPageContent() {
   const [isLoading, setIsLoading] = useState(false);
   const [sessionId, setSessionId] = useState<string | null>(sessionParam);
   const [sessionTitle, setSessionTitle] = useState<string>("Coach");
-  const [quota, setQuota] = useState<{ remaining: number; max_messages: number; resetAt: string | null } | null>(() => {
-    if (typeof window !== "undefined") {
-      const cached = sessionStorage.getItem("coach_quota_cache");
-      if (cached) {
-        try {
-          return JSON.parse(cached);
-        } catch { /* ignore */ }
-      }
-    }
-    return null;
-  });
+  const [quota, setQuota] = useState<{ remaining: number; max_messages: number; resetAt: string | null } | null>(null);
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
   const [wizardMeta, setWizardMeta] = useState<WizardMeta>(DEFAULT_WIZARD_META);
   const wizard = useGoalWizard();
@@ -330,6 +694,17 @@ function CoachPageContent() {
       setMessages([]); // wipe stale messages from previous session
     }
   }, [sessionParam, sessionId]);
+
+  useEffect(() => {
+    const cached = sessionStorage.getItem("coach_quota_cache");
+    if (cached) {
+      try {
+        setQuota(JSON.parse(cached));
+      } catch {
+        sessionStorage.removeItem("coach_quota_cache");
+      }
+    }
+  }, []);
 
   useEffect(() => {
     if (initialized.current) return;

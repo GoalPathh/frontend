@@ -116,6 +116,7 @@ function mapApiGoal(row: ApiGoal): Goal {
 
 export const todayService = {
   async getToday(): Promise<TodayPlan> {
+    const tzOffset = new Date().getTimezoneOffset();
     const data = await apiRequest<{
       date: string;
       profile: TodayProfile;
@@ -124,7 +125,7 @@ export const todayService = {
       habits: TodayHabit[];
       focusQueue: TodayHabit[];
       motivation: TodayMotivation;
-    }>("/today");
+    }>(`/today?tzOffset=${tzOffset}`);
 
     return {
       date: data.date,

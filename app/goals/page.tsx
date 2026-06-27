@@ -1,92 +1,77 @@
-"use client";
-
-import { useCallback, useEffect, useMemo, useState } from "react";
-import { useRouter } from "next/navigation";
+import { cookies } from "next/headers";
+import { redirect } from "next/navigation";
 import {
   AlertTriangle,
-  ArrowRight,
   CalendarDays,
   CheckCircle2,
-  Loader2,
-  Plus,
   Sparkles,
   Target,
   Trophy,
   Zap,
 } from "lucide-react";
-import { GoalDashboard, GoalDashboardGoal, goalService } from "@/lib/goalService";
-import { GoalCard } from "@/components/goals/goal-card";
+import { getApiUrl } from "@/lib/api";
+import { GoalDashboard } from "@/lib/goalService";
 import { BottomNavigation } from "@/components/bottom-navigation";
 import { AppSidebar } from "@/components/app-sidebar";
 import { ThemeToggle } from "@/components/theme-toggle";
+import { GoalsInteractiveHeader, AddGoalButton, CreateFirstGoalButton } from "./client-interactive";
+import { ClientGoalCard } from "./client-goal-card";
 
-const emptyDashboard: GoalDashboard = {
-  summary: {
-    activeGoals: 0,
-    totalHabits: 0,
-    totalMinutes: 0,
-    averageProgress: 0,
-    atRiskGoals: 0,
-    completedMilestones: 0,
-  },
-  strongestGoal: null,
-  goals: [],
-};
+export default async function GoalsPage() {
+  const cookieStore = await cookies();
+  const token = cookieStore.get("goalpath_access_token")?.value;
 
-export default function GoalsPage() {
-  const router = useRouter();
-  const [dashboard, setDashboard] = useState<GoalDashboard>(emptyDashboard);
-  const [loading, setLoading] = useState(true);
-  const [busyGoalId, setBusyGoalId] = useState<string | null>(null);
-  const [loadError, setLoadError] = useState("");
+  if (!token) {
+    redirect("/login");
+  }
 
-  const loadDashboard = useCallback(async () => {
-    setLoadError("");
-    try {
-      const data = await goalService.getDashboard();
-      setDashboard(data);
-    } catch (error) {
-      setLoadError(error instanceof Error ? error.message : "Unable to load goals.");
-    } finally {
-      setLoading(false);
+  let dashboard: GoalDashboard | null = null;
+  let loadError = "";
+
+  try {
+    const res = await fetch(`${getApiUrl()}/goals/dashboard`, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
+      },
+      cache: "no-store",
+    });
+
+    if (!res.ok) {
+      if (res.status === 401) {
+        redirect("/login");
+      }
+      throw new Error(`Request failed with status ${res.status}`);
     }
-  }, []);
 
-  useEffect(() => {
-    void loadDashboard();
-  }, [loadDashboard]);
+    const payload = await res.json();
+    dashboard = payload.data as GoalDashboard;
+  } catch (error) {
+    loadError = error instanceof Error ? error.message : "Unable to load goals.";
+  }
 
-  const handleAddGoal = () => {
-    router.push("/goals/add");
+  // Ensure safe fallbacks if dashboard failed to load
+  const safeDashboard = dashboard ?? {
+    summary: {
+      activeGoals: 0,
+      totalHabits: 0,
+      totalMinutes: 0,
+      averageProgress: 0,
+      atRiskGoals: 0,
+      completedMilestones: 0,
+    },
+    strongestGoal: null,
+    goals: [],
   };
 
-  const handleDeleteGoal = async (goal: GoalDashboardGoal) => {
-    if (!window.confirm(`Delete "${goal.title}"? This goal and its habits will be removed.`)) {
-      return;
-    }
+  const stats = [
+    { label: "Active Goals", value: safeDashboard.summary.activeGoals, icon: Target, tone: "bg-primary/10 text-primary" },
+    { label: "Daily Habits", value: safeDashboard.summary.totalHabits, icon: CheckCircle2, tone: "bg-sky/10 text-sky" },
+    { label: "Focus Time", value: `${safeDashboard.summary.totalMinutes}m`, icon: Zap, tone: "bg-gold/20 text-[#8a6100]" },
+    { label: "Milestones Done", value: safeDashboard.summary.completedMilestones, icon: Trophy, tone: "bg-coral/12 text-coral" },
+  ];
 
-    setBusyGoalId(goal.id);
-    try {
-      await goalService.deleteGoalFromApi(goal.id);
-      await loadDashboard();
-    } catch (error) {
-      setLoadError(error instanceof Error ? error.message : "Unable to delete goal.");
-    } finally {
-      setBusyGoalId(null);
-    }
-  };
-
-  const stats = useMemo(
-    () => [
-      { label: "Active Goals", value: dashboard.summary.activeGoals, icon: Target, tone: "bg-primary/10 text-primary" },
-      { label: "Daily Habits", value: dashboard.summary.totalHabits, icon: CheckCircle2, tone: "bg-sky/10 text-sky" },
-      { label: "Focus Time", value: `${dashboard.summary.totalMinutes}m`, icon: Zap, tone: "bg-gold/20 text-[#8a6100]" },
-      { label: "Milestones Done", value: dashboard.summary.completedMilestones, icon: Trophy, tone: "bg-coral/12 text-coral" },
-    ],
-    [dashboard],
-  );
-
-  const strongestGoal = dashboard.strongestGoal;
+  const strongestGoal = safeDashboard.strongestGoal;
 
   return (
     <div className="min-h-screen bg-background pb-32 text-foreground lg:pl-[272px] lg:pb-10">
@@ -97,13 +82,7 @@ export default function GoalsPage() {
           <h1 className="text-2xl font-bold text-foreground">Goals</h1>
           <div className="flex items-center gap-3">
             <ThemeToggle className="size-10 bg-surface/80 dark:bg-surface/10" />
-            <button
-              onClick={handleAddGoal}
-              className="flex items-center gap-2 rounded-xl bg-primary px-4 py-2 font-semibold text-white transition-all hover:bg-primary/90 active:scale-95"
-            >
-              <Plus className="h-5 w-5" />
-              <span className="hidden sm:inline">Add Goal</span>
-            </button>
+            <GoalsInteractiveHeader />
           </div>
         </div>
       </header>
@@ -129,17 +108,11 @@ export default function GoalsPage() {
                 Build big goals from small daily wins.
               </h2>
               <p className="mt-4 max-w-2xl text-sm font-medium leading-7 text-foreground/60 sm:text-base">
-                Your goal workspace now reads directly from the backend: active goals, habit load, milestones, and risk signals all stay in one place.
+                Your goal workspace now reads directly from the backend via Server-Side Rendering: active goals, habit load, milestones, and risk signals all stay in one place.
               </p>
 
               <div className="mt-6 flex flex-col gap-3 sm:flex-row">
-                <button
-                  onClick={handleAddGoal}
-                  className="inline-flex items-center justify-center gap-2 rounded-full bg-primary px-5 py-3 text-sm font-extrabold text-white shadow-lg shadow-primary/20 transition hover:-translate-y-0.5 hover:bg-primary/90 active:translate-y-0"
-                >
-                  Add New Goal
-                  <ArrowRight className="h-4 w-4" />
-                </button>
+                <AddGoalButton />
                 <a
                   href="/today"
                   className="inline-flex items-center justify-center gap-2 rounded-full border border-border bg-background px-5 py-3 text-sm font-extrabold text-foreground transition hover:-translate-y-0.5 hover:border-primary hover:text-primary active:translate-y-0"
@@ -148,10 +121,10 @@ export default function GoalsPage() {
                 </a>
               </div>
 
-              {dashboard.summary.atRiskGoals > 0 && (
+              {safeDashboard.summary.atRiskGoals > 0 && (
                 <div className="mt-5 inline-flex items-start gap-2 rounded-2xl border border-coral/20 bg-coral/10 px-4 py-3 text-sm font-semibold text-coral">
                   <AlertTriangle className="mt-0.5 h-4 w-4 flex-shrink-0" />
-                  {dashboard.summary.atRiskGoals} goal{dashboard.summary.atRiskGoals > 1 ? "s are" : " is"} currently off pace and may need adjustment.
+                  {safeDashboard.summary.atRiskGoals} goal{safeDashboard.summary.atRiskGoals > 1 ? "s are" : " is"} currently off pace and may need adjustment.
                 </div>
               )}
             </div>
@@ -161,47 +134,39 @@ export default function GoalsPage() {
                 Top Momentum
               </p>
 
-              {loading ? (
-                <div className="flex h-44 items-center justify-center text-foreground/50">
-                  <Loader2 className="h-5 w-5 animate-spin" />
-                </div>
-              ) : (
-                <>
-                  <div className="mt-4 flex items-start justify-between gap-4">
-                    <div>
-                      <h3 className="text-xl font-extrabold text-foreground">
-                        {strongestGoal?.title ?? "No goal yet"}
-                      </h3>
-                      <p className="mt-2 text-sm font-semibold text-foreground/60">
-                        {strongestGoal
-                          ? `${strongestGoal.habits.length} habits • ${strongestGoal.completedMilestoneCount}/${strongestGoal.milestoneCount} milestones completed`
-                          : "Create your first goal to start tracking."}
-                      </p>
-                    </div>
-                    <div className="flex h-20 w-20 shrink-0 items-center justify-center rounded-full border-[10px] border-primary/20 bg-surface text-lg font-extrabold text-primary shadow-card">
-                      {strongestGoal?.progress ?? 0}%
-                    </div>
-                  </div>
-
-                  <div className="mt-5 h-2 overflow-hidden rounded-full bg-muted">
-                    <div
-                      className="h-full rounded-full bg-gradient-to-r from-primary via-sky to-gold"
-                      style={{ width: `${strongestGoal?.progress ?? 0}%` }}
-                    />
-                  </div>
-
-                  <div className="mt-4 flex items-center gap-2 text-xs font-bold text-foreground/55">
-                    <CalendarDays className="h-4 w-4 text-primary" />
+              <div className="mt-4 flex items-start justify-between gap-4">
+                <div>
+                  <h3 className="text-xl font-extrabold text-foreground">
+                    {strongestGoal?.title ?? "No goal yet"}
+                  </h3>
+                  <p className="mt-2 text-sm font-semibold text-foreground/60">
                     {strongestGoal
-                      ? `Target ${new Date(strongestGoal.targetDate).toLocaleDateString("en-US", {
-                          month: "short",
-                          day: "numeric",
-                          year: "numeric",
-                        })}`
-                      : "No active target yet"}
-                  </div>
-                </>
-              )}
+                      ? `${strongestGoal.habits.length} habits • ${strongestGoal.completedMilestoneCount}/${strongestGoal.milestoneCount} milestones completed`
+                      : "Create your first goal to start tracking."}
+                  </p>
+                </div>
+                <div className="flex h-20 w-20 shrink-0 items-center justify-center rounded-full border-[10px] border-primary/20 bg-surface text-lg font-extrabold text-primary shadow-card">
+                  {strongestGoal?.progress ?? 0}%
+                </div>
+              </div>
+
+              <div className="mt-5 h-2 overflow-hidden rounded-full bg-muted">
+                <div
+                  className="h-full rounded-full bg-gradient-to-r from-primary via-sky to-gold"
+                  style={{ width: `${strongestGoal?.progress ?? 0}%` }}
+                />
+              </div>
+
+              <div className="mt-4 flex items-center gap-2 text-xs font-bold text-foreground/55">
+                <CalendarDays className="h-4 w-4 text-primary" />
+                {strongestGoal
+                  ? `Target ${new Date(strongestGoal.targetDate).toLocaleDateString("en-US", {
+                      month: "short",
+                      day: "numeric",
+                      year: "numeric",
+                    })}`
+                  : "No active target yet"}
+              </div>
             </div>
           </div>
         </section>
@@ -212,24 +177,15 @@ export default function GoalsPage() {
               <div className={`mb-5 flex h-12 w-12 items-center justify-center rounded-[14px] ${tone}`}>
                 <Icon className="h-5 w-5" />
               </div>
-              <p className="text-[10px] font-extrabold uppercase tracking-[0.22em] text-foreground/50">{label}</p>
+              <p className="text-[10px] font-extrabold uppercase tracking-[0.2em] text-foreground/50">{label}</p>
               <p className="mt-2 text-3xl font-extrabold text-foreground">
-                {loading ? "..." : value}
+                {value}
               </p>
             </article>
           ))}
         </section>
 
-        {loading ? (
-          <section className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">
-            {Array.from({ length: 3 }).map((_, index) => (
-              <div
-                key={index}
-                className="h-[320px] animate-pulse rounded-[20px] border border-border bg-surface"
-              />
-            ))}
-          </section>
-        ) : dashboard.goals.length === 0 ? (
+        {!dashboard || dashboard.goals.length === 0 ? (
           <section className="flex flex-col items-center justify-center rounded-[24px] border border-dashed border-primary/30 bg-surface p-10 text-center shadow-card">
             <div className="mb-5 flex h-16 w-16 items-center justify-center rounded-full bg-primary/10">
               <Target className="h-8 w-8 text-primary" />
@@ -238,12 +194,7 @@ export default function GoalsPage() {
             <p className="mt-3 max-w-md text-sm leading-7 text-foreground/60">
               Start with one goal. GoalPath will help you break it into small habits you can actually repeat.
             </p>
-            <button
-              onClick={handleAddGoal}
-              className="mt-6 rounded-full bg-primary px-6 py-3 text-sm font-extrabold text-white shadow-lg shadow-primary/20 transition hover:bg-primary/90"
-            >
-              Create Your First Goal
-            </button>
+            <CreateFirstGoalButton />
           </section>
         ) : (
           <section className="space-y-5">
@@ -254,15 +205,13 @@ export default function GoalsPage() {
               </div>
               <div className="flex items-center gap-2 rounded-full border border-border bg-surface px-4 py-2 text-sm font-bold text-foreground/60">
                 <CalendarDays className="h-4 w-4 text-primary" />
-                Synced with backend
+                Synced with backend SSR
               </div>
             </div>
 
             <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">
               {dashboard.goals.map((goal) => (
-                <div key={goal.id} className={busyGoalId === goal.id ? "opacity-60" : ""}>
-                  <GoalCard goal={goal} onDelete={() => void handleDeleteGoal(goal)} />
-                </div>
+                <ClientGoalCard key={goal.id} goal={goal} />
               ))}
             </div>
           </section>

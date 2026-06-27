@@ -8,7 +8,24 @@ export interface CoachSession {
   message_count?: number;
 }
 
+export interface CoachQuota {
+  max_messages: number;
+  used_messages: number;
+  remaining_messages: number;
+  reset_at: string | null;
+}
+
 export const coachSessionService = {
+  async getQuota(): Promise<CoachQuota | null> {
+    try {
+      const data = await apiRequest<{ data: CoachQuota } | CoachQuota>("/coach/quota");
+      return (data as any)?.data ?? (data as CoachQuota) ?? null;
+    } catch (e) {
+      console.error("[coachSessionService.getQuota] failed:", (e as Error).message);
+      return null;
+    }
+  },
+
   async list(): Promise<CoachSession[]> {
     try {
       const data = await apiRequest<MaybeApiData<CoachSession[]>>(

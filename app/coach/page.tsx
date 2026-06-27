@@ -14,6 +14,9 @@ import {
   Target,
   X,
   Loader2,
+  MessageSquarePlus,
+  Zap,
+  AlertCircle
 } from "lucide-react";
 import { UserAvatar } from "@/components/user-avatar";
 import { AppSidebar } from "@/components/app-sidebar";
@@ -31,6 +34,7 @@ import {
 } from "./wizard-bubbles";
 import { useGoalWizard } from "./use-goal-wizard";
 import { milestoneService } from "@/lib/milestoneService";
+import { coachSessionService } from "@/lib/coachSessionService";
 import { MilestoneFlow } from "./milestone-flow";
 import {
   GOAL_WIZARD_TAG,
@@ -272,6 +276,17 @@ function CoachPageContent() {
   const [isLoading, setIsLoading] = useState(false);
   const [sessionId, setSessionId] = useState<string | null>(sessionParam);
   const [sessionTitle, setSessionTitle] = useState<string>("Coach");
+  const [quota, setQuota] = useState<{ remaining: number; max_messages: number; resetAt: string | null } | null>(() => {
+    if (typeof window !== "undefined") {
+      const cached = sessionStorage.getItem("coach_quota_cache");
+      if (cached) {
+        try {
+          return JSON.parse(cached);
+        } catch { /* ignore */ }
+      }
+    }
+    return null;
+  });
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
   const [wizardMeta, setWizardMeta] = useState<WizardMeta>(DEFAULT_WIZARD_META);
   const wizard = useGoalWizard();
@@ -318,12 +333,22 @@ function CoachPageContent() {
 
   useEffect(() => {
     if (initialized.current) return;
-    if (!hasAuthSession()) {
-      router.replace("/login?next=/coach");
-      return;
-    }
+    
+    // Auth redirect is handled globally via API 401 interceptor
+    // or by backend redirecting unauthenticated requests
     if (sessionParam !== null && messages.length > 0) return; // already loaded a target
     initialized.current = true;
+
+    // FETCH QUOTA INDEPENDENTLY ON MOUNT
+    coachSessionService.getQuota()
+      .then(q => {
+        if (q) {
+          const quotaData = { remaining: q.remaining_messages, max_messages: q.max_messages, resetAt: q.reset_at };
+          setQuota(quotaData);
+          sessionStorage.setItem("coach_quota_cache", JSON.stringify(quotaData));
+        }
+      })
+      .catch(err => console.error("Failed to fetch quota:", err));
 
     async function loadOrCreateSession() {
       try {
@@ -362,7 +387,6 @@ function CoachPageContent() {
             url.searchParams.set("session", sid);
             window.history.replaceState(null, "", url.toString());
           }
-
           const history = await apiRequest<CoachMessageResponse[]>(`/coach/sessions/${sid}/messages`);
           setMessages(history.map(mapCoachMessage));
 
@@ -423,6 +447,15 @@ function CoachPageContent() {
           content: sanitizeAssistantContent(responseMsg.content),
         }
       ]);
+
+      // Refresh quota if it was a successful message
+      const q = await coachSessionService.getQuota();
+      if (q) {
+        const quotaData = { remaining: q.remaining_messages, max_messages: q.max_messages, resetAt: q.reset_at };
+        setQuota(quotaData);
+        sessionStorage.setItem("coach_quota_cache", JSON.stringify(quotaData));
+      }
+      
     } catch (err) {
       console.error("Failed to send message", err);
       setMessages((prev) => prev.filter(m => m.id !== newMsg.id));
@@ -675,6 +708,26 @@ function CoachPageContent() {
             </section>
 
             <footer className="shrink-0 border-t border-border bg-background/95 px-4 pb-[calc(6.5rem+env(safe-area-inset-bottom))] pt-3 backdrop-blur-xl sm:px-6 lg:pb-5">
+              
+              {/* Quota Badge Indicator */}
+              <div className="mb-2 flex justify-center">
+                {quota ? (
+                  <div className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-[10px] font-bold uppercase tracking-wider transition-colors ${quota.remaining <= 10 ? 'bg-coral/10 text-coral' : 'bg-primary/10 text-primary'}`}>
+                    {quota.remaining <= 10 ? <AlertCircle className="h-3.5 w-3.5" /> : <Zap className="h-3.5 w-3.5" />}
+                    <span>Sisa {quota.remaining}/{quota.max_messages} pesan</span>
+                    {quota.resetAt && (
+                      <span className="ml-1 opacity-80">
+                        (Reset: {new Date(quota.resetAt).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })})
+                      </span>
+                    )}
+                  </div>
+                ) : (
+                  <div className="inline-flex items-center gap-1.5 rounded-full bg-muted/50 px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-foreground/40">
+                    <Loader2 className="h-3.5 w-3.5 animate-spin" /> Memuat kuota...
+                  </div>
+                )}
+              </div>
+
               <div className="rounded-2xl border border-border bg-surface p-2 shadow-card focus-within:border-primary/40 focus-within:ring-4 focus-within:ring-primary/10">
                 <div className="flex items-center gap-1">
                   <button
@@ -688,9 +741,9 @@ function CoachPageContent() {
                     value={input}
                     onChange={(e) => setInput(e.target.value)}
                     onKeyDown={(e) => e.key === "Enter" && handleSendMessage()}
-                    placeholder="Tell me what's on your mind..."
-                    className="min-w-0 flex-1 bg-transparent px-2 py-2 text-sm font-medium text-foreground outline-none placeholder:text-foreground/35"
-                    disabled={isLoading}
+                    placeholder={quota && quota.remaining <= 0 ? "Batas chat tercapai. Tunggu waktu reset..." : "Tell me what's on your mind..."}
+                    className="min-w-0 flex-1 bg-transparent px-2 py-2 text-sm font-medium text-foreground outline-none placeholder:text-foreground/35 disabled:opacity-50"
+                    disabled={isLoading || (quota !== null && quota.remaining <= 0)}
                   />
                   <button
                     className="hidden size-10 shrink-0 items-center justify-center rounded-xl text-foreground/45 transition hover:bg-muted hover:text-primary sm:flex"
@@ -700,7 +753,7 @@ function CoachPageContent() {
                   </button>
                   <button
                     onClick={() => handleSendMessage()}
-                    disabled={isLoading || !input.trim()}
+                    disabled={isLoading || !input.trim() || (quota !== null && quota.remaining <= 0)}
                     className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-primary text-white shadow-md shadow-primary/20 transition hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-primary/40 active:scale-95 disabled:opacity-50"
                     aria-label="Send message"
                   >

@@ -12,7 +12,6 @@ import {
   Flame,
   Globe2,
   Loader2,
-  Menu,
   Mic,
   Moon,
   Sparkles,
@@ -145,9 +144,6 @@ export default function TodayPage() {
       <nav className="fixed top-0 z-40 w-full border-b border-border bg-background/80 px-6 py-3 backdrop-blur-xl dark:border-surface/10 dark:bg-background/80 md:px-10 lg:left-[272px] lg:w-[calc(100%-272px)]">
         <div className="mx-auto flex max-w-7xl items-center justify-between">
           <div className="flex items-center gap-4">
-            <a href="/me" className="text-primary duration-200 active:scale-95 lg:hidden" aria-label="Open profile">
-              <Menu className="h-6 w-6" />
-            </a>
             <h1 className="text-xl font-bold tracking-tight text-primary">Today</h1>
           </div>
           <div className="flex items-center gap-3">

@@ -649,6 +649,15 @@ function CoachPageContent() {
   const [isLoading, setIsLoading] = useState(false);
   const [sessionId, setSessionId] = useState<string | null>(sessionParam);
   const [sessionTitle, setSessionTitle] = useState<string>("Coach");
+  /**
+   * Bump this when the quota response shape changes so stale
+   * `sessionStorage` entries from before the bump are dropped on mount
+   * (they'll be missing `accessPercentage` and would render with empty
+   * values everywhere except `resetAt`).
+   */
+  const QUOTA_CACHE_KEY = "coach_quota_cache_v2";
+  const QUOTA_CACHE_LEGACY_KEYS = ["coach_quota_cache", "coach_quota_cache_v1"];
+
   const [quota, setQuota] = useState<
     | { remaining: number; max_messages: number; resetAt: string | null; accessPercentage: number }
     | null
@@ -698,12 +707,31 @@ function CoachPageContent() {
   }, [sessionParam, sessionId]);
 
   useEffect(() => {
-    const cached = sessionStorage.getItem("coach_quota_cache");
+    // Bump-driven cache invalidation: any legacy keys from before this
+    // schema are wiped so a Premium user can't be served a stale shape
+    // that renders "Sisa X/Y pesan · Akses undefined%" against the new UI.
+    for (const legacyKey of QUOTA_CACHE_LEGACY_KEYS) {
+      if (sessionStorage.getItem(legacyKey) !== null) {
+        sessionStorage.removeItem(legacyKey);
+      }
+    }
+    const cached = sessionStorage.getItem(QUOTA_CACHE_KEY);
     if (cached) {
       try {
-        setQuota(JSON.parse(cached));
+        const parsed = JSON.parse(cached);
+        // Defensive: only hydrate if the entry has all expected fields,
+        // otherwise drop it so we ask the API fresh.
+        if (
+          typeof parsed?.remaining === "number" &&
+          typeof parsed?.max_messages === "number" &&
+          typeof parsed?.accessPercentage === "number"
+        ) {
+          setQuota(parsed);
+        } else {
+          sessionStorage.removeItem(QUOTA_CACHE_KEY);
+        }
       } catch {
-        sessionStorage.removeItem("coach_quota_cache");
+        sessionStorage.removeItem(QUOTA_CACHE_KEY);
       }
     }
   }, []);
@@ -727,7 +755,7 @@ function CoachPageContent() {
             accessPercentage: q.access_percentage,
           };
           setQuota(quotaData);
-          sessionStorage.setItem("coach_quota_cache", JSON.stringify(quotaData));
+          sessionStorage.setItem(QUOTA_CACHE_KEY, JSON.stringify(quotaData));
         }
       })
       .catch(err => console.error("Failed to fetch quota:", err));
@@ -840,7 +868,7 @@ function CoachPageContent() {
           accessPercentage: q.access_percentage,
         };
         setQuota(quotaData);
-        sessionStorage.setItem("coach_quota_cache", JSON.stringify(quotaData));
+        sessionStorage.setItem(QUOTA_CACHE_KEY, JSON.stringify(quotaData));
       }
 
     } catch (err) {
@@ -1120,15 +1148,17 @@ function CoachPageContent() {
               
               {/* Quota Badge Indicator */}
               <div className="mb-2 flex justify-center">
-                {quota ? (
-                  <div className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-[10px] font-bold uppercase tracking-wider transition-colors ${quota.remaining <= 10 ? 'bg-coral/10 text-coral' : 'bg-primary/10 text-primary'}`}>
+                {quota && typeof quota.remaining === "number" && typeof quota.max_messages === "number" && typeof quota.accessPercentage === "number" ? (
+                  <div
+                    className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-[10px] font-bold uppercase tracking-wider transition-colors ${quota.remaining <= 10 ? 'bg-coral/10 text-coral' : 'bg-primary/10 text-primary'}`}
+                  >
                     {quota.remaining <= 10 ? <AlertCircle className="h-3.5 w-3.5" /> : <Zap className="h-3.5 w-3.5" />}
                     <span>
                       Sisa {quota.remaining}/{quota.max_messages} pesan
                       <span className="ml-1.5 opacity-80">· Akses {quota.accessPercentage}%</span>
                     </span>
                     {quota.resetAt && (
-                      <span className="ml-1 opacity-80">· Reset UTC {new Date(quota.resetAt).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })}</span>
+                      <span className="ml-1 opacity-80">· Reset 00:00 UTC besok</span>
                     )}
                   </div>
                 ) : (

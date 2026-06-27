@@ -45,46 +45,46 @@ const FEATURE_ROWS: Array<{
   {
     key: "unlimitedGoals",
     label: "Unlimited Goals & Habits",
-    description: "Buat sebanyak yang kamu mau — gak ada batasan jumlah goal atau habit per goal.",
+    description: "Create as many as you need, with no cap on goals or habits per goal.",
     icon: <Target className="h-4 w-4" />,
   },
   {
     key: "aiAdaptiveHabit",
     label: "AI Adaptive Habit",
-    description: "AI coach otomatis menyesuaikan kesulitan habit berdasarkan pola energi kamu.",
+    description: "Your AI coach adjusts habit difficulty based on your energy patterns.",
     icon: <Sparkles className="h-4 w-4" />,
   },
   {
     key: "futureSelfSimulation",
     label: "Future Self Simulation",
-    description: "Simulasi 7–180 hari ke depan untuk memprediksi streak, milestone, dan persona shift.",
+    description: "Preview the next 7-180 days to forecast streaks, milestones, and persona shifts.",
     icon: <TrendingUp className="h-4 w-4" />,
   },
   {
     key: "fullAiCoachAccess",
     label: "Full AI Coach Access",
-    description: "Chat coach tanpa batas harian — brainstorming goal kapan pun kamu butuh.",
+    description: "Chat with your coach without a daily cap whenever you need goal support.",
     icon: <Zap className="h-4 w-4" />,
   },
   {
     key: "advancedInsight",
     label: "Advanced Insight",
-    description: "Heatmap, time-of-day analysis, dan risk-flagging yang lebih tajam dari data biasa.",
+    description: "Heatmaps, time-of-day analysis, and sharper risk flags from your progress data.",
     icon: <Shield className="h-4 w-4" />,
   },
   {
     key: "prioritySupport",
     label: "Priority Support",
-    description: "Respons lebih cepat untuk pertanyaan & bug report lewat channel khusus Premium.",
+    description: "Faster responses for questions and bug reports through a Premium support channel.",
     icon: <UserCheck className="h-4 w-4" />,
   },
 ];
 
 const FREE_HIGHLIGHTS: Array<{ label: string; value: string; icon: React.ReactNode }> = [
-  { label: "Goals", value: "Hingga 3 goal aktif", icon: <Target className="h-4 w-4" /> },
-  { label: "Habits per goal", value: "Hingga 5 habit", icon: <Sparkles className="h-4 w-4" /> },
-  { label: "Coach messages", value: "10 pesan / hari", icon: <Zap className="h-4 w-4" /> },
-  { label: "Insight dasar", value: "✓", icon: <Shield className="h-4 w-4" /> },
+  { label: "Goals", value: "Up to 3 active goals", icon: <Target className="h-4 w-4" /> },
+  { label: "Habits per goal", value: "Up to 5 habits", icon: <Sparkles className="h-4 w-4" /> },
+  { label: "Coach messages", value: "10 messages / day", icon: <Zap className="h-4 w-4" /> },
+  { label: "Basic insights", value: "Included", icon: <Shield className="h-4 w-4" /> },
 ];
 
 export default function PricingPage() {
@@ -146,7 +146,7 @@ export default function PricingPage() {
       if (!SNAP_CLIENT_KEY) {
         setCheckoutStatus("error");
         setErrorMessage(
-          "Midtrans client key belum di-set di frontend (NEXT_PUBLIC_MIDTRANS_CLIENT_KEY). Tambahkan variable itu dulu di .env frontend untuk mengaktifkan Snap.",
+          "The Midtrans client key is not set in the frontend (NEXT_PUBLIC_MIDTRANS_CLIENT_KEY). Add it to the frontend .env file to enable Snap.",
         );
         return;
       }
@@ -163,7 +163,7 @@ export default function PricingPage() {
         },
         onError: () => {
           setCheckoutStatus("error");
-          setErrorMessage("Pembayaran gagal diproses oleh Midtrans. Coba lagi atau ganti metode pembayaran.");
+          setErrorMessage("Midtrans could not process the payment. Try again or use a different payment method.");
         },
         onClose: () => {
           setCheckoutStatus("idle");
@@ -177,12 +177,12 @@ export default function PricingPage() {
         return;
       }
       if (isSubscriptionGateError(error)) {
-        setErrorMessage("Kamu sudah punya langganan aktif. Refresh halaman untuk melihat status terbaru.");
+        setErrorMessage("You already have an active subscription. Refresh the page to see the latest status.");
         void subscriptionService.refresh().then(setSubscription).catch(() => undefined);
       } else if (error instanceof Error) {
         setErrorMessage(error.message);
       } else {
-        setErrorMessage("Terjadi kesalahan tak terduga saat memulai checkout.");
+        setErrorMessage("Something went wrong while starting checkout.");
       }
     }
   }, [router]);
@@ -196,7 +196,7 @@ export default function PricingPage() {
           <div>
             <p className="text-sm font-semibold uppercase tracking-[0.28em] text-primary">Pricing</p>
             <h1 className="mt-3 text-3xl font-bold tracking-tight text-foreground md:text-4xl">
-              Pilih plan yang cocok buat kamu
+              Choose the plan that fits your goals
             </h1>
           </div>
           <ThemeToggle className="shrink-0 bg-surface/80 dark:bg-surface/10" />
@@ -204,7 +204,7 @@ export default function PricingPage() {
 
         {hydrated && isAuthenticated && isPremium && (
           <div className="mb-6 rounded-[20px] border border-primary/30 bg-primary/10 px-4 py-3 text-sm font-semibold text-primary">
-            Kamu sudah punya plan {describeTierLabel("premium")} aktif. Terima kasih sudah mendukung GoalPath! 🎉
+            You already have an active {describeTierLabel("premium")} plan. Thanks for supporting GoalPath.
           </div>
         )}
 
@@ -223,13 +223,13 @@ export default function PricingPage() {
               </div>
               <div>
                 <p className="text-sm font-semibold uppercase tracking-[0.22em] text-foreground/60">Free</p>
-                <h3 className="mt-1 text-xl font-bold text-foreground">Mulai tanpa biaya</h3>
+                <h3 className="mt-1 text-xl font-bold text-foreground">Start for free</h3>
               </div>
             </div>
 
             <div className="mt-6 flex items-baseline gap-2">
               <span className="text-4xl font-bold text-foreground">Rp 0</span>
-              <span className="text-sm font-semibold text-foreground/55">selamanya</span>
+              <span className="text-sm font-semibold text-foreground/55">forever</span>
             </div>
 
             <ul className="mt-5 space-y-3 text-sm text-foreground">
@@ -245,7 +245,7 @@ export default function PricingPage() {
             </ul>
 
             <div className="mt-6 rounded-[18px] border border-dashed border-border bg-background p-4 text-xs text-foreground/55">
-              Cocok buat kamu yang baru mulai eksplor GoalPath. Tidak ada kartu kredit, tidak ada waktu percobaan.
+              Best for exploring GoalPath for the first time. No credit card, no trial timer.
             </div>
 
             <button
@@ -254,7 +254,7 @@ export default function PricingPage() {
               className="mt-6 inline-flex cursor-not-allowed items-center justify-center gap-2 rounded-2xl border border-border bg-background px-5 py-3 text-sm font-bold text-foreground/55"
             >
               <Lock className="h-4 w-4" />
-              {isPremium ? "Tetap di akun ini" : "Plan kamu saat ini"}
+              {isPremium ? "Keep this account" : "Your current plan"}
             </button>
           </div>
 
@@ -271,16 +271,16 @@ export default function PricingPage() {
               </div>
               <div>
                 <p className="text-sm font-semibold uppercase tracking-[0.22em] text-primary">Premium</p>
-                <h3 className="mt-1 text-xl font-bold text-foreground">Unlock semuanya</h3>
+                <h3 className="mt-1 text-xl font-bold text-foreground">Unlock everything</h3>
               </div>
             </div>
 
             <div className="mt-6 flex items-baseline gap-2">
               <span className="text-4xl font-bold text-foreground">{formattedPrice}</span>
-              <span className="text-sm font-semibold text-foreground/55">/ bulan</span>
+              <span className="text-sm font-semibold text-foreground/55">/ month</span>
             </div>
             <p className="mt-1 text-xs font-semibold uppercase tracking-[0.18em] text-foreground/55">
-              Pembayaran via Midtrans • Sandbox mode
+              Payment via Midtrans - Sandbox mode
             </p>
 
             <ul className="mt-5 space-y-3 text-sm text-foreground">
@@ -319,39 +319,39 @@ export default function PricingPage() {
               {checkoutStatus === "loading" ? (
                 <>
                   <Loader2 className="h-4 w-4 animate-spin" />
-                  Menyiapkan pembayaran...
+                  Preparing payment...
                 </>
               ) : checkoutStatus === "snap" ? (
                 <>
                   <Wallet className="h-4 w-4" />
-                  Selesaikan di popup Midtrans
+                  Complete payment in the Midtrans popup
                 </>
               ) : isPremium ? (
                 <>
                   <Check className="h-4 w-4" />
-                  Sudah Premium
+                  Already Premium
                 </>
               ) : (
                 <>
-                  Subscribe sekarang
+                  Subscribe now
                   <ArrowRight className="h-4 w-4" />
                 </>
               )}
             </button>
 
             <p className="mt-3 text-center text-xs text-foreground/55">
-              Pembayaran diproses lewat <strong>Midtrans Snap (sandbox)</strong>. Tidak ada tagihan nyata di mode dev.
+              Payments are processed through <strong>Midtrans Snap (sandbox)</strong>. No real charges are made in dev mode.
             </p>
           </div>
         </div>
 
         {/* FAQ / confidence bar */}
         <div className="mt-10 grid gap-4 sm:grid-cols-3">
-          <ConfidenceCard title="Batalkan kapan saja" body="Status Premium berhenti otomatis di akhir periode. Tidak ada kontrak panjang." />
-          <ConfidenceCard title="Data tetap aman" body="Subscription row & payment log tersimpan di Supabase dengan RLS aktif." />
+          <ConfidenceCard title="Cancel anytime" body="Premium access stops automatically at the end of the period. No long-term contract." />
+          <ConfidenceCard title="Your data stays safe" body="Subscription rows and payment logs are stored in Supabase with RLS enabled." />
           <ConfidenceCard
-            title="Transparansi harga"
-            body={`${formattedPrice} sudah termasuk akses ke semua fitur Premium di atas.`}
+            title="Transparent pricing"
+            body={`${formattedPrice} includes access to every Premium feature above.`}
           />
         </div>
       </div>

@@ -14,6 +14,10 @@ export function getApiUrl() {
   return API_URL;
 }
 
+export function hasAuthSession() {
+  return typeof window !== "undefined";
+}
+
 // Since we use httpOnly cookies, the browser automatically sends them to the backend 
 // IF the frontend and backend are on the same domain.
 // However, since they are on different ports/domains (3000 vs 4000), 

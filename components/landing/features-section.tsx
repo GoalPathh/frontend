@@ -76,8 +76,8 @@ function AIPlanDemo() {
 
 function ChatDemo() {
   return (
-    <div className="flex w-full max-w-md flex-col gap-3 rounded-[2rem] border border-primary/20 bg-primary p-6 shadow-2xl relative overflow-hidden">
-      <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,rgba(255,255,255,0.1),transparent_50%)] pointer-events-none" />
+    <div className="flex w-full max-w-md flex-col gap-3 rounded-[2rem] border border-border bg-surface p-6 shadow-2xl relative overflow-hidden">
+      <div className="absolute inset-0 bg-gradient-to-br from-primary/5 to-transparent pointer-events-none" />
       {chatLines.map((m, i) => (
         <motion.div
           key={i}
@@ -87,16 +87,16 @@ function ChatDemo() {
           className={
             "relative max-w-[85%] rounded-[1.25rem] px-5 py-3.5 text-[14px] font-medium leading-relaxed shadow-sm z-10 " +
             (m.side === "user"
-              ? "ml-auto rounded-br-sm bg-surface text-primary"
-              : "rounded-bl-sm bg-primary-deep text-surface border border-white/10")
+              ? "ml-auto rounded-br-sm border border-primary/20 bg-primary/10 text-primary"
+              : "rounded-bl-sm border border-border bg-background text-foreground")
           }
         >
           <div className="mb-1.5 flex items-center gap-1.5 opacity-60">
-            <span className={cn("text-[9px] font-bold uppercase tracking-[0.2em]", m.side === "user" ? "text-primary" : "text-surface")}>
+            <span className={cn("text-[9px] font-bold uppercase tracking-[0.2em]", m.side === "user" ? "text-primary" : "text-muted-foreground")}>
               {m.side === "user" ? "You" : "Coach"}
             </span>
           </div>
-          <p className={m.side === "user" ? "text-foreground" : "text-surface/90"}>{m.body}</p>
+          <p className="text-foreground">{m.body}</p>
         </motion.div>
       ))}
     </div>
@@ -105,13 +105,13 @@ function ChatDemo() {
 
 function AdaptiveDemo() {
   return (
-    <div className="grid w-full max-w-sm gap-5 rounded-[2rem] bg-primary p-8 text-foreground shadow-2xl relative overflow-hidden">
-       <div className="absolute inset-0 bg-white/10 mix-blend-overlay pointer-events-none" />
+    <div className="grid w-full max-w-sm gap-5 rounded-[2rem] border border-border bg-surface p-8 text-foreground shadow-2xl relative overflow-hidden">
+      <div className="absolute inset-0 bg-gradient-to-br from-primary/5 to-transparent pointer-events-none" />
       <header className="flex items-center justify-between relative z-10">
-        <span className="eyebrow text-[10px] font-bold uppercase tracking-eyebrow opacity-80">
+        <span className="eyebrow text-[10px] font-bold uppercase tracking-eyebrow text-primary">
           Today&apos;s intensity
         </span>
-        <span className="rounded-full border border-foreground/20 px-3 py-1 text-[9px] font-bold uppercase tracking-[0.2em]">
+        <span className="rounded-full border border-primary/20 bg-primary/10 px-3 py-1 text-[9px] font-bold uppercase tracking-[0.2em] text-primary">
           Light mode
         </span>
       </header>
@@ -119,18 +119,18 @@ function AdaptiveDemo() {
         &ldquo;The habit gets easier when energy is low. The goal stays the same.&rdquo;
       </p>
       <div className="mt-4 relative z-10">
-        <div className="h-2.5 overflow-hidden rounded-full bg-foreground/10">
+        <div className="h-2.5 overflow-hidden rounded-full bg-muted">
           <motion.div 
             initial={{ width: 0 }}
             animate={{ width: "33%" }}
             transition={{ duration: 1.2, delay: 0.2, ease: [0.32, 0.72, 0, 1] }}
-            className="h-full rounded-full bg-foreground" 
+            className="h-full rounded-full bg-primary" 
           />
         </div>
-        <ul className="mt-3 grid grid-cols-3 gap-2 numerals text-[11px] font-bold text-foreground/50 text-center">
-          <li className="rounded-xl bg-foreground/5 px-2 py-2.5">Easy</li>
-          <li className="rounded-xl bg-surface px-2 py-2.5 text-foreground shadow-sm">Light</li>
-          <li className="rounded-xl bg-foreground/5 px-2 py-2.5">Full</li>
+        <ul className="mt-3 grid grid-cols-3 gap-2 numerals text-center text-[11px] font-bold text-muted-foreground">
+          <li className="rounded-xl bg-background px-2 py-2.5">Easy</li>
+          <li className="rounded-xl border border-primary/20 bg-primary/10 px-2 py-2.5 text-primary shadow-sm">Light</li>
+          <li className="rounded-xl bg-background px-2 py-2.5">Full</li>
         </ul>
       </div>
     </div>
@@ -316,11 +316,7 @@ export function FeaturesSection() {
             {/* Ambient Background Glow based on active item */}
             <div className="absolute inset-0 opacity-30 transition-colors duration-1000" 
               style={{
-                background: activeFeature === 'coach' 
-                  ? 'radial-gradient(circle at center, rgb(var(--primary)) 0%, transparent 70%)'
-                  : activeFeature === 'adaptive'
-                  ? 'radial-gradient(circle at center, rgb(var(--accent)) 0%, transparent 70%)'
-                  : 'radial-gradient(circle at center, rgb(var(--primary-soft)) 0%, transparent 70%)'
+                background: 'radial-gradient(circle at center, rgb(var(--primary-soft)) 0%, transparent 70%)'
               }}
             />
             

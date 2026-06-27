@@ -41,6 +41,9 @@ export function TodayInteractiveClient({ planDate, habit }: { planDate?: string,
       }
     };
 
+    const XP_PER_HABIT_COMPLETION = 30;
+    const xpDelta = habit.completed ? -XP_PER_HABIT_COMPLETION : XP_PER_HABIT_COMPLETION;
+
     return (
       <button
         type="button"
@@ -63,9 +66,32 @@ export function TodayInteractiveClient({ planDate, habit }: { planDate?: string,
             </div>
           </div>
           <div className="flex flex-shrink-0 items-center gap-2 text-foreground/60">
+            <span
+              className={`hidden rounded-full px-2.5 py-1 text-xs font-extrabold sm:inline-flex ${
+                habit.completed
+                  ? "bg-coral/10 text-coral"
+                  : "bg-primary/10 text-primary"
+              }`}
+            >
+              {xpDelta > 0 ? "+" : ""}
+              {xpDelta} XP
+            </span>
             <span className="hidden rounded-full bg-primary/10 px-2.5 py-1 text-xs font-extrabold text-primary sm:inline-flex">{habit.duration} min</span>
             <Icon className="h-5 w-5" />
           </div>
+        </div>
+        <div className="mt-3 flex items-center gap-2 sm:hidden">
+          <span
+            className={`rounded-full px-2.5 py-1 text-xs font-extrabold ${
+              habit.completed
+                ? "bg-coral/10 text-coral"
+                : "bg-primary/10 text-primary"
+            }`}
+          >
+            {xpDelta > 0 ? "+" : ""}
+            {xpDelta} XP
+          </span>
+          <span className="rounded-full bg-primary/10 px-2.5 py-1 text-xs font-extrabold text-primary">{habit.duration} min</span>
         </div>
       </button>
     );

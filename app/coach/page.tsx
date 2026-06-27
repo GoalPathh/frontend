@@ -10,9 +10,7 @@ import {
   Cpu,
   Flame,
   Menu,
-  Mic,
   MoreHorizontal,
-  Paperclip,
   Send,
   Sparkles,
   Target,
@@ -1128,12 +1126,6 @@ function CoachPageContent() {
 
               <div className="rounded-2xl border border-border bg-surface p-2 shadow-card focus-within:border-primary/40 focus-within:ring-4 focus-within:ring-primary/10">
                 <div className="flex items-center gap-1">
-                  <button
-                    className="flex size-10 shrink-0 items-center justify-center rounded-xl text-foreground/45 transition hover:bg-muted hover:text-primary"
-                    aria-label="Use microphone"
-                  >
-                    <Mic className="h-5 w-5" />
-                  </button>
                   <input
                     type="text"
                     value={input}
@@ -1143,12 +1135,6 @@ function CoachPageContent() {
                     className="min-w-0 flex-1 bg-transparent px-2 py-2 text-sm font-medium text-foreground outline-none placeholder:text-foreground/35 disabled:opacity-50"
                     disabled={isLoading || (quota !== null && quota.remaining <= 0)}
                   />
-                  <button
-                    className="hidden size-10 shrink-0 items-center justify-center rounded-xl text-foreground/45 transition hover:bg-muted hover:text-primary sm:flex"
-                    aria-label="Attach a file"
-                  >
-                    <Paperclip className="h-5 w-5" />
-                  </button>
                   <button
                     onClick={() => handleSendMessage()}
                     disabled={isLoading || !input.trim() || (quota !== null && quota.remaining <= 0)}

@@ -651,7 +651,10 @@ function CoachPageContent() {
   const [isLoading, setIsLoading] = useState(false);
   const [sessionId, setSessionId] = useState<string | null>(sessionParam);
   const [sessionTitle, setSessionTitle] = useState<string>("Coach");
-  const [quota, setQuota] = useState<{ remaining: number; max_messages: number; resetAt: string | null } | null>(null);
+  const [quota, setQuota] = useState<
+    | { remaining: number; max_messages: number; resetAt: string | null; accessPercentage: number }
+    | null
+  >(null);
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
   const [wizardMeta, setWizardMeta] = useState<WizardMeta>(DEFAULT_WIZARD_META);
   const wizard = useGoalWizard();
@@ -719,7 +722,12 @@ function CoachPageContent() {
     coachSessionService.getQuota()
       .then(q => {
         if (q) {
-          const quotaData = { remaining: q.remaining_messages, max_messages: q.max_messages, resetAt: q.reset_at };
+          const quotaData = {
+            remaining: q.remaining_messages,
+            max_messages: q.max_messages,
+            resetAt: q.reset_at,
+            accessPercentage: q.access_percentage,
+          };
           setQuota(quotaData);
           sessionStorage.setItem("coach_quota_cache", JSON.stringify(quotaData));
         }
@@ -827,11 +835,16 @@ function CoachPageContent() {
       // Refresh quota if it was a successful message
       const q = await coachSessionService.getQuota();
       if (q) {
-        const quotaData = { remaining: q.remaining_messages, max_messages: q.max_messages, resetAt: q.reset_at };
+        const quotaData = {
+          remaining: q.remaining_messages,
+          max_messages: q.max_messages,
+          resetAt: q.reset_at,
+          accessPercentage: q.access_percentage,
+        };
         setQuota(quotaData);
         sessionStorage.setItem("coach_quota_cache", JSON.stringify(quotaData));
       }
-      
+
     } catch (err) {
       setMessages((prev) => prev.filter(m => m.id !== newMsg.id));
       if (isSubscriptionGateError(err)) {
@@ -1112,11 +1125,12 @@ function CoachPageContent() {
                 {quota ? (
                   <div className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-[10px] font-bold uppercase tracking-wider transition-colors ${quota.remaining <= 10 ? 'bg-coral/10 text-coral' : 'bg-primary/10 text-primary'}`}>
                     {quota.remaining <= 10 ? <AlertCircle className="h-3.5 w-3.5" /> : <Zap className="h-3.5 w-3.5" />}
-                    <span>Sisa {quota.remaining}/{quota.max_messages} pesan</span>
+                    <span>
+                      Sisa {quota.remaining}/{quota.max_messages} pesan
+                      <span className="ml-1.5 opacity-80">· Akses {quota.accessPercentage}%</span>
+                    </span>
                     {quota.resetAt && (
-                      <span className="ml-1 opacity-80">
-                        (Reset: {new Date(quota.resetAt).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })})
-                      </span>
+                      <span className="ml-1 opacity-80">· Reset UTC {new Date(quota.resetAt).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })}</span>
                     )}
                   </div>
                 ) : (

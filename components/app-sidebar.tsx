@@ -6,6 +6,7 @@ import {
   BarChart3,
   CheckCircle2,
   Cpu,
+  Crown,
   Loader2,
   MessageSquarePlus,
   Pencil,
@@ -25,7 +26,7 @@ import { UserAvatar } from "@/components/user-avatar";
 import { userService } from "@/lib/userService";
 import type { UserProfile } from "@/lib/types";
 
-export type AppSection = "today" | "goals" | "progress" | "coach" | "me";
+export type AppSection = "today" | "goals" | "progress" | "coach" | "me" | "pricing";
 
 type AppSidebarProps = {
   active: AppSection;
@@ -39,6 +40,7 @@ const mainMenu = [
   { key: "goals", label: "Goals", href: "/goals", Icon: Target },
   { key: "progress", label: "Progress", href: "/progress", Icon: BarChart3 },
   { key: "coach", label: "Coach", href: "/coach", Icon: UserCog },
+  { key: "pricing", label: "Pricing", href: "/pricing", Icon: Crown },
 ] as const;
 
 export function AppSidebar({

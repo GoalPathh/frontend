@@ -234,8 +234,27 @@ export interface SubscriptionLimits {
   maxGoals: number | null;
   /** max habits per single goal; null = unlimited */
   maxHabitsPerGoal: number | null;
-  /** max user->coach messages per user per UTC day; null = unlimited */
-  maxCoachMessagesPerDay: number | null;
+  /**
+   * max user->coach messages per UTC day (Fair Use Policy).
+   * Both tiers now have a CONCRETE cap — no longer `null`-able.
+   * Premium is no longer "unlimited"; it's 50/day by default.
+   */
+  maxCoachMessagesPerDay: number;
+  /** the percentage of the coach baseline this tier enjoys (10 | 100) */
+  coachAccessPercentage: number;
+}
+
+/** Mirror of the `coach/getQuota` API response (daily-utc window). */
+export interface CoachQuota {
+  max_messages: number;
+  used_messages: number;
+  remaining_messages: number;
+  /** how much of the baseline this tier represents (10 | 100) — for UI badge */
+  access_percentage: number;
+  /** ISO timestamp marking the current daily window's end (UTC 23:59:59.999) */
+  reset_at: string | null;
+  /** discriminator so the UI knows it's a daily cap, not the old 3-hour one */
+  window: "daily-utc";
 }
 
 export interface PlanFeatures {

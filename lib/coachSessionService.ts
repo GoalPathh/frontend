@@ -12,7 +12,12 @@ export interface CoachQuota {
   max_messages: number;
   used_messages: number;
   remaining_messages: number;
+  /** how much of the baseline this tier represents (10 | 100) — for UI badge */
+  access_percentage: number;
+  /** ISO timestamp marking the current daily window's end (UTC 23:59:59.999) */
   reset_at: string | null;
+  /** discriminator so the UI knows it's a daily cap, not the old 3-hour one */
+  window: "daily-utc";
 }
 
 export const coachSessionService = {

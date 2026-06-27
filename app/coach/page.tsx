@@ -195,11 +195,28 @@ function getSessionTitle(
   return sessionDetail?.data?.title ?? sessionDetail?.title ?? fallbackTitle;
 }
 
+function formatWizardUserContent(content: string): string {
+  if (!content.startsWith(GOAL_WIZARD_TAG)) return content;
+
+  try {
+    const payload = JSON.parse(content.slice(GOAL_WIZARD_TAG.length).trim()) as Partial<GoalFinalizationPayload>;
+    const title = typeof payload.title === "string" && payload.title.trim()
+      ? payload.title.trim()
+      : "goal baru";
+    return `Saya konfirmasi goal: ${title}`;
+  } catch {
+    return "Saya konfirmasi goal baru";
+  }
+}
+
 function mapCoachMessage(message: CoachMessageResponse): Message {
+  const role = message.role ?? "assistant";
+  const content = message.content ?? "";
+
   return {
     id: message.id ?? createMessageId("message"),
-    role: message.role ?? "assistant",
-    content: message.content ?? "",
+    role,
+    content: role === "user" ? formatWizardUserContent(content) : content,
   };
 }
 

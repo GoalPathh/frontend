@@ -1,11 +1,12 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { useRouter } from "next/navigation";
+import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import {
   Bell,
   CalendarCheck2,
   ChevronRight,
+  Crown,
   ImageUp,
   KeyRound,
   Loader2,
@@ -31,9 +32,11 @@ import { AccountCard } from "@/components/me/account-card";
 import { NotificationSettings } from "@/components/me/notification-settings";
 import { userService, type UserOverview } from "@/lib/userService";
 import { authService } from "@/lib/authService";
+import { subscriptionService, describeTierLabel } from "@/lib/subscriptionService";
 import type {
   AppearancePreference,
   NotificationPreference,
+  SubscriptionResponse,
   UserProfile,
   UserStats,
 } from "@/lib/types";
@@ -41,13 +44,45 @@ import type {
 type SaveTone = "success" | "error";
 
 export default function MePage() {
+  /**
+   * `useSearchParams` is required for upgrade status banners, but Next.js 15
+   * App Router mandates that any client component consuming search params be
+   * wrapped in a Suspense boundary so pre-rendering doesn't bail. The actual
+   * page state lives in MePageContent below.
+   */
+  return (
+    <Suspense fallback={<MePageLoadingShell />}>
+      <MePageContent />
+    </Suspense>
+  );
+}
+
+function MePageLoadingShell() {
+  return (
+    <div className="min-h-screen bg-background pb-32 text-foreground lg:pl-[272px] lg:pb-10">
+      <AppSidebar active="me" className="fixed inset-y-0 left-0 z-50 hidden lg:flex" />
+      <div className="mx-auto max-w-7xl px-5 py-8 md:px-10">
+        <div className="h-[176px] animate-pulse rounded-[28px] border border-border bg-surface" />
+        <div className="mt-8 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+          {Array.from({ length: 4 }).map((_, index) => (
+            <div key={index} className="h-28 animate-pulse rounded-[24px] border border-border bg-surface" />
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function MePageContent() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const settingsRef = useRef<HTMLDivElement | null>(null);
   const avatarInputRef = useRef<HTMLInputElement | null>(null);
 
   const [overview, setOverview] = useState<UserOverview | null>(null);
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [stats, setStats] = useState<UserStats | null>(null);
+  const [subscription, setSubscription] = useState<SubscriptionResponse | null>(null);
   const [appearance, setAppearance] = useState<AppearancePreference>("light");
   const [notifications, setNotifications] = useState<NotificationPreference[]>([]);
   const [profileForm, setProfileForm] = useState({ name: "", username: "", avatarUrl: "" });
@@ -58,8 +93,10 @@ export default function MePage() {
   const [avatarUploading, setAvatarUploading] = useState(false);
   const [notificationSaving, setNotificationSaving] = useState(false);
   const [passwordSaving, setPasswordSaving] = useState(false);
+  const [cancelling, setCancelling] = useState(false);
   const [showAppearanceModal, setShowAppearanceModal] = useState(false);
   const [saveFeedback, setSaveFeedback] = useState<{ tone: SaveTone; message: string } | null>(null);
+  const [upgradeNotice, setUpgradeNotice] = useState<{ tone: "success" | "pending" | "failed"; message: string } | null>(null);
 
   const loadOverview = useCallback(async () => {
     setLoadingError("");
@@ -82,9 +119,68 @@ export default function MePage() {
     }
   }, []);
 
+  const loadSubscription = useCallback(async () => {
+    try {
+      const sub = await subscriptionService.getMySubscription();
+      setSubscription(sub);
+    } catch {
+      setSubscription(null);
+    }
+  }, []);
+
   useEffect(() => {
     void loadOverview();
   }, [loadOverview]);
+
+  useEffect(() => {
+    void loadSubscription();
+  }, [loadSubscription]);
+
+  // Handle ?upgrade=success|pending|failed query param from Snap finish URL.
+  useEffect(() => {
+    const status = searchParams?.get("upgrade");
+    if (!status) return;
+    if (status === "success") {
+      setUpgradeNotice({
+        tone: "success",
+        message: "Pembayaran berhasil! Selamat datang di GoalPath Premium 🎉",
+      });
+      void loadSubscription();
+    } else if (status === "pending") {
+      setUpgradeNotice({
+        tone: "pending",
+        message: "Pembayaran masih diproses. Status akan diperbarui otomatis dalam beberapa menit.",
+      });
+      void loadSubscription();
+    } else if (status === "failed") {
+      setUpgradeNotice({
+        tone: "failed",
+        message: "Pembayaran gagal. Coba lagi dengan metode pembayaran lain di halaman Pricing.",
+      });
+    }
+    router.replace("/me");
+  }, [searchParams, loadSubscription, router]);
+
+  const handleCancelSubscription = useCallback(async () => {
+    if (!subscription || subscription.tier !== "premium") return;
+    setCancelling(true);
+    setUpgradeNotice(null);
+    try {
+      const updated = await subscriptionService.cancel();
+      setSubscription(updated);
+      setUpgradeNotice({
+        tone: "success",
+        message: "Premium dinonaktifkan. Kamu tetap punya akses sampai akhir periode.",
+      });
+    } catch (error) {
+      setUpgradeNotice({
+        tone: "failed",
+        message: error instanceof Error ? error.message : "Gagal membatalkan subscription.",
+      });
+    } finally {
+      setCancelling(false);
+    }
+  }, [subscription]);
 
   const enabledNotifications = useMemo(
     () => notifications.filter((item) => item.enabled).length,
@@ -259,6 +355,20 @@ export default function MePage() {
             }`}
           >
             {saveFeedback.message}
+          </div>
+        )}
+
+        {upgradeNotice && (
+          <div
+            className={`mb-6 rounded-[18px] px-4 py-3 text-sm font-semibold ${
+              upgradeNotice.tone === "success"
+                ? "border border-primary/30 bg-primary/10 text-primary"
+                : upgradeNotice.tone === "pending"
+                  ? "border border-gold/30 bg-gold/15 text-[#8a6100]"
+                  : "border border-coral/30 bg-coral/10 text-coral"
+            }`}
+          >
+            {upgradeNotice.message}
           </div>
         )}
 
@@ -502,23 +612,12 @@ export default function MePage() {
                 </div>
 
                 <div className="space-y-6">
-                  <div className="rounded-[28px] border border-border bg-surface p-6 shadow-sm">
-                    <div className="flex items-center gap-3">
-                      <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-gold/20 text-[#8a6100]">
-                        <ShieldCheck className="h-5 w-5" />
-                      </div>
-                      <div>
-                        <p className="text-sm font-semibold uppercase tracking-[0.22em] text-primary">Subscription</p>
-                        <h3 className="mt-1 text-xl font-bold text-foreground">Billing status</h3>
-                      </div>
-                    </div>
-                    <div className="mt-5 rounded-[22px] border border-dashed border-border bg-background p-4">
-                      <p className="text-sm font-semibold text-foreground">No subscription data connected yet.</p>
-                      <p className="mt-1 text-sm text-foreground/60">
-                        This section is ready for billing integration once plan data is available from the backend.
-                      </p>
-                    </div>
-                  </div>
+                  <SubscriptionCard
+                    subscription={subscription}
+                    cancelling={cancelling}
+                    onUpgrade={() => router.push("/pricing")}
+                    onCancel={() => void handleCancelSubscription()}
+                  />
 
                   <div className="rounded-[28px] border border-border bg-surface p-6 shadow-sm">
                     <div className="flex items-center gap-3">
@@ -535,6 +634,7 @@ export default function MePage() {
                       <li>Appearance and notification preferences are stored in `user_preferences`.</li>
                       <li>Avatar images are uploaded to Cloudinary and the delivered URL is stored in `profiles.avatar_url`.</li>
                       <li>Password changes are applied through Supabase Auth from the backend.</li>
+                      <li>Subscription tier and payment history live in `subscriptions` + `payment_transactions` tables.</li>
                     </ul>
                   </div>
                 </div>
@@ -581,6 +681,104 @@ function OverviewTile({ label, value }: { label: string; value: string }) {
     <div className="rounded-[22px] border border-border bg-background p-4">
       <p className="text-xs font-semibold uppercase tracking-[0.18em] text-foreground/50">{label}</p>
       <p className="mt-2 text-xl font-bold text-foreground">{value}</p>
+    </div>
+  );
+}
+
+function formatPriceIdr(value: number): string {
+  return new Intl.NumberFormat("id-ID", {
+    style: "currency",
+    currency: "IDR",
+    maximumFractionDigits: 0,
+  }).format(value);
+}
+
+function formatExpiredAt(iso: string): string {
+  const date = new Date(iso);
+  if (Number.isNaN(date.getTime())) return "—";
+  return date.toLocaleDateString("id-ID", { day: "numeric", month: "long", year: "numeric" });
+}
+
+function SubscriptionCard({
+  subscription,
+  cancelling,
+  onUpgrade,
+  onCancel,
+}: {
+  subscription: SubscriptionResponse | null;
+  cancelling: boolean;
+  onUpgrade: () => void;
+  onCancel: () => void;
+}) {
+  const tier = subscription?.tier ?? "free";
+  const isPremium = tier === "premium";
+  const price = subscription?.premiumPriceIdr ?? 150_000;
+
+  return (
+    <div
+      className={`rounded-[28px] border bg-surface p-6 shadow-sm ${
+        isPremium ? "border-primary/40 shadow-primary/15" : "border-border"
+      }`}
+    >
+      <div className="flex items-center gap-3">
+        <div
+          className={`flex h-11 w-11 items-center justify-center rounded-2xl ${
+            isPremium ? "bg-primary/20 text-primary" : "bg-foreground/5 text-foreground"
+          }`}
+        >
+          {isPremium ? <Crown className="h-5 w-5" /> : <ShieldCheck className="h-5 w-5" />}
+        </div>
+        <div>
+          <p className="text-sm font-semibold uppercase tracking-[0.22em] text-primary">Subscription</p>
+          <h3 className="mt-1 text-xl font-bold text-foreground">Billing status</h3>
+        </div>
+      </div>
+
+      <div className="mt-5 rounded-[22px] border border-border bg-background p-4">
+        <div className="flex flex-wrap items-baseline justify-between gap-2">
+          <p className="text-2xl font-bold text-foreground">{describeTierLabel(tier)}</p>
+          {isPremium && subscription?.currentPeriodEnd && (
+            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-foreground/60">
+              s.d. {formatExpiredAt(subscription.currentPeriodEnd)}
+            </p>
+          )}
+        </div>
+        {isPremium ? (
+          <p className="mt-2 text-sm text-foreground/70">
+            Semua fitur premium aktif. Bayar {formatPriceIdr(price)} / {subscription?.premiumPeriodDays ?? 30} hari untuk perpanjang otomatis berikutnya.
+          </p>
+        ) : (
+          <p className="mt-2 text-sm text-foreground/70">
+            Upgrade ke Premium untuk membuka unlimited goals, AI adaptive habit, future-self simulation, dan akses penuh AI coach.
+          </p>
+        )}
+      </div>
+
+      <div className="mt-4 flex flex-wrap items-center gap-3">
+        {isPremium ? (
+          <button
+            type="button"
+            disabled={cancelling}
+            onClick={onCancel}
+            className="inline-flex items-center gap-2 rounded-2xl border border-coral/40 bg-coral/5 px-4 py-3 text-sm font-semibold text-coral transition hover:bg-coral/10 disabled:cursor-not-allowed disabled:opacity-60"
+          >
+            {cancelling && <Loader2 className="h-4 w-4 animate-spin" />}
+            {cancelling ? "Membatalkan..." : "Matikan auto-renewal"}
+          </button>
+        ) : (
+          <button
+            type="button"
+            onClick={onUpgrade}
+            className="inline-flex items-center gap-2 rounded-2xl bg-primary px-5 py-3 text-sm font-bold text-white shadow-lg shadow-primary/20 transition hover:bg-primary/90"
+          >
+            <Crown className="h-4 w-4" />
+            Upgrade ke Premium
+          </button>
+        )}
+        <span className="rounded-full bg-foreground/5 px-3 py-1 text-xs font-semibold text-foreground/60">
+          Pembayaran via Midtrans (Sandbox dev)
+        </span>
+      </div>
     </div>
   );
 }

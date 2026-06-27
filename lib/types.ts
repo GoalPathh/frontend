@@ -220,3 +220,74 @@ export interface PersonaResponse {
   generatedAt: string;
   windowDays: number;
 }
+
+// ── Subscription types (mirror backend/src/dto/subscription.ts) ──
+
+export type SubscriptionTier = "free" | "premium";
+export type SubscriptionStatus = "pending" | "active" | "expired" | "cancelled";
+
+/** Sentinel error flag thrown by the backend when a free-tier limit or premium gate is hit. */
+export const SUBSCRIPTION_GATE_CODE = 402;
+
+export interface SubscriptionLimits {
+  /** max active goals; null = unlimited */
+  maxGoals: number | null;
+  /** max habits per single goal; null = unlimited */
+  maxHabitsPerGoal: number | null;
+  /** max user->coach messages per user per UTC day; null = unlimited */
+  maxCoachMessagesPerDay: number | null;
+}
+
+export interface PlanFeatures {
+  unlimitedGoals: boolean;
+  unlimitedHabits: boolean;
+  fullAiCoachAccess: boolean;
+  aiAdaptiveHabit: boolean;
+  futureSelfSimulation: boolean;
+  prioritySupport: boolean;
+  advancedInsight: boolean;
+}
+
+export interface SubscriptionResponse {
+  tier: SubscriptionTier;
+  status: SubscriptionStatus;
+  currentPeriodEnd: string | null;
+  limits: SubscriptionLimits;
+  features: PlanFeatures;
+  premiumPriceIdr: number;
+  premiumPeriodDays: number;
+}
+
+export interface SubscriptionCheckoutResponse {
+  token: string;
+  redirectUrl: string;
+  orderId: string;
+}
+
+export interface SubscriptionWebhookAck {
+  accepted: boolean;
+  status: "pending" | "settlement" | "cancelled" | "failed";
+  signatureMatch: boolean;
+}
+
+declare global {
+  interface Window {
+    /** Midtrans Snap global injected by snap.js. */
+    snap?: {
+      pay: (
+        token: string,
+        options: {
+          onSuccess?: (result: { finish_redirect_url?: string }) => void;
+          onPending?: (result: { finish_redirect_url?: string }) => void;
+          onError?: (result: unknown) => void;
+          onClose?: () => void;
+        },
+      ) => void;
+      embed?: (
+        token: string,
+        elementId: string,
+        options: { embedId?: string; onSuccess?: () => void; onPending?: () => void; onError?: () => void; onClose?: () => void },
+      ) => void;
+    };
+  }
+}

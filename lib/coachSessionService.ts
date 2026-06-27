@@ -1,4 +1,4 @@
-import { apiRequest } from "./api";
+import { apiRequest, unwrapApiData, type MaybeApiData } from "./api";
 
 export interface CoachSession {
   id: string;
@@ -28,11 +28,10 @@ export const coachSessionService = {
 
   async list(): Promise<CoachSession[]> {
     try {
-      const data = await apiRequest<{ data: CoachSession[] } | CoachSession[]>(
+      const data = await apiRequest<MaybeApiData<CoachSession[]>>(
         "/coach/sessions",
       );
-      const list = Array.isArray(data) ? data : (data as any).data ?? [];
-      return list;
+      return unwrapApiData(data);
     } catch (e) {
       console.error("[coachSessionService.list] falling back to []:", (e as Error).message);
       return [];
@@ -42,11 +41,11 @@ export const coachSessionService = {
   async create(title?: string): Promise<CoachSession | null> {
     try {
       const body = title ? JSON.stringify({ title }) : undefined;
-      const res = await apiRequest<{ data: CoachSession } | CoachSession>(
+      const response = await apiRequest<MaybeApiData<CoachSession>>(
         "/coach/sessions",
         { method: "POST", body },
       );
-      return (res as any)?.data ?? (res as CoachSession) ?? null;
+      return unwrapApiData(response);
     } catch (e) {
       console.error("[coachSessionService.create] failed:", (e as Error).message);
       return null;
@@ -55,14 +54,14 @@ export const coachSessionService = {
 
   async rename(id: string, title: string): Promise<CoachSession | null> {
     try {
-      const res = await apiRequest<{ data: CoachSession } | CoachSession>(
+      const response = await apiRequest<MaybeApiData<CoachSession>>(
         `/coach/sessions/${id}`,
         {
           method: "PATCH",
           body: JSON.stringify({ title }),
         },
       );
-      return (res as any)?.data ?? (res as CoachSession) ?? null;
+      return unwrapApiData(response);
     } catch (e) {
       console.error("[coachSessionService.rename] failed:", (e as Error).message);
       return null;

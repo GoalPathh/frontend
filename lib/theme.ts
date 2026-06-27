@@ -1,13 +1,10 @@
 import type { AppearancePreference } from "@/lib/types";
 
 export const APPEARANCE_KEY = "goalpathAppearance";
+export const DEFAULT_APPEARANCE: AppearancePreference = "light";
 
 export function resolveAppearance(preference: AppearancePreference) {
-  if (preference === "system") {
-    return window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
-  }
-
-  return preference;
+  return preference === "dark" ? "dark" : "light";
 }
 
 export function applyAppearance(preference: AppearancePreference) {
@@ -18,13 +15,16 @@ export function applyAppearance(preference: AppearancePreference) {
 }
 
 export function getStoredAppearance(): AppearancePreference {
-  if (typeof window === "undefined") return "light";
+  if (typeof window === "undefined") return DEFAULT_APPEARANCE;
 
   try {
     const stored = window.localStorage.getItem(APPEARANCE_KEY);
-    return stored ? (JSON.parse(stored) as AppearancePreference) : "light";
+    if (!stored) return DEFAULT_APPEARANCE;
+
+    const parsed = JSON.parse(stored) as AppearancePreference;
+    return parsed === "dark" ? "dark" : DEFAULT_APPEARANCE;
   } catch {
-    return "light";
+    return DEFAULT_APPEARANCE;
   }
 }
 

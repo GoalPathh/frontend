@@ -13,7 +13,9 @@ import {
   Trash2,
   X,
 } from "lucide-react";
+import type { LucideIcon } from "lucide-react";
 import type {
+  GoalCategory,
   GoalPeriod,
   GoalWizardDraft,
   WizardDay,
@@ -50,7 +52,7 @@ const BubbleShell = ({
   children,
 }: {
   step: WizardStep;
-  Icon: any;
+  Icon: LucideIcon;
   onCancel?: () => void;
   children: React.ReactNode;
 }) => {
@@ -357,7 +359,7 @@ export function ScheduleBubble({
 
 /* ───────────────────────────── ReviewBubble ───────────────────────────── */
 
-const CATEGORY_OPTIONS: Array<{ value: string; label: string }> = [
+const CATEGORY_OPTIONS: Array<{ value: GoalCategory; label: string }> = [
   { value: "language", label: "Bahasa" },
   { value: "fitness", label: "Kebugaran" },
   { value: "skills", label: "Keterampilan" },
@@ -377,10 +379,10 @@ export function ReviewBubble({
   onCancel,
 }: {
   goalTitle: string;
-  category: string;
+  category: GoalCategory;
   draft: GoalWizardDraft;
   onTitleChange: (title: string) => void;
-  onCategoryChange: (category: string) => void;
+  onCategoryChange: (category: GoalCategory) => void;
   onConfirm: () => void;
   onBack: () => void;
   onCancel?: () => void;

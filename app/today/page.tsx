@@ -25,6 +25,8 @@ import { getApiUrl } from "@/lib/api";
 import { TodayHabit, TodayPlan, TodayProfile } from "@/lib/todayService";
 import { TodayInteractiveClient } from "./client-interactive";
 
+const XP_PER_HABIT_COMPLETION = 30;
+
 const timeRangeMeta: Record<TimeRange, { label: string; Icon: typeof Sun; className: string }> = {
   morning: { label: "Morning Routine", Icon: Sun, className: "text-orange-500" },
   afternoon: { label: "Noon Focus", Icon: Target, className: "text-yellow-600" },

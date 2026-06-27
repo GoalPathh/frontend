@@ -2,6 +2,16 @@ import type { Metadata } from "next";
 import { Bricolage_Grotesque, Plus_Jakarta_Sans } from "next/font/google";
 import "./globals.css";
 
+const themeBootScript = `
+  try {
+    const raw = window.localStorage.getItem("goalpathAppearance");
+    const appearance = raw ? JSON.parse(raw) : "light";
+    document.documentElement.classList.toggle("dark", appearance === "dark");
+  } catch {
+    document.documentElement.classList.remove("dark");
+  }
+`;
+
 const jakarta = Plus_Jakarta_Sans({
   subsets: ["latin"],
   variable: "--font-jakarta",

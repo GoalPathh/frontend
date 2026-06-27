@@ -1,5 +1,7 @@
-import Image from "next/image";
+"use client";
+
 import { Edit3, Flame, Sparkles, Trophy } from "lucide-react";
+import { UserAvatar } from "@/components/user-avatar";
 import type { UserProfile } from "@/lib/types";
 
 interface ProfileHeaderProps {
@@ -13,9 +15,13 @@ export function ProfileHeader({ profile, onEdit }: ProfileHeaderProps) {
       <div className="absolute -right-8 -top-10 h-44 w-44 rounded-full bg-primary/10 blur-3xl" />
       <div className="relative z-10 grid gap-6 lg:grid-cols-[0.9fr_0.5fr] items-center">
         <div className="flex items-center gap-4">
-          <div className="relative h-24 w-24 overflow-hidden rounded-[28px] border border-border bg-primary/10 shadow-sm">
-            <Image src={profile.avatarUrl} alt={profile.name} fill sizes="96px" className="object-cover" />
-          </div>
+          <UserAvatar
+            avatarUrl={profile.avatarUrl}
+            name={profile.name}
+            className="h-24 w-24 text-primary"
+            iconClassName="h-10 w-10"
+            imageSizes="96px"
+          />
           <div>
             <p className="text-sm font-semibold uppercase tracking-[0.22em] text-primary">Profile</p>
             <h1 className="text-3xl font-bold text-foreground">{profile.name}</h1>

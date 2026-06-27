@@ -1,6 +1,7 @@
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:4000/api/v1";
 
 type ApiResponse<T> = { data: T };
+export type MaybeApiData<T> = T | ApiResponse<T>;
 
 export class ApiError extends Error {
   constructor(message: string, public readonly status: number) {
@@ -17,6 +18,18 @@ export function getApiUrl() {
 // IF the frontend and backend are on the same domain.
 // However, since they are on different ports/domains (3000 vs 4000), 
 // we must ensure credentials are included.
+export function unwrapApiData<T>(payload: MaybeApiData<T>): T {
+  if (
+    payload &&
+    typeof payload === "object" &&
+    !Array.isArray(payload) &&
+    "data" in payload
+  ) {
+    return payload.data as T;
+  }
+
+  return payload as T;
+}
 async function request<T>(path: string, options: RequestInit, retryOnUnauthorized: boolean): Promise<T> {
   const response = await fetch(`${API_URL}${path}`, {
     ...options,

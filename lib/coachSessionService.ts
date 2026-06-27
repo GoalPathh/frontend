@@ -84,6 +84,63 @@ export const coachSessionService = {
   },
 };
 
+/**
+ * SWR-managed quota cache key. Lives here so the React hook, the
+ * `fetchCoachQuota` fetcher, and the `readCoachQuotaFallback` hydrator
+ * all agree on the same identifier — keeping cache, dedupe, and
+ * sessionStorage in lockstep.
+ */
+export const COACH_QUOTA_SWR_KEY = "/coach/quota";
+
+/**
+ * sessionStorage key for the last known good quota snapshot. Bumped to
+ * `v2` after accessPercentage was added to the response shape so any
+ * stale entry from the previous schema is discarded rather than
+ * rendered as "Akses undefined%".
+ */
+export const COACH_QUOTA_CACHE_KEY = "coach_quota_cache_v2";
+export const COACH_QUOTA_CACHE_LEGACY_KEYS = ["coach_quota_cache", "coach_quota_cache_v1"];
+
+/**
+ * Pure fetcher for SWR — thin wrapper around the typed `apiRequest`.
+ * SWR passes the cache key as the first argument; we ignore it because
+ * we always read the same endpoint. Throws on non-2xx so SWR bubbles
+ * the error to its `error` field (no silent `null` returns that would
+ * flip the UI into the loading-spinner state forever).
+ */
+export async function fetchCoachQuota(_key: string): Promise<CoachQuota> {
+  const data = await apiRequest<{ data: CoachQuota } | CoachQuota>("/coach/quota");
+  return ((data as any)?.data ?? (data as CoachQuota)) as CoachQuota;
+}
+
+/**
+ * Synchronous fallbackData reader used by `useSWR` on the very first
+ * render. Returns `undefined` when no cached snapshot exists or when
+ * the cached shape is invalid — letting SWR transparently flip to the
+ * loading state on a true cold start (first visit, cleared storage).
+ */
+export function readCoachQuotaFallback(): CoachQuota | undefined {
+  if (typeof window === "undefined") return undefined;
+  try {
+    const raw = window.sessionStorage.getItem(COACH_QUOTA_CACHE_KEY);
+    if (!raw) return undefined;
+    const parsed = JSON.parse(raw) as Partial<CoachQuota>;
+    if (
+      typeof parsed?.max_messages !== "number" ||
+      typeof parsed?.used_messages !== "number" ||
+      typeof parsed?.remaining_messages !== "number" ||
+      typeof parsed?.access_percentage !== "number"
+    ) {
+      // Shape mismatch: drop it so SWR fetches fresh from the API.
+      window.sessionStorage.removeItem(COACH_QUOTA_CACHE_KEY);
+      return undefined;
+    }
+    return parsed as CoachQuota;
+  } catch {
+    return undefined;
+  }
+}
+
 /** Format an ISO timestamp to a short relative label. */
 export function formatRelativeTime(iso: string): string {
   const then = new Date(iso).getTime();

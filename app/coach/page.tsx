@@ -1,6 +1,7 @@
 "use client";
 
 import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import useSWR from "swr";
 import { useRouter, useSearchParams } from "next/navigation";
 import {
   Check,
@@ -37,7 +38,15 @@ import {
 } from "./wizard-bubbles";
 import { useGoalWizard } from "./use-goal-wizard";
 import { milestoneService } from "@/lib/milestoneService";
-import { coachSessionService } from "@/lib/coachSessionService";
+import {
+  coachSessionService,
+  fetchCoachQuota,
+  readCoachQuotaFallback,
+  COACH_QUOTA_CACHE_KEY,
+  COACH_QUOTA_CACHE_LEGACY_KEYS,
+  COACH_QUOTA_SWR_KEY,
+  type CoachQuota,
+} from "@/lib/coachSessionService";
 import { MilestoneFlow } from "./milestone-flow";
 import {
   GOAL_WIZARD_TAG,
@@ -666,19 +675,30 @@ function CoachPageContent() {
   const [isLoading, setIsLoading] = useState(false);
   const [sessionId, setSessionId] = useState<string | null>(sessionParam);
   const [sessionTitle, setSessionTitle] = useState<string>("Coach");
-  /**
-   * Bump this when the quota response shape changes so stale
-   * `sessionStorage` entries from before the bump are dropped on mount
-   * (they'll be missing `accessPercentage` and would render with empty
-   * values everywhere except `resetAt`).
-   */
-  const QUOTA_CACHE_KEY = "coach_quota_cache_v2";
-  const QUOTA_CACHE_LEGACY_KEYS = ["coach_quota_cache", "coach_quota_cache_v1"];
-
-  const [quota, setQuota] = useState<
-    | { remaining: number; max_messages: number; resetAt: string | null; accessPercentage: number }
-    | null
-  >(null);
+  // Quota is fetched via SWR so the badge renders instantly from the
+  // last-known sessionStorage snapshot on revisits (no "Memuat kuota..."
+  // spinner for returning users), shares an in-flight request across
+  // concurrent callers via `dedupingInterval`, and revalidates on tab
+  // focus or after a successful message send. See `fetchCoachQuota` +
+  // `readCoachQuotaFallback` in `@/lib/coachSessionService` for the
+  // fetcher and the sessionStorage-backed hydration details.
+  const { data: quota, mutate: refreshQuota } = useSWR<CoachQuota>(
+    COACH_QUOTA_SWR_KEY,
+    fetchCoachQuota,
+    {
+      fallbackData: readCoachQuotaFallback(),
+      revalidateOnFocus: true,
+      dedupingInterval: 3000,
+      onSuccess: (latest: CoachQuota) => {
+        try {
+          window.sessionStorage.setItem(COACH_QUOTA_CACHE_KEY, JSON.stringify(latest));
+        } catch {
+          // sessionStorage quota exceeded or disabled — non-fatal,
+          // SWR still holds the value in memory for the current session.
+        }
+      },
+    },
+  );
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
   const [wizardMeta, setWizardMeta] = useState<WizardMeta>(DEFAULT_WIZARD_META);
   const wizard = useGoalWizard();
@@ -723,32 +743,17 @@ function CoachPageContent() {
     }
   }, [sessionParam, sessionId]);
 
+  // Drop pre-v2 quota snapshots in sessionStorage so a future schema
+  // bump can't accidentally re-hydrate a broken shape. The current v2
+  // snapshot is owned by `readCoachQuotaFallback()` for SWR's initial
+  // render and by the `onSuccess` callback above for writes, so we
+  // deliberately don't touch it here.
   useEffect(() => {
-    // Bump-driven cache invalidation: any legacy keys from before this
-    // schema are wiped so a Premium user can't be served a stale shape
-    // that renders "Sisa X/Y pesan · Akses undefined%" against the new UI.
-    for (const legacyKey of QUOTA_CACHE_LEGACY_KEYS) {
-      if (sessionStorage.getItem(legacyKey) !== null) {
-        sessionStorage.removeItem(legacyKey);
-      }
-    }
-    const cached = sessionStorage.getItem(QUOTA_CACHE_KEY);
-    if (cached) {
+    for (const legacyKey of COACH_QUOTA_CACHE_LEGACY_KEYS) {
       try {
-        const parsed = JSON.parse(cached);
-        // Defensive: only hydrate if the entry has all expected fields,
-        // otherwise drop it so we ask the API fresh.
-        if (
-          typeof parsed?.remaining === "number" &&
-          typeof parsed?.max_messages === "number" &&
-          typeof parsed?.accessPercentage === "number"
-        ) {
-          setQuota(parsed);
-        } else {
-          sessionStorage.removeItem(QUOTA_CACHE_KEY);
-        }
+        window.sessionStorage.removeItem(legacyKey);
       } catch {
-        sessionStorage.removeItem(QUOTA_CACHE_KEY);
+        // sessionStorage disabled — ignore.
       }
     }
   }, []);
@@ -761,21 +766,8 @@ function CoachPageContent() {
     if (sessionParam !== null && messages.length > 0) return; // already loaded a target
     initialized.current = true;
 
-    // FETCH QUOTA INDEPENDENTLY ON MOUNT
-    coachSessionService.getQuota()
-      .then(q => {
-        if (q) {
-          const quotaData = {
-            remaining: q.remaining_messages,
-            max_messages: q.max_messages,
-            resetAt: q.reset_at,
-            accessPercentage: q.access_percentage,
-          };
-          setQuota(quotaData);
-          sessionStorage.setItem(QUOTA_CACHE_KEY, JSON.stringify(quotaData));
-        }
-      })
-      .catch(err => console.error("Failed to fetch quota:", err));
+    // Quota is fetched by `useSWR` independently above; we deliberately
+    // don't duplicate that work in this effect.
 
     async function loadOrCreateSession() {
       try {
@@ -875,17 +867,15 @@ function CoachPageContent() {
         }
       ]);
 
-      // Refresh quota if it was a successful message
-      const q = await coachSessionService.getQuota();
-      if (q) {
-        const quotaData = {
-          remaining: q.remaining_messages,
-          max_messages: q.max_messages,
-          resetAt: q.reset_at,
-          accessPercentage: q.access_percentage,
-        };
-        setQuota(quotaData);
-        sessionStorage.setItem(QUOTA_CACHE_KEY, JSON.stringify(quotaData));
+      // SWR revalidates quota after every successful message so the
+      // badge decrements in lockstep with the server's usedMessages
+      // count. Awaiting `mutate()` lets us catch transient network
+      // blips that would otherwise leave the user staring at a stale
+      // "Sisa 5/5" right after they spent their last message.
+      try {
+        await refreshQuota();
+      } catch (err) {
+        console.warn("[coach] quota revalidation after send failed:", err);
       }
 
     } catch (err) {
@@ -1163,18 +1153,19 @@ function CoachPageContent() {
 
             <footer className="shrink-0 border-t border-border bg-background/95 px-4 pb-[calc(6.5rem+env(safe-area-inset-bottom))] pt-3 backdrop-blur-xl sm:px-6 lg:pb-5">
               
-              {/* Quota Badge Indicator */}
+              {/* Quota Badge Indicator (SWR-driven; renders from sessionStorage
+                  snapshot on revisits, real-time after a successful send). */}
               <div className="mb-2 flex justify-center">
-                {quota && typeof quota.remaining === "number" && typeof quota.max_messages === "number" && typeof quota.accessPercentage === "number" ? (
+                {quota && typeof quota.remaining_messages === "number" && typeof quota.max_messages === "number" && typeof quota.access_percentage === "number" ? (
                   <div
-                    className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-[10px] font-bold uppercase tracking-wider transition-colors ${quota.remaining <= 10 ? 'bg-coral/10 text-coral' : 'bg-primary/10 text-primary'}`}
+                    className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-[10px] font-bold uppercase tracking-wider transition-colors ${quota.remaining_messages <= 10 ? 'bg-coral/10 text-coral' : 'bg-primary/10 text-primary'}`}
                   >
-                    {quota.remaining <= 10 ? <AlertCircle className="h-3.5 w-3.5" /> : <Zap className="h-3.5 w-3.5" />}
+                    {quota.remaining_messages <= 10 ? <AlertCircle className="h-3.5 w-3.5" /> : <Zap className="h-3.5 w-3.5" />}
                     <span>
-                      Sisa {quota.remaining}/{quota.max_messages} pesan
-                      <span className="ml-1.5 opacity-80">· Akses {quota.accessPercentage}%</span>
+                      Sisa {quota.remaining_messages}/{quota.max_messages} pesan
+                      <span className="ml-1.5 opacity-80">· Akses {quota.access_percentage}%</span>
                     </span>
-                    {quota.resetAt && (
+                    {quota.reset_at && (
                       <span className="ml-1 opacity-80">· Reset 00:00 UTC besok</span>
                     )}
                   </div>
@@ -1192,13 +1183,13 @@ function CoachPageContent() {
                     value={input}
                     onChange={(e) => setInput(e.target.value)}
                     onKeyDown={(e) => e.key === "Enter" && handleSendMessage()}
-                    placeholder={quota && quota.remaining <= 0 ? "Batas chat tercapai. Tunggu waktu reset..." : "Tell me what's on your mind..."}
+                    placeholder={quota && typeof quota.remaining_messages === "number" && quota.remaining_messages <= 0 ? "Batas chat tercapai. Tunggu waktu reset..." : "Tell me what's on your mind..."}
                     className="min-w-0 flex-1 bg-transparent px-2 py-2 text-sm font-medium text-foreground outline-none placeholder:text-foreground/35 disabled:opacity-50"
-                    disabled={isLoading || (quota !== null && quota.remaining <= 0)}
+                    disabled={isLoading || (typeof quota?.remaining_messages === "number" && quota.remaining_messages <= 0)}
                   />
                   <button
                     onClick={() => handleSendMessage()}
-                    disabled={isLoading || !input.trim() || (quota !== null && quota.remaining <= 0)}
+                    disabled={isLoading || !input.trim() || (typeof quota?.remaining_messages === "number" && quota.remaining_messages <= 0)}
                     className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-primary text-white shadow-md shadow-primary/20 transition hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-primary/40 active:scale-95 disabled:opacity-50"
                     aria-label="Send message"
                   >

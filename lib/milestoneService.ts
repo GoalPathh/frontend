@@ -1,4 +1,4 @@
-import { apiRequest } from "./api";
+import { apiRequest, unwrapApiData, type MaybeApiData } from "./api";
 
 // Shape of milestone objects returned by backend (matches goal_milestones table).
 export interface Milestone {
@@ -25,14 +25,14 @@ export const milestoneService = {
     goalId: string,
     items: SuggestedMilestone[],
   ): Promise<Milestone[]> {
-    const data = await apiRequest<{ data: Milestone[] }>(
+    const data = await apiRequest<MaybeApiData<Milestone[]>>(
       `/goals/${goalId}/milestones`,
       {
         method: "PUT",
         body: JSON.stringify({ milestones: items }),
       },
     );
-    return (data as any).data ?? (data as any);
+    return unwrapApiData(data);
   },
 
   async toggle(
@@ -40,14 +40,14 @@ export const milestoneService = {
     milestoneId: string,
     completed: boolean,
   ): Promise<Milestone> {
-    const data = await apiRequest<{ data: Milestone }>(
+    const data = await apiRequest<MaybeApiData<Milestone>>(
       `/goals/${goalId}/milestones/${milestoneId}`,
       {
         method: "PATCH",
         body: JSON.stringify({ completed }),
       },
     );
-    return (data as any).data ?? (data as any);
+    return unwrapApiData(data);
   },
 
   async suggest(input: {
@@ -56,12 +56,13 @@ export const milestoneService = {
     duration?: string;
     habits?: { title: string; difficulty?: string }[];
   }): Promise<{ milestones: SuggestedMilestone[]; source: string }> {
-    const data = await apiRequest<{
-      data: { milestones: SuggestedMilestone[]; source: string };
-    }>(`/milestones/suggest`, {
+    const data = await apiRequest<MaybeApiData<{
+      milestones: SuggestedMilestone[];
+      source: string;
+    }>>(`/milestones/suggest`, {
       method: "POST",
       body: JSON.stringify(input),
     });
-    return (data as any).data ?? (data as any);
+    return unwrapApiData(data);
   },
 };

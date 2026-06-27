@@ -1,12 +1,9 @@
-"use client";
-
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { cookies } from "next/headers";
+import { redirect } from "next/navigation";
 import {
   ArrowRight,
-  Bell,
   BookOpen,
   CalendarDays,
-  Check,
   Clock3,
   Droplet,
   Flame,
@@ -24,9 +21,12 @@ import {
 import { BottomNavigation } from "@/components/bottom-navigation";
 import { AppSidebar } from "@/components/app-sidebar";
 import { ThemeToggle } from "@/components/theme-toggle";
-import { NotificationsPanel } from "@/components/notifications-panel";
 import { TimeRange } from "@/lib/types";
-import { todayService, TodayHabit, TodayPlan, TodayProfile } from "@/lib/todayService";
+import { getApiUrl } from "@/lib/api";
+import { TodayHabit, TodayPlan, TodayProfile } from "@/lib/todayService";
+import { TodayInteractiveClient } from "./client-interactive";
+
+const XP_PER_HABIT_COMPLETION = 30;
 
 const timeRangeMeta: Record<TimeRange, { label: string; Icon: typeof Sun; className: string }> = {
   morning: { label: "Morning Routine", Icon: Sun, className: "text-orange-500" },
@@ -34,18 +34,6 @@ const timeRangeMeta: Record<TimeRange, { label: string; Icon: typeof Sun; classN
   evening: { label: "Evening Reflection", Icon: Moon, className: "text-primary" },
   anytime: { label: "Anytime", Icon: Clock3, className: "text-sky" },
 };
-
-function habitIcon(title: string, timeRange: TimeRange) {
-  const lower = title.toLowerCase();
-  if (lower.includes("water") || lower.includes("drink")) return Droplet;
-  if (lower.includes("read") || lower.includes("book") || lower.includes("vocab")) return BookOpen;
-  if (lower.includes("speak") || lower.includes("shadow")) return Mic;
-  if (lower.includes("lunch") || lower.includes("meal") || lower.includes("food")) return Utensils;
-  if (timeRange === "morning") return Sun;
-  if (timeRange === "evening") return Moon;
-  if (timeRange === "afternoon") return Target;
-  return Globe2;
-}
 
 function greetingName(profile: TodayProfile | null) {
   const name = profile?.name?.trim();
@@ -67,52 +55,44 @@ function groupHabitsByTime(habits: TodayHabit[]) {
   );
 }
 
-export default function TodayPage() {
-  const [showNotifications, setShowNotifications] = useState(false);
-  const [plan, setPlan] = useState<TodayPlan | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [savingHabitId, setSavingHabitId] = useState<string | null>(null);
+export default async function TodayPage() {
+  const cookieStore = await cookies();
+  const token = cookieStore.get("goalpath_access_token")?.value;
 
-  const loadToday = useCallback(async (showLoader = true) => {
-    try {
-      if (showLoader) setLoading(true);
-      setError(null);
-      const todayData = await todayService.getToday();
-      setPlan(todayData);
-    } catch (err) {
-      setError((err as Error).message);
-    } finally {
-      if (showLoader) setLoading(false);
-    }
-  }, []);
+  if (!token) {
+    redirect("/login");
+  }
 
-  useEffect(() => {
-    let cancelled = false;
+  // Fallback to UTC offset for SSR, client components handle real time.
+  const tzOffset = -420;
+  
+  let plan: TodayPlan | null = null;
+  let error: string | null = null;
 
-    async function loadInitialToday() {
-      try {
-        setLoading(true);
-        setError(null);
-        const todayData = await todayService.getToday();
-        if (cancelled) return;
-        setPlan(todayData);
-      } catch (err) {
-        if (!cancelled) setError((err as Error).message);
-      } finally {
-        if (!cancelled) setLoading(false);
+  try {
+    const res = await fetch(`${getApiUrl()}/today?tzOffset=${tzOffset}`, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
+      },
+      cache: "no-store", 
+    });
+
+    if (!res.ok) {
+      if (res.status === 401) {
+        redirect("/login");
       }
+      throw new Error(`Failed to fetch today data: ${res.status}`);
     }
 
-    void loadInitialToday();
-
-    return () => {
-      cancelled = true;
-    };
-  }, []);
+    const payload = await res.json();
+    plan = payload.data as TodayPlan;
+  } catch (err) {
+    error = (err as Error).message;
+  }
 
   const todayHabits = plan?.habits ?? [];
-  const groupedHabits = useMemo(() => groupHabitsByTime(todayHabits), [todayHabits]);
+  const groupedHabits = groupHabitsByTime(todayHabits);
   const profile = plan?.profile ?? null;
   const summary = plan?.summary;
   const completedCount = summary?.completedHabits ?? 0;
@@ -123,46 +103,17 @@ export default function TodayPage() {
   const xp = summary?.totalXp ?? profile?.xp ?? 0;
   const streak = summary?.currentStreak ?? profile?.streak_days ?? 0;
 
-  async function toggleHabit(habit: TodayHabit) {
-    if (!plan || savingHabitId) return;
-    setSavingHabitId(habit.id);
-
-    try {
-      await todayService.setHabitCompletion(habit.id, !habit.completed, plan.date);
-      await loadToday(false);
-    } catch (err) {
-      setError((err as Error).message);
-    } finally {
-      setSavingHabitId(null);
-    }
-  }
-
   return (
     <div className="min-h-screen bg-background text-foreground antialiased dark:bg-background dark:text-white lg:pl-[272px]">
       <AppSidebar active="today" className="fixed inset-y-0 left-0 z-50 hidden lg:flex" />
       <nav className="fixed top-0 z-40 w-full border-b border-border bg-background/80 px-6 py-3 backdrop-blur-xl dark:border-surface/10 dark:bg-background/80 md:px-10 lg:left-[272px] lg:w-[calc(100%-272px)]">
         <div className="mx-auto flex max-w-7xl items-center justify-between">
           <div className="flex items-center gap-4">
-            <a href="/me" className="text-primary duration-200 active:scale-95 lg:hidden" aria-label="Open profile">
-              <Menu className="h-6 w-6" />
-            </a>
             <h1 className="text-xl font-bold tracking-tight text-primary">Today</h1>
           </div>
           <div className="flex items-center gap-3">
             <ThemeToggle className="size-10 bg-surface/80 dark:bg-surface/10" />
-            <div className="relative">
-              <button
-                type="button"
-                onClick={() => setShowNotifications((current) => !current)}
-                className="relative flex size-10 items-center justify-center rounded-full border border-border bg-surface/80 text-primary shadow-card transition hover:-translate-y-0.5 active:translate-y-0"
-                aria-label="Open notifications"
-                aria-expanded={showNotifications}
-              >
-                <Bell className="h-5 w-5" />
-                <span className="absolute right-2 top-2 h-2 w-2 rounded-full bg-primary shadow-[0_0_8px_rgba(89,79,187,0.4)]" />
-              </button>
-              <NotificationsPanel open={showNotifications} onClose={() => setShowNotifications(false)} />
-            </div>
+            <TodayInteractiveClient />
           </div>
         </div>
       </nav>
@@ -184,7 +135,7 @@ export default function TodayPage() {
                 Today plan
               </div>
               <h1 className="text-3xl font-extrabold tracking-tight text-foreground sm:text-4xl lg:text-5xl">
-                Hi {loading ? "..." : greetingName(plan?.profile ?? null)}
+                Hi {greetingName(profile)}
               </h1>
               <p className="mt-3 max-w-2xl text-sm font-medium leading-7 text-foreground/60 sm:text-base">
                 {summary?.message ?? "Loading today's plan..."}
@@ -227,12 +178,7 @@ export default function TodayPage() {
                   <h3 className="text-lg font-semibold text-foreground">Current Goals</h3>
                   <Zap className="h-6 w-6 text-primary" />
                 </div>
-                {loading ? (
-                  <div className="flex items-center gap-2 rounded-2xl border border-border bg-background/70 p-4 text-sm font-semibold text-foreground/60">
-                    <Loader2 className="h-4 w-4 animate-spin text-primary" />
-                    Loading goals...
-                  </div>
-                ) : activeGoals.length > 0 ? (
+                {activeGoals.length > 0 ? (
                   <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
                     {activeGoals.slice(0, 4).map((goal) => (
                       <div key={goal.id} className="space-y-1.5">
@@ -271,24 +217,19 @@ export default function TodayPage() {
 
             <section className="space-y-6">
               <div className="flex flex-col gap-2 sm:flex-row sm:items-baseline sm:justify-between">
-                <h2 className="text-xl font-bold tracking-tight text-foreground">Today&apos;s Habits</h2>
+                <h2 className="text-xl font-bold tracking-tight text-foreground">Today's Habits</h2>
                 <span className="text-[10px] font-bold uppercase tracking-[0.32em] text-primary">
                   {completedCount} / {totalHabits} completed
                 </span>
               </div>
 
-              {loading ? (
-                <div className="rounded-[18px] border border-border bg-surface p-5 text-sm font-semibold text-foreground/60">
-                  Loading today&apos;s habits...
-                </div>
-              ) : totalHabits > 0 ? (
+              {totalHabits > 0 ? (
                 (Object.keys(groupedHabits) as TimeRange[]).map((range) => (
                   <HabitGroup
                     key={range}
                     range={range}
                     habits={groupedHabits[range]}
-                    savingHabitId={savingHabitId}
-                    onToggle={toggleHabit}
+                    planDate={plan?.date ?? new Date().toISOString().slice(0, 10)}
                   />
                 ))
               ) : (
@@ -329,8 +270,8 @@ export default function TodayPage() {
               </div>
               <div>
                 <p className="mb-1 text-[10px] font-bold uppercase tracking-[0.26em] text-primary">Daily Motivation</p>
-                <p className="text-sm font-bold text-foreground">{plan?.motivation.title ?? "Loading motivation..."}</p>
-                <p className="mt-1 text-sm font-medium text-foreground/60">{plan?.motivation.body ?? "We are preparing today's guidance based on your real plan."}</p>
+                <p className="text-sm font-bold text-foreground">{plan?.motivation.title ?? "Daily focus"}</p>
+                <p className="mt-1 text-sm font-medium text-foreground/60">{plan?.motivation.body ?? "Complete a habit to build momentum."}</p>
               </div>
             </div>
           </aside>
@@ -354,13 +295,11 @@ function MetricCard({ icon, label }: { icon: React.ReactNode; label: string }) {
 function HabitGroup({
   range,
   habits,
-  savingHabitId,
-  onToggle,
+  planDate,
 }: {
   range: TimeRange;
   habits: TodayHabit[];
-  savingHabitId: string | null;
-  onToggle: (habit: TodayHabit) => void;
+  planDate: string;
 }) {
   if (habits.length === 0) return null;
 
@@ -375,37 +314,12 @@ function HabitGroup({
       </div>
       <div className="space-y-2.5">
         {habits.map((habit) => {
-          const Icon = habitIcon(habit.title, habit.schedule.timeRange);
-          const isSaving = savingHabitId === habit.id;
-
           return (
-            <button
-              key={habit.id}
-              type="button"
-              disabled={isSaving}
-              onClick={() => onToggle(habit)}
-              className={`w-full rounded-[18px] border border-border p-4 text-left transition-transform active:scale-[0.99] sm:p-5 ${
-                habit.completed ? "glass-panel" : "shadow-sm hover:border-primary/40 glass-card"
-              } disabled:cursor-not-allowed disabled:opacity-70`}
-            >
-              <div className="flex items-center justify-between gap-4">
-                <div className="flex min-w-0 items-center gap-4">
-                  <div className={`flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-full ${habit.completed ? "bg-primary text-white shadow-md" : "border-2 border-foreground/30"}`}>
-                    {isSaving ? <Loader2 className="h-4 w-4 animate-spin" /> : habit.completed ? <Check className="h-4 w-4" /> : null}
-                  </div>
-                  <div className="min-w-0">
-                    <span className={`block truncate text-base ${habit.completed ? "font-medium text-foreground/60 line-through opacity-70" : "font-semibold text-foreground"}`}>
-                      {habit.title}
-                    </span>
-                    <span className="mt-0.5 block truncate text-xs font-semibold text-foreground/45">{habit.goalTitle}</span>
-                  </div>
-                </div>
-                <div className="flex flex-shrink-0 items-center gap-2 text-foreground/60">
-                  <span className="hidden rounded-full bg-primary/10 px-2.5 py-1 text-xs font-extrabold text-primary sm:inline-flex">{habit.duration} min</span>
-                  <Icon className="h-5 w-5" />
-                </div>
-              </div>
-            </button>
+            <TodayInteractiveClient 
+              key={habit.id} 
+              habit={habit} 
+              planDate={planDate}
+            />
           );
         })}
       </div>

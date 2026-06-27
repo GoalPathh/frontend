@@ -1,8 +1,7 @@
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:4000/api/v1";
-const TOKEN_KEY = "goalpath_access_token";
-const REFRESH_TOKEN_KEY = "goalpath_refresh_token";
 
 type ApiResponse<T> = { data: T };
+export type MaybeApiData<T> = T | ApiResponse<T>;
 
 export class ApiError extends Error {
   constructor(message: string, public readonly status: number) {
@@ -10,61 +9,48 @@ export class ApiError extends Error {
   }
 }
 
-export function getAccessToken() {
-  if (typeof window === "undefined") return null;
-  return window.localStorage.getItem(TOKEN_KEY);
+// Server Component helper (requires passing headers manually)
+export function getApiUrl() {
+  return API_URL;
 }
 
-export function hasAuthSession() {
-  if (typeof window === "undefined") return false;
-  return Boolean(
-    window.localStorage.getItem(TOKEN_KEY) ||
-    window.localStorage.getItem(REFRESH_TOKEN_KEY),
-  );
-}
+// Since we use httpOnly cookies, the browser automatically sends them to the backend 
+// IF the frontend and backend are on the same domain.
+// However, since they are on different ports/domains (3000 vs 4000), 
+// we must ensure credentials are included.
+export function unwrapApiData<T>(payload: MaybeApiData<T>): T {
+  if (
+    payload &&
+    typeof payload === "object" &&
+    !Array.isArray(payload) &&
+    "data" in payload
+  ) {
+    return payload.data as T;
+  }
 
-export function setAccessToken(token: string) {
-  window.localStorage.setItem(TOKEN_KEY, token);
+  return payload as T;
 }
-
-export function setRefreshToken(token: string) {
-  window.localStorage.setItem(REFRESH_TOKEN_KEY, token);
-}
-
-export function clearAccessToken() {
-  window.localStorage.removeItem(TOKEN_KEY);
-  window.localStorage.removeItem(REFRESH_TOKEN_KEY);
-}
-
 async function request<T>(path: string, options: RequestInit, retryOnUnauthorized: boolean): Promise<T> {
-  const token = getAccessToken();
   const response = await fetch(`${API_URL}${path}`, {
     ...options,
+    credentials: "include", // This tells fetch to send cookies with cross-origin requests
     headers: {
       "Content-Type": "application/json",
-      ...(token ? { Authorization: `Bearer ${token}` } : {}),
       ...options.headers,
     },
   });
 
   if (response.status === 401 && retryOnUnauthorized && typeof window !== "undefined") {
-    const refreshToken = window.localStorage.getItem(REFRESH_TOKEN_KEY);
-    if (refreshToken) {
-      const refreshResponse = await fetch(`${API_URL}/auth/refresh`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ refreshToken }),
-      });
-      if (refreshResponse.ok) {
-        const payload = await refreshResponse.json();
-        const session = payload.data?.session;
-        if (session?.access_token && session?.refresh_token) {
-          setAccessToken(session.access_token);
-          setRefreshToken(session.refresh_token);
-          return request<T>(path, options, false);
-        }
-      }
-      clearAccessToken();
+    // Attempt backend-side refresh via cookie
+    const refreshResponse = await fetch(`${API_URL}/auth/refresh`, {
+      method: "POST",
+      credentials: "include",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({}), // backend routes.ts falls back to reading cookie if body token is missing
+    });
+    
+    if (refreshResponse.ok) {
+      return request<T>(path, options, false);
     }
   }
 

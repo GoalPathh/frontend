@@ -24,6 +24,7 @@ import {
 import { BottomNavigation } from "@/components/bottom-navigation";
 import { AppSidebar } from "@/components/app-sidebar";
 import { ThemeToggle } from "@/components/theme-toggle";
+import { UserAvatar } from "@/components/user-avatar";
 import { ProfileHeader } from "@/components/me/profile-header";
 import { StatCard } from "@/components/me/stat-card";
 import { PreferenceCard } from "@/components/me/preference-card";
@@ -77,6 +78,7 @@ function MePageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const settingsRef = useRef<HTMLDivElement | null>(null);
+  const notificationSettingsRef = useRef<HTMLDivElement | null>(null);
   const avatarInputRef = useRef<HTMLInputElement | null>(null);
 
   const [overview, setOverview] = useState<UserOverview | null>(null);
@@ -189,6 +191,10 @@ function MePageContent() {
 
   const scrollToSettings = () => {
     settingsRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+  };
+
+  const scrollToNotificationSettings = () => {
+    notificationSettingsRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
   };
 
   const setFeedback = (tone: SaveTone, message: string) => {
@@ -498,6 +504,12 @@ function MePageContent() {
                       placeholder="https://..."
                     />
                     <div className="flex flex-wrap items-center gap-3">
+                      <UserAvatar
+                        avatarUrl={profileForm.avatarUrl}
+                        name={profileForm.name}
+                        className="size-12"
+                        imageSizes="48px"
+                      />
                       <input
                         ref={avatarInputRef}
                         type="file"
@@ -549,7 +561,7 @@ function MePageContent() {
                         title="Notifications"
                         current={`${enabledNotifications} active`}
                         actionLabel="Review settings"
-                        onAction={scrollToSettings}
+                        onAction={scrollToNotificationSettings}
                         accentClass="bg-sky/10 text-sky"
                       />
                     </div>
@@ -596,7 +608,7 @@ function MePageContent() {
               </div>
 
               <div className="grid gap-6 xl:grid-cols-[1.05fr_0.95fr]">
-                <div>
+                <div ref={notificationSettingsRef} className="scroll-mt-8">
                   <NotificationSettings preferences={notifications} onToggle={handleToggleNotification} />
                   <div className="mt-5 flex justify-end">
                     <button
@@ -630,11 +642,10 @@ function MePageContent() {
                       </div>
                     </div>
                     <ul className="mt-5 space-y-3 text-sm text-foreground/60">
-                      <li>Your profile data is stored in the `profiles` table.</li>
-                      <li>Appearance and notification preferences are stored in `user_preferences`.</li>
-                      <li>Avatar images are uploaded to Cloudinary and the delivered URL is stored in `profiles.avatar_url`.</li>
-                      <li>Password changes are applied through Supabase Auth from the backend.</li>
-                      <li>Subscription tier and payment history live in `subscriptions` + `payment_transactions` tables.</li>
+                      <li>We only keep the account details needed to personalize your GoalPath experience.</li>
+                      <li>Your appearance and notification choices stay under your control from this page.</li>
+                      <li>Avatar uploads are used only for your profile image and can be replaced anytime.</li>
+                      <li>Password updates are handled through the secure authentication flow.</li>
                     </ul>
                   </div>
                 </div>

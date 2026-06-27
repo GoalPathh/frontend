@@ -1,4 +1,4 @@
-import { apiRequest, clearAccessToken, setAccessToken, setRefreshToken } from "./api";
+import { apiRequest } from "./api";
 
 type AuthResult = {
   session: { access_token: string; refresh_token: string } | null;
@@ -11,10 +11,7 @@ export const authService = {
       method: "POST",
       body: JSON.stringify({ email, password }),
     });
-    if (result.session) {
-      setAccessToken(result.session.access_token);
-      setRefreshToken(result.session.refresh_token);
-    }
+    // With httpOnly cookies, backend sets cookies directly via headers
     return result;
   },
   async register(name: string, email: string, password: string) {
@@ -22,10 +19,7 @@ export const authService = {
       method: "POST",
       body: JSON.stringify({ name, email, password }),
     });
-    if (result.session) {
-      setAccessToken(result.session.access_token);
-      setRefreshToken(result.session.refresh_token);
-    }
+    // With httpOnly cookies, backend sets cookies directly via headers
     return result;
   },
   async loginWithGoogle(next = "/today") {
@@ -47,7 +41,13 @@ export const authService = {
       body: JSON.stringify({ password }),
     });
   },
-  logout() {
-    clearAccessToken();
+  async logout() {
+    // Clear cookies via backend route AND Next.js API route
+    try {
+      await apiRequest("/auth/logout", { method: "POST" }).catch(() => {});
+      await fetch("/api/auth/logout", { method: "POST" });
+    } catch (e) {
+      // Ignore network errors on logout
+    }
   },
 };

@@ -3,7 +3,6 @@
 import { Suspense, useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Loader2 } from "lucide-react";
-import { setAccessToken, setRefreshToken } from "@/lib/api";
 
 function AuthCallbackContent() {
   const router = useRouter();
@@ -26,10 +25,18 @@ function AuthCallbackContent() {
       return;
     }
 
-    setAccessToken(accessToken);
-    setRefreshToken(refreshToken);
-    const next = searchParams.get("next");
-    router.replace(next && /^\/(?!\/)/.test(next) ? next : "/today");
+    // Call our internal Next.js API route to set the HTTP-only cookies
+    fetch("/api/auth/cookies", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ accessToken, refreshToken }),
+    })
+      .then((res) => {
+        if (!res.ok) throw new Error("Failed to set cookies");
+        const next = searchParams.get("next");
+        router.replace(next && /^\/(?!\/)/.test(next) ? next : "/today");
+      })
+      .catch((err) => setError(err.message));
   }, [router, searchParams]);
 
   return (

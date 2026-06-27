@@ -31,6 +31,9 @@ type ApiGoal = {
 export type TodayCompletion = {
   habit_id: string;
   completed: boolean;
+  completion_date?: string;
+  xp_delta?: number;
+  total_xp?: number;
 };
 
 export type TodayHabit = Habit & {
@@ -113,6 +116,7 @@ function mapApiGoal(row: ApiGoal): Goal {
 
 export const todayService = {
   async getToday(): Promise<TodayPlan> {
+    const tzOffset = new Date().getTimezoneOffset();
     const data = await apiRequest<{
       date: string;
       profile: TodayProfile;
@@ -121,7 +125,7 @@ export const todayService = {
       habits: TodayHabit[];
       focusQueue: TodayHabit[];
       motivation: TodayMotivation;
-    }>("/today");
+    }>(`/today?tzOffset=${tzOffset}`);
 
     return {
       date: data.date,

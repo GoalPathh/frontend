@@ -1,13 +1,11 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useState, type SetStateAction } from "react";
 import {
-  GOAL_WIZARD_TAG,
   GoalPeriod,
   GoalWizardDraft,
   WizardDay,
   WizardHabit,
-  WizardSchedule,
   WizardStep,
 } from "@/lib/types";
 
@@ -20,6 +18,23 @@ const EMPTY_DRAFT: GoalWizardDraft = {
   notifications: "all",
   milestones: [],
 };
+
+type WizardMilestones = GoalWizardDraft["milestones"];
+type GoalWizardPrefill = {
+  hint?: string | null;
+  duration?: GoalPeriod | null;
+  category?: string | null;
+  title?: string | null;
+  habits?: Array<{ title: string; difficulty?: string }>;
+};
+
+function normalizeDifficulty(
+  difficulty: string | undefined,
+): WizardHabit["difficulty"] {
+  return difficulty === "easy" || difficulty === "medium" || difficulty === "hard"
+    ? difficulty
+    : "medium";
+}
 
 function loadFromStorage(): GoalWizardDraft {
   if (typeof window === "undefined") return EMPTY_DRAFT;
@@ -35,28 +50,6 @@ function loadFromStorage(): GoalWizardDraft {
 function persist(draft: GoalWizardDraft) {
   if (typeof window === "undefined") return;
   sessionStorage.setItem(STORAGE_KEY, JSON.stringify(draft));
-}
-
-/**
- * Build the standalone JSON message text that the backend will detect via GOAL_WIZARD_TAG.
- * Returns plain string for chat DB column; backend splits TAG from JSON.
- */
-export function buildWizardMessageContent(draft: GoalWizardDraft): string {
-  const payload = {
-    duration: draft.duration,
-    habits: draft.habits.map((h) => ({
-      title: h.title,
-      difficulty: h.difficulty,
-      // store in minutes so backend keeps consistent unit
-      duration_minutes: h.duration,
-    })),
-    schedule: {
-      activeDays: draft.schedule.activeDays,
-      reminderTime: draft.schedule.reminderTime,
-    },
-    notifications: draft.notifications,
-  };
-  return `${GOAL_WIZARD_TAG} ${JSON.stringify(payload)}`;
 }
 
 export function useGoalWizard() {
@@ -110,13 +103,11 @@ export function useGoalWizard() {
 
   const toggleDay = useCallback((day: WizardDay) => {
     setDraft((d) => {
-      const schedule: WizardSchedule = { ...d.schedule };
-      if (schedule.activeDays.includes(day)) {
-        schedule.activeDays = schedule.activeDays.filter((x) => x !== day);
-      } else {
-        schedule.activeDays = [...schedule.activeDays, day];
-      }
-      return { ...d, schedule };
+      const activeDays = d.schedule.activeDays.includes(day)
+        ? d.schedule.activeDays.filter((activeDay) => activeDay !== day)
+        : [...d.schedule.activeDays, day];
+
+      return { ...d, schedule: { ...d.schedule, activeDays } };
     });
   }, []);
 
@@ -133,28 +124,21 @@ export function useGoalWizard() {
   }, []);
 
   const goToMilestones = useCallback(() => {
-    setDraft((d) => ({ ...d, step: "milestones" as WizardStep }));
+    setDraft((d) => ({ ...d, step: "milestones" }));
   }, []);
 
-  const startWizard = useCallback((prefill?: {
-    hint?: string | null;
-    duration?: GoalPeriod | null;
-    category?: string | null;
-    title?: string | null;
-    habits?: Array<{ title: string; difficulty?: string }>;
-  }) => {
+  const startWizard = useCallback((prefill?: GoalWizardPrefill) => {
     const nextDraft: GoalWizardDraft = {
       ...EMPTY_DRAFT,
       step: prefill?.duration ? "habits" : "duration",
       duration: prefill?.duration || undefined,
       habits: (prefill?.habits ?? []).slice(0, 3).map((h) => ({
         title: String(h.title ?? "").trim(),
-        difficulty: ["easy", "medium", "hard"].includes(String(h.difficulty)) ? (h.difficulty as "easy" | "medium" | "hard") : "medium",
+        difficulty: normalizeDifficulty(h.difficulty),
         duration: 15,
       })),
     };
     setDraft(nextDraft);
-    // Category hint, if any, is consumed via setMeta from caller (page.tsx wizardMeta)
   }, []);
 
   const resetWizard = useCallback(() => {
@@ -175,20 +159,14 @@ export function useGoalWizard() {
     return /^(batal|cancel|stop|nggak|jangan dulu|nggak dulu|nanti dulu|tidak dulu|skip|nevermind|ga jadi|ga dulu|maybe later|gdln|batalin)\b/i.test(t);
   }, []);
 
-  const setMeta = useCallback((meta: { title: string; category: string }) => {
-    setDraft((d) => ({ ...d, ...meta }));
-  }, []);
-
   const setMilestones = useCallback(
-    (
-      ms: { title: string; target_date?: string }[] | ((prev: { title: string; target_date?: string }[]) => { title: string; target_date?: string }[]),
-    ) => {
+    (milestones: SetStateAction<WizardMilestones>) => {
       setDraft((d) => ({
         ...d,
         milestones:
-          typeof ms === "function"
-            ? (ms as (p: { title: string; target_date?: string }[]) => { title: string; target_date?: string }[])(d.milestones)
-            : ms,
+          typeof milestones === "function"
+            ? milestones(d.milestones)
+            : milestones,
       }));
     },
     [],
@@ -210,7 +188,6 @@ export function useGoalWizard() {
 
   return {
     draft,
-    setMeta,
     setStep,
     setDuration,
     addHabit,

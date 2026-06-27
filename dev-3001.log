@@ -1,0 +1,11 @@
+
+> goalpath-landing-nextjs@0.1.0 dev
+> next dev -p 3001
+
+   ▲ Next.js 15.5.19
+   - Local:        http://localhost:3001
+   - Network:      http://192.168.100.245:3001
+   - Environments: .env
+
+ ✓ Starting...
+ ✓ Ready in 7.2s

@@ -1,6 +1,5 @@
 "use client";
 
-import Image from "next/image";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import {
@@ -23,6 +22,7 @@ import {
   formatRelativeTime,
   type CoachSession,
 } from "@/lib/coachSessionService";
+import { UserAvatar } from "@/components/user-avatar";
 import { userService } from "@/lib/userService";
 import type { UserProfile } from "@/lib/types";
 
@@ -43,16 +43,6 @@ const mainMenu = [
   { key: "pricing", label: "Pricing", href: "/pricing", Icon: Crown },
 ] as const;
 
-function getProfileInitials(profile: UserProfile | null) {
-  const source = profile?.name?.trim() || profile?.username?.trim() || "GoalPath User";
-  return source
-    .split(/\s+/)
-    .filter(Boolean)
-    .slice(0, 2)
-    .map((part) => part[0]?.toUpperCase() ?? "")
-    .join("");
-}
-
 export function AppSidebar({
   active,
   coachSessions = false,
@@ -60,7 +50,6 @@ export function AppSidebar({
   onNavigate,
 }: AppSidebarProps) {
   const [profile, setProfile] = useState<UserProfile | null>(null);
-  const [avatarBroken, setAvatarBroken] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -70,7 +59,6 @@ export function AppSidebar({
       .then((overview) => {
         if (cancelled) return;
         setProfile(overview.profile);
-        setAvatarBroken(false);
       })
       .catch(() => {
         if (cancelled) return;
@@ -88,7 +76,6 @@ export function AppSidebar({
     : profile
       ? `Level ${profile.level} • ${profile.xp.toLocaleString("id-ID")} XP`
       : "Account settings";
-  const initials = getProfileInitials(profile);
 
   return (
     <aside
@@ -159,20 +146,12 @@ export function AppSidebar({
             active === "me" ? "bg-primary/10" : "hover:bg-muted"
           }`}
         >
-          <div className="relative flex size-10 shrink-0 items-center justify-center overflow-hidden rounded-full border border-border bg-primary/10 text-xs font-bold text-primary">
-            {profile?.avatarUrl && !avatarBroken ? (
-              <Image
-                src={profile.avatarUrl}
-                alt={displayName}
-                fill
-                sizes="40px"
-                className="object-cover"
-                onError={() => setAvatarBroken(true)}
-              />
-            ) : (
-              <span>{initials}</span>
-            )}
-          </div>
+          <UserAvatar
+            avatarUrl={profile?.avatarUrl}
+            name={displayName}
+            className="size-10"
+            imageSizes="40px"
+          />
           <span className="min-w-0 flex-1">
             <span className="block truncate text-sm font-bold">{displayName}</span>
             <span className="block truncate text-[10px] font-medium text-foreground/45">

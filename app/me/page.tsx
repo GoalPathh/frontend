@@ -135,10 +135,14 @@ function MePageContent() {
   }, [loadOverview]);
 
   useEffect(() => {
+    // Mount-time read of subscription row (DB only — no Midtrans HTTP).
     void loadSubscription();
   }, [loadSubscription]);
 
   // Handle ?upgrade=success|pending|failed query param from Snap finish URL.
+  // This is the one place we actively pull from Midtrans (`refresh()`) so
+  // dev without a tunnel can reconcile settlement locally. On a normal
+  // page mount we only do the cheap `getMySubscription()` above.
   useEffect(() => {
     const status = searchParams?.get("upgrade");
     if (!status) return;
@@ -147,13 +151,19 @@ function MePageContent() {
         tone: "success",
         message: "Pembayaran berhasil! Selamat datang di GoalPath Premium 🎉",
       });
-      void loadSubscription();
+      void subscriptionService
+        .refresh()
+        .then((sub) => setSubscription(sub))
+        .catch(() => undefined);
     } else if (status === "pending") {
       setUpgradeNotice({
         tone: "pending",
         message: "Pembayaran masih diproses. Status akan diperbarui otomatis dalam beberapa menit.",
       });
-      void loadSubscription();
+      void subscriptionService
+        .refresh()
+        .then((sub) => setSubscription(sub))
+        .catch(() => undefined);
     } else if (status === "failed") {
       setUpgradeNotice({
         tone: "failed",

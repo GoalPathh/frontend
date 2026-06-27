@@ -25,7 +25,7 @@ import {
   loadMidtransSnapScript,
   subscriptionService,
 } from "@/lib/subscriptionService";
-import { hasAuthSession } from "@/lib/api";
+import { ApiError } from "@/lib/api";
 import type {
   SubscriptionResponse,
   SubscriptionTier,
@@ -97,14 +97,30 @@ export default function PricingPage() {
   const [hydrated, setHydrated] = useState(false);
 
   useEffect(() => {
-    setIsAuthenticated(hasAuthSession());
     setHydrated(true);
-    if (hasAuthSession()) {
-      void subscriptionService
-        .getMySubscription()
-        .then((sub) => setSubscription(sub))
-        .catch(() => setSubscription(null));
-    }
+    let active = true;
+    void subscriptionService
+      .getMySubscription()
+      .then((sub) => {
+        if (!active) return;
+        setSubscription(sub);
+        setIsAuthenticated(true);
+      })
+      .catch((err: unknown) => {
+        if (!active) return;
+        if (err instanceof ApiError && err.status === 401) {
+          setIsAuthenticated(false);
+          setSubscription(null);
+          return;
+        }
+        // Network / unexpected error: optimistically assume authenticated and
+        // let the CTA attempt speak for itself when the user clicks Subscribe.
+        setSubscription(null);
+        setIsAuthenticated(true);
+      });
+    return () => {
+      active = false;
+    };
   }, []);
 
   const formattedPrice = useMemo(() => {
@@ -120,13 +136,11 @@ export default function PricingPage() {
 
   const handleSubscribe = useCallback(async () => {
     setErrorMessage("");
-    if (!hasAuthSession()) {
-      router.push("/login?next=/pricing");
-      return;
-    }
-
     setCheckoutStatus("loading");
     try {
+      // The API call itself is the auth probe — a 401 will fall through to
+      // the catch block below where we redirect to /login. We don't try to
+      // guess from local state since the session lives in an httpOnly cookie.
       const checkout = await subscriptionService.createCheckout();
 
       if (!SNAP_CLIENT_KEY) {
@@ -157,6 +171,11 @@ export default function PricingPage() {
       });
     } catch (error) {
       setCheckoutStatus("error");
+      if (error instanceof ApiError && error.status === 401) {
+        setIsAuthenticated(false);
+        router.push("/login?next=/pricing");
+        return;
+      }
       if (isSubscriptionGateError(error)) {
         setErrorMessage("Kamu sudah punya langganan aktif. Refresh halaman untuk melihat status terbaru.");
         void subscriptionService.refresh().then(setSubscription).catch(() => undefined);

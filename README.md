@@ -89,3 +89,5 @@ This means that swapping the LLM provider does **not** require any frontend chan
 ## License
 
 This repository is provided as-is for development and prototyping.
+logo : <img width="1254" height="1254" alt="logo single goalpath" src="https://github.com/user-attachments/assets/67a06178-4fef-4ca7-9f1d-5a7ba076ef8d" />
+

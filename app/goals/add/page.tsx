@@ -159,7 +159,7 @@ export default function AddGoalPage() {
 
   return (
     <div className="min-h-screen bg-background pb-20 lg:pl-[272px]">
-      <AppSidebar active="goals" className="fixed inset-y-0 left-0 z-50 hidden lg:flex" />
+      <AppSidebar active="goals" prefetchTodayGoals={false} className="fixed inset-y-0 left-0 z-50 hidden lg:flex" />
       {/* Header */}
       <header className="fixed top-0 z-40 w-full border-b border-border bg-background/90 px-6 py-4 backdrop-blur-xl md:px-10 lg:left-[272px] lg:w-[calc(100%-272px)]">
         <div className="max-w-3xl mx-auto flex items-center gap-4">

@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { ArrowUpRight, Sparkles } from "lucide-react";
+import Link from "next/link";
 import { cn } from "@/lib/utils";
 
 const tickerMoments = [
@@ -102,7 +103,7 @@ export function HeroSection() {
           </p>
 
           <div className="mt-9 flex flex-wrap items-center gap-x-8 gap-y-4">
-            <a
+            <Link
               href="/register"
               className="group inline-flex min-h-12 items-center gap-2 rounded-pill bg-primary px-6 text-sm font-bold text-surface shadow-lift transition duration-200 hover:-translate-y-0.5 hover:bg-primary-deep focus:outline-none focus:ring-4 focus:ring-primary/30 active:translate-y-0"
             >
@@ -111,7 +112,7 @@ export function HeroSection() {
                 className="size-4 transition group-hover:translate-x-0.5 group-hover:-translate-y-0.5"
                 aria-hidden="true"
               />
-            </a>
+            </Link>
             <a
               href="#how-it-works"
               className="inline-flex items-center gap-2 text-sm font-bold text-foreground underline decoration-muted decoration-2 underline-offset-[6px] transition hover:decoration-primary"

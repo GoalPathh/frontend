@@ -1,6 +1,7 @@
 "use client";
 
 import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import dynamic from "next/dynamic";
 import { useRouter, useSearchParams } from "next/navigation";
 import {
   Bell,
@@ -28,7 +29,6 @@ import { UserAvatar } from "@/components/user-avatar";
 import { ProfileHeader } from "@/components/me/profile-header";
 import { StatCard } from "@/components/me/stat-card";
 import { PreferenceCard } from "@/components/me/preference-card";
-import { AppearanceModal } from "@/components/me/appearance-modal";
 import { AccountCard } from "@/components/me/account-card";
 import { NotificationSettings } from "@/components/me/notification-settings";
 import { userService, type UserOverview } from "@/lib/userService";
@@ -43,6 +43,11 @@ import type {
 } from "@/lib/types";
 
 type SaveTone = "success" | "error";
+
+const AppearanceModal = dynamic(
+  () => import("@/components/me/appearance-modal").then((module) => module.AppearanceModal),
+  { ssr: false },
+);
 
 export default function MePage() {
   /**
@@ -687,12 +692,14 @@ function MePageContent() {
 
       <BottomNavigation active="me" />
 
-      <AppearanceModal
-        open={showAppearanceModal}
-        currentPreference={appearance}
-        onClose={() => setShowAppearanceModal(false)}
-        onSave={(preference) => void handleAppearanceSave(preference)}
-      />
+      {showAppearanceModal && (
+        <AppearanceModal
+          open
+          currentPreference={appearance}
+          onClose={() => setShowAppearanceModal(false)}
+          onSave={(preference) => void handleAppearanceSave(preference)}
+        />
+      )}
     </div>
   );
 }

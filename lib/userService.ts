@@ -68,6 +68,29 @@ const defaultNotifications: NotificationPreference[] = [
   { id: "weekly-reports", title: "Weekly Reports", enabled: true, description: "Review your performance every week." },
 ];
 
+let cachedProfile: UserProfile | null = null;
+let profileRequest: Promise<UserProfile> | null = null;
+let profileVersion = 0;
+export const USER_PROFILE_EVENT = "goalpath:profile";
+
+function cacheProfile(profile: UserProfile) {
+  profileVersion += 1;
+  cachedProfile = profile;
+  profileRequest = null;
+  if (typeof window !== "undefined") {
+    window.dispatchEvent(new CustomEvent(USER_PROFILE_EVENT, { detail: profile }));
+  }
+}
+
+function clearProfileCache() {
+  profileVersion += 1;
+  cachedProfile = null;
+  profileRequest = null;
+  if (typeof window !== "undefined") {
+    window.dispatchEvent(new CustomEvent(USER_PROFILE_EVENT, { detail: null }));
+  }
+}
+
 function normalizeProfile(profile: ApiProfile): UserProfile {
   const usernameRaw = String(profile.username ?? "").trim();
   const username = usernameRaw ? (usernameRaw.startsWith("@") ? usernameRaw : `@${usernameRaw}`) : "@goalpath";
@@ -116,10 +139,28 @@ function normalizeOverview(payload: MeOverviewResponse): UserOverview {
 }
 
 export const userService = {
+  async getProfile() {
+    if (cachedProfile) return cachedProfile;
+    if (profileRequest) return profileRequest;
+
+    const version = profileVersion;
+    const request = apiRequest<ApiProfile>("/me").then((payload) => {
+      const profile = normalizeProfile(payload);
+      if (version === profileVersion) cacheProfile(profile);
+      return profile;
+    });
+    profileRequest = request;
+    void request.then(
+      () => { if (profileRequest === request) profileRequest = null; },
+      () => { if (profileRequest === request) profileRequest = null; },
+    );
+    return request;
+  },
+
   async getOverview() {
     const response = await apiRequest<MeOverviewResponse>("/me/overview");
     const overview = normalizeOverview(response);
-    setStoredAppearance(overview.preferences.appearance);
+    cacheProfile(overview.profile);
     return overview;
   },
 
@@ -128,8 +169,12 @@ export const userService = {
       method: "PATCH",
       body: JSON.stringify(input),
     });
-    return normalizeProfile(response);
+    const profile = normalizeProfile(response);
+    cacheProfile(profile);
+    return profile;
   },
+
+  clearProfileCache,
 
   async updatePreferences(input: {
     appearance?: AppearancePreference;

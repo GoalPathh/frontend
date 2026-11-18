@@ -1,4 +1,5 @@
 import { Award, BarChart3, CheckCircle2, Crown, User, UserCog } from "lucide-react";
+import { IntentLink } from "@/components/intent-link";
 
 type BottomNavigationProps = {
   active: "today" | "goals" | "progress" | "coach" | "me" | "pricing";
@@ -20,9 +21,13 @@ export function BottomNavigation({ active }: BottomNavigationProps) {
         const isActive = active === key;
 
         return (
-          <a
+          <IntentLink
             key={key}
             href={href}
+            prefetch={
+              (active === "today" && key === "goals") ||
+              (active === "goals" && key === "today")
+            }
             className={
               isActive
                 ? "flex flex-col items-center justify-center text-primary"
@@ -33,7 +38,7 @@ export function BottomNavigation({ active }: BottomNavigationProps) {
             <span className={`text-[10px] uppercase tracking-widest mt-1 ${isActive ? "font-bold" : "font-medium"}`}>
               {label}
             </span>
-          </a>
+          </IntentLink>
         );
       })}
     </nav>

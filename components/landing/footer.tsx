@@ -1,4 +1,4 @@
-import { Target } from "lucide-react";
+import { BrandLogo } from "@/components/brand-logo";
 
 const footerLinks = [
   {
@@ -17,9 +17,7 @@ export function Footer() {
       <div className="mx-auto grid max-w-7xl gap-10 md:grid-cols-[1.2fr_1fr_1fr_1.2fr]">
         <div>
           <div className="flex items-center gap-2 font-extrabold">
-            <span className="flex size-9 items-center justify-center rounded-full bg-primary text-white">
-              <Target className="size-5" aria-hidden="true" />
-            </span>
+            <BrandLogo size={40} />
             <span>GoalPath</span>
           </div>
           <p className="mt-4 max-w-sm text-sm leading-6 text-[#6b7280]">

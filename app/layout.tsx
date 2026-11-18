@@ -4,9 +4,9 @@ import "./globals.css";
 
 const themeBootScript = `
   try {
-    const raw = window.localStorage.getItem("goalpathAppearance");
-    const appearance = raw ? JSON.parse(raw) : "light";
-    document.documentElement.classList.toggle("dark", appearance === "dark");
+    const raw = window.localStorage.getItem("goalpathAppearanceV2");
+    const appearance = raw ? JSON.parse(raw) : "dark";
+    document.documentElement.classList.toggle("dark", appearance !== "light");
   } catch {
     document.documentElement.classList.remove("dark");
   }
@@ -41,7 +41,10 @@ export default function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <html lang="en" className={`${jakarta.variable} ${bricolage.variable}`} suppressHydrationWarning>
+    <html lang="en" className={`dark ${jakarta.variable} ${bricolage.variable}`} suppressHydrationWarning>
+      <head>
+        <script dangerouslySetInnerHTML={{ __html: themeBootScript }} />
+      </head>
       <body className="font-sans antialiased">
         <a href="#main" className="skip-link">Skip to content</a>
         <div className="grain-overlay" aria-hidden="true" />

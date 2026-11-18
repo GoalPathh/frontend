@@ -1,7 +1,9 @@
 import type { AppearancePreference } from "@/lib/types";
 
-export const APPEARANCE_KEY = "goalpathAppearance";
-export const DEFAULT_APPEARANCE: AppearancePreference = "light";
+// Versioned so an older server-synced light preference cannot override the new
+// dark-by-default behaviour. This key is written only by an explicit theme toggle.
+export const APPEARANCE_KEY = "goalpathAppearanceV2";
+export const DEFAULT_APPEARANCE: AppearancePreference = "dark";
 
 export function resolveAppearance(preference: AppearancePreference) {
   return preference === "dark" ? "dark" : "light";
@@ -22,7 +24,7 @@ export function getStoredAppearance(): AppearancePreference {
     if (!stored) return DEFAULT_APPEARANCE;
 
     const parsed = JSON.parse(stored) as AppearancePreference;
-    return parsed === "dark" ? "dark" : DEFAULT_APPEARANCE;
+    return parsed === "light" ? "light" : DEFAULT_APPEARANCE;
   } catch {
     return DEFAULT_APPEARANCE;
   }

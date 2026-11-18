@@ -1,38 +1,39 @@
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
+import Link from "next/link";
 import {
   ArrowRight,
-  BookOpen,
   CalendarDays,
   Clock3,
-  Droplet,
   Flame,
-  Globe2,
-  Loader2,
-  Menu,
-  Mic,
   Moon,
   Sparkles,
   Sun,
   Target,
-  Utensils,
-  Zap,
 } from "lucide-react";
 import { BottomNavigation } from "@/components/bottom-navigation";
 import { AppSidebar } from "@/components/app-sidebar";
+import { IntentLink } from "@/components/intent-link";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { TimeRange } from "@/lib/types";
 import { getApiUrl } from "@/lib/api";
 import { TodayHabit, TodayPlan, TodayProfile } from "@/lib/todayService";
 import { TodayInteractiveClient } from "./client-interactive";
 
-const XP_PER_HABIT_COMPLETION = 30;
-
 const timeRangeMeta: Record<TimeRange, { label: string; Icon: typeof Sun; className: string }> = {
   morning: { label: "Morning Routine", Icon: Sun, className: "text-orange-500" },
   afternoon: { label: "Noon Focus", Icon: Target, className: "text-yellow-600" },
   evening: { label: "Evening Reflection", Icon: Moon, className: "text-primary" },
   anytime: { label: "Anytime", Icon: Clock3, className: "text-sky" },
+};
+
+const goalCardVisuals: Record<string, { gradient: string; symbol: string }> = {
+  language: { gradient: "from-sky-500 via-cyan-500 to-blue-700", symbol: "🌍" },
+  fitness: { gradient: "from-rose-500 via-orange-500 to-amber-400", symbol: "💪" },
+  skills: { gradient: "from-violet-500 via-indigo-500 to-blue-600", symbol: "🎯" },
+  creativity: { gradient: "from-fuchsia-500 via-pink-500 to-rose-400", symbol: "🎨" },
+  learning: { gradient: "from-emerald-500 via-teal-500 to-cyan-600", symbol: "📚" },
+  other: { gradient: "from-primary via-sky to-gold", symbol: "⭐" },
 };
 
 function greetingName(profile: TodayProfile | null) {
@@ -141,13 +142,13 @@ export default async function TodayPage() {
                 {summary?.message ?? "Loading today's plan..."}
               </p>
               <div className="mt-6 flex flex-col gap-3 sm:flex-row">
-                <a href="/coach" className="inline-flex items-center justify-center gap-2 rounded-full bg-primary px-5 py-3 text-sm font-extrabold text-white shadow-lg shadow-primary/20 transition hover:-translate-y-0.5 hover:bg-primary/90 active:translate-y-0">
+                <Link href="/coach" className="inline-flex items-center justify-center gap-2 rounded-full bg-primary px-5 py-3 text-sm font-extrabold text-white shadow-lg shadow-primary/20 transition hover:-translate-y-0.5 hover:bg-primary/90 active:translate-y-0">
                   Start Focus
                   <ArrowRight className="h-4 w-4" />
-                </a>
-                <a href="/goals" className="inline-flex items-center justify-center gap-2 rounded-full border border-border bg-background px-5 py-3 text-sm font-extrabold text-foreground transition hover:-translate-y-0.5 hover:border-primary hover:text-primary active:translate-y-0">
+                </Link>
+                <IntentLink href="/goals" prefetch className="inline-flex items-center justify-center gap-2 rounded-full border border-border bg-background px-5 py-3 text-sm font-extrabold text-foreground transition hover:-translate-y-0.5 hover:border-primary hover:text-primary active:translate-y-0">
                   Adjust Plan
-                </a>
+                </IntentLink>
               </div>
             </div>
 
@@ -169,43 +170,64 @@ export default async function TodayPage() {
           </div>
         </header>
 
+        <section aria-label="Goal widgets" className="space-y-4">
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
+            <div>
+              <p className="text-[10px] font-extrabold uppercase tracking-[0.24em] text-primary">Your learning path</p>
+              <h2 className="mt-1 text-xl font-bold tracking-tight text-foreground">My Goals</h2>
+            </div>
+            <IntentLink href="/goals" prefetch className="text-sm font-bold text-primary transition hover:text-primary/75">
+              Manage goals
+            </IntentLink>
+          </div>
+
+          {activeGoals.length > 0 ? (
+            <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+              {activeGoals.map((goal) => {
+                const progress = Math.min(100, Math.max(0, Number(goal.progress) || 0));
+                const visual = goalCardVisuals[goal.category] ?? goalCardVisuals.other;
+
+                return (
+                  <article key={goal.id} className="rounded-[20px] border border-border bg-surface p-4 shadow-card transition hover:-translate-y-0.5 hover:shadow-soft">
+                    <div className={`relative flex h-32 items-start justify-between overflow-hidden rounded-[15px] bg-gradient-to-br ${visual.gradient} p-4`}>
+                      <div className="absolute -right-8 -top-10 size-32 rounded-full border-[18px] border-white/10" />
+                      <div className="absolute -bottom-12 left-1/3 size-28 rounded-full bg-white/10 blur-2xl" />
+                      <span className="relative flex size-12 items-center justify-center rounded-[14px] bg-white/20 text-2xl shadow-sm backdrop-blur-sm">
+                        {visual.symbol}
+                      </span>
+                      <span className="relative rounded-full bg-black/15 px-3 py-1.5 text-xs font-extrabold text-white backdrop-blur-sm">
+                        {Math.round(progress)}% complete
+                      </span>
+                      <span className="absolute bottom-3 left-4 text-[10px] font-extrabold uppercase tracking-[0.2em] text-white/85">
+                        {goal.category}
+                      </span>
+                    </div>
+
+                    <div className="px-1 pb-1 pt-4">
+                      <h3 className="min-h-12 text-base font-extrabold leading-6 text-foreground">{goal.title}</h3>
+                      <div className="mt-3 h-2 overflow-hidden rounded-full bg-muted">
+                        <div className="h-full rounded-full bg-gradient-to-r from-primary via-sky to-gold" style={{ width: `${progress}%` }} />
+                      </div>
+                      <p className="mt-3 text-xs font-semibold text-foreground/55">
+                        {goal.todayCompletedHabits} of {goal.todayTotalHabits} habits done today
+                      </p>
+                    </div>
+                  </article>
+                );
+              })}
+            </div>
+          ) : (
+            <div className="flex flex-col gap-4 rounded-[20px] border border-dashed border-primary/30 bg-surface p-5 sm:flex-row sm:items-center sm:justify-between">
+              <p className="text-sm font-semibold text-foreground/60">Create a goal and its progress card will appear here.</p>
+              <Link href="/goals/add" className="inline-flex items-center justify-center rounded-full bg-primary px-4 py-2.5 text-sm font-extrabold text-white transition hover:bg-primary/90">
+                Create a goal
+              </Link>
+            </div>
+          )}
+        </section>
+
         <div className="grid gap-6 lg:grid-cols-[1fr_22rem] lg:items-start">
           <div className="space-y-6">
-            <section className="relative overflow-hidden rounded-[20px] border border-border p-5 shadow-card glass-card sm:p-6">
-              <div className="absolute -right-24 -top-24 h-64 w-64 rounded-full bg-primary/10 blur-[80px]" />
-              <div className="relative z-10 space-y-4">
-                <div className="flex items-center justify-between">
-                  <h3 className="text-lg font-semibold text-foreground">Current Goals</h3>
-                  <Zap className="h-6 w-6 text-primary" />
-                </div>
-                {activeGoals.length > 0 ? (
-                  <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-                    {activeGoals.slice(0, 4).map((goal) => (
-                      <div key={goal.id} className="space-y-1.5">
-                        <div className="flex items-center justify-between gap-2 text-xs font-semibold text-foreground">
-                          <span className="truncate">{goal.title}</span>
-                          <span className="text-[10px] uppercase text-foreground/60">{Math.round(goal.progress)}%</span>
-                        </div>
-                        <div className="h-1.5 w-full overflow-hidden rounded-full bg-muted">
-                          <div className="h-full rounded-full bg-gradient-to-r from-primary to-primary/80" style={{ width: `${Math.min(100, Math.max(0, goal.progress))}%` }} />
-                        </div>
-                        <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-foreground/45">
-                          {goal.todayCompletedHabits}/{goal.todayTotalHabits} today
-                        </p>
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  <div className="rounded-2xl border border-dashed border-border bg-background/70 p-4 text-sm font-semibold text-foreground/60">
-                    No active goals yet. Create your first goal to build a daily plan.
-                  </div>
-                )}
-                <a href="/goals" className="block w-full rounded-xl py-3 text-center text-xs font-bold uppercase tracking-[0.24em] text-white shadow-md transition active:scale-[0.98] gradient-btn">
-                  View Strategy
-                </a>
-              </div>
-            </section>
-
             <div className="grid gap-4 sm:grid-cols-3">
               <MetricCard icon={<Flame className="h-10 w-10 text-orange-500" />} label={`${streak}d Streak`} />
               <MetricCard icon={<Sparkles className="h-10 w-10 text-primary" />} label={`${xp} XP`} />

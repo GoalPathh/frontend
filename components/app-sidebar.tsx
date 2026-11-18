@@ -1,11 +1,11 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import {
   BarChart3,
   CheckCircle2,
-  Cpu,
   Crown,
   Loader2,
   MessageSquarePlus,
@@ -23,7 +23,9 @@ import {
   type CoachSession,
 } from "@/lib/coachSessionService";
 import { UserAvatar } from "@/components/user-avatar";
-import { userService } from "@/lib/userService";
+import { BrandLogo } from "@/components/brand-logo";
+import { IntentLink } from "@/components/intent-link";
+import { USER_PROFILE_EVENT, userService } from "@/lib/userService";
 import type { UserProfile } from "@/lib/types";
 
 export type AppSection = "today" | "goals" | "progress" | "coach" | "me" | "pricing";
@@ -33,6 +35,7 @@ type AppSidebarProps = {
   coachSessions?: boolean;
   className?: string;
   onNavigate?: () => void;
+  prefetchTodayGoals?: boolean;
 };
 
 const mainMenu = [
@@ -48,25 +51,24 @@ export function AppSidebar({
   coachSessions = false,
   className = "",
   onNavigate,
+  prefetchTodayGoals = true,
 }: AppSidebarProps) {
   const [profile, setProfile] = useState<UserProfile | null>(null);
 
   useEffect(() => {
     let cancelled = false;
-
-    void userService
-      .getOverview()
-      .then((overview) => {
-        if (cancelled) return;
-        setProfile(overview.profile);
-      })
-      .catch(() => {
-        if (cancelled) return;
-        setProfile(null);
-      });
-
+    const updateProfile = (event: Event) => {
+      setProfile((event as CustomEvent<UserProfile | null>).detail);
+    };
+    window.addEventListener(USER_PROFILE_EVENT, updateProfile);
+    void userService.getProfile().then((value) => {
+      if (!cancelled) setProfile(value);
+    }).catch(() => {
+      if (!cancelled) setProfile(null);
+    });
     return () => {
       cancelled = true;
+      window.removeEventListener(USER_PROFILE_EVENT, updateProfile);
     };
   }, []);
 
@@ -83,9 +85,7 @@ export function AppSidebar({
     >
       <div className="px-5 pb-5 pt-6">
         <div className="flex items-center gap-3">
-          <div className="flex size-10 items-center justify-center rounded-2xl bg-primary text-white shadow-lg shadow-primary/20">
-            <Cpu className="h-5 w-5" />
-          </div>
+          <BrandLogo size={40} priority />
           <div className="min-w-0">
             <h2 className="truncate text-lg font-bold tracking-tight">GoalPath AI</h2>
             <p className="mt-0.5 text-xs font-semibold text-primary">
@@ -103,9 +103,13 @@ export function AppSidebar({
           {mainMenu.map(({ key, label, href, Icon }) => {
             const isActive = active === key;
             return (
-              <a
+              <IntentLink
                 key={key}
                 href={href}
+                prefetch={prefetchTodayGoals && (
+                  (active === "today" && key === "goals") ||
+                  (active === "goals" && key === "today")
+                )}
                 onClick={onNavigate}
                 aria-current={isActive ? "page" : undefined}
                 className={`flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-semibold transition ${
@@ -117,7 +121,7 @@ export function AppSidebar({
                 <Icon className="h-4.5 w-4.5" />
                 <span>{label}</span>
                 {isActive && <span className="ml-auto size-1.5 rounded-full bg-primary" />}
-              </a>
+              </IntentLink>
             );
           })}
         </nav>
@@ -138,7 +142,7 @@ export function AppSidebar({
       )}
 
       <div className="border-t border-border p-4">
-        <a
+        <Link
           href="/me"
           onClick={onNavigate}
           aria-current={active === "me" ? "page" : undefined}
@@ -161,7 +165,7 @@ export function AppSidebar({
           <Settings
             className={`h-4 w-4 ${active === "me" ? "text-primary" : "text-foreground/40"}`}
           />
-        </a>
+        </Link>
       </div>
     </aside>
   );
@@ -316,7 +320,7 @@ function CoachSessionsPanel({ onNavigate }: { onNavigate?: () => void }) {
                       : "border-transparent hover:border-border hover:bg-muted"
                   }`}
                 >
-                  <a
+                  <Link
                     href={`/coach?session=${s.id}`}
                     onClick={onNavigate}
                     className="flex min-w-0 flex-1 items-center gap-3"
@@ -363,7 +367,7 @@ function CoachSessionsPanel({ onNavigate }: { onNavigate?: () => void }) {
                         )}
                       </span>
                     </span>
-                  </a>
+                  </Link>
                   {!isEditing && (
                     <div className="flex items-center gap-0.5 opacity-0 transition group-hover:opacity-100">
                       <button

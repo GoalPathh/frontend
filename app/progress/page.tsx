@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import {
   Activity,
   AlertTriangle,
@@ -23,6 +24,7 @@ import { AchievementCard } from "@/components/progress/achievement-card";
 import { AIInsightCard } from "@/components/progress/ai-insight-card";
 import { BottomNavigation } from "@/components/bottom-navigation";
 import { AppSidebar } from "@/components/app-sidebar";
+import { IntentLink } from "@/components/intent-link";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { progressService, type ProgressOverview } from "@/lib/progressService";
 import { personaService } from "@/lib/personaService";
@@ -155,13 +157,14 @@ export default function ProgressPage() {
                   <CalendarDays className="h-4 w-4 text-primary" />
                   {range.replace(/-/g, " ")}
                 </span>
-                <a
+                <IntentLink
                   href="/goals"
+                  prefetch
                   className="inline-flex items-center gap-2 rounded-full border border-border bg-background px-4 py-2 text-sm font-extrabold text-foreground transition hover:border-primary hover:text-primary"
                 >
                   Manage goals
                   <ArrowRight className="h-4 w-4" />
-                </a>
+                </IntentLink>
               </div>
 
               {summary && summary.atRiskGoals > 0 && (
@@ -210,12 +213,12 @@ export default function ProgressPage() {
             <p className="mb-6 text-foreground/60">
               Start your first goal to unlock progress analytics, streak tracking, and habit rankings.
             </p>
-            <a
+            <Link
               href="/goals/add"
               className="inline-flex rounded-full bg-primary px-6 py-3 text-sm font-bold text-white shadow-sm transition-colors hover:bg-primary/90"
             >
               Start Your First Goal
-            </a>
+            </Link>
           </section>
         ) : overview ? (
           <>

@@ -1,5 +1,6 @@
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
+import Link from "next/link";
 import {
   AlertTriangle,
   CalendarDays,
@@ -13,6 +14,7 @@ import { getApiUrl } from "@/lib/api";
 import { GoalDashboard } from "@/lib/goalService";
 import { BottomNavigation } from "@/components/bottom-navigation";
 import { AppSidebar } from "@/components/app-sidebar";
+import { IntentLink } from "@/components/intent-link";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { GoalsInteractiveHeader, AddGoalButton, CreateFirstGoalButton } from "./client-interactive";
 import { ClientGoalCard } from "./client-goal-card";
@@ -113,12 +115,13 @@ export default async function GoalsPage() {
 
               <div className="mt-6 flex flex-col gap-3 sm:flex-row">
                 <AddGoalButton />
-                <a
+                <IntentLink
                   href="/today"
+                  prefetch
                   className="inline-flex items-center justify-center gap-2 rounded-full border border-border bg-background px-5 py-3 text-sm font-extrabold text-foreground transition hover:-translate-y-0.5 hover:border-primary hover:text-primary active:translate-y-0"
                 >
                   View Today
-                </a>
+                </IntentLink>
               </div>
 
               {safeDashboard.summary.atRiskGoals > 0 && (

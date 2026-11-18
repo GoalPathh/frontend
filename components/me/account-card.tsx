@@ -1,4 +1,5 @@
 import { ChevronRight } from "lucide-react";
+import { IntentLink } from "@/components/intent-link";
 import type { ReactNode } from "react";
 
 interface AccountCardProps {
@@ -10,7 +11,7 @@ interface AccountCardProps {
 
 export function AccountCard({ icon, title, subtitle, href }: AccountCardProps) {
   return (
-    <a
+    <IntentLink
       href={href}
       className="group flex items-center justify-between rounded-[24px] border border-border bg-surface p-5 text-left shadow-sm transition hover:border-primary"
     >
@@ -24,6 +25,6 @@ export function AccountCard({ icon, title, subtitle, href }: AccountCardProps) {
         </div>
       </div>
       <ChevronRight className="h-5 w-5 text-primary" />
-    </a>
+    </IntentLink>
   );
 }

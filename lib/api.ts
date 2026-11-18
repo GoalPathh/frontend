@@ -37,6 +37,7 @@ export function unwrapApiData<T>(payload: MaybeApiData<T>): T {
 async function request<T>(path: string, options: RequestInit, retryOnUnauthorized: boolean): Promise<T> {
   const response = await fetch(`${API_URL}${path}`, {
     ...options,
+    cache: options.cache ?? "no-store",
     credentials: "include", // This tells fetch to send cookies with cross-origin requests
     headers: {
       "Content-Type": "application/json",
@@ -44,7 +45,13 @@ async function request<T>(path: string, options: RequestInit, retryOnUnauthorize
     },
   });
 
-  if (response.status === 401 && retryOnUnauthorized && typeof window !== "undefined") {
+  const isAuthenticationAttempt = ["/auth/login", "/auth/register", "/auth/google"].includes(path);
+  if (
+    response.status === 401 &&
+    retryOnUnauthorized &&
+    !isAuthenticationAttempt &&
+    typeof window !== "undefined"
+  ) {
     // Attempt backend-side refresh via cookie
     const refreshResponse = await fetch(`${API_URL}/auth/refresh`, {
       method: "POST",

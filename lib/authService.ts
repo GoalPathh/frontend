@@ -1,4 +1,5 @@
 import { apiRequest } from "./api";
+import { userService } from "./userService";
 
 type AuthResult = {
   session: { access_token: string; refresh_token: string } | null;
@@ -11,6 +12,7 @@ export const authService = {
       method: "POST",
       body: JSON.stringify({ email, password }),
     });
+    userService.clearProfileCache();
     // With httpOnly cookies, backend sets cookies directly via headers
     return result;
   },
@@ -19,6 +21,7 @@ export const authService = {
       method: "POST",
       body: JSON.stringify({ name, email, password }),
     });
+    userService.clearProfileCache();
     // With httpOnly cookies, backend sets cookies directly via headers
     return result;
   },
@@ -42,6 +45,7 @@ export const authService = {
     });
   },
   async logout() {
+    userService.clearProfileCache();
     // Clear cookies via backend route AND Next.js API route
     try {
       await apiRequest("/auth/logout", { method: "POST" }).catch(() => {});

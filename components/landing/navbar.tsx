@@ -1,8 +1,10 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Sparkles, Menu, X, ArrowUpRight } from "lucide-react";
+import { Menu, X, ArrowUpRight } from "lucide-react";
+import Link from "next/link";
 import { navigation } from "@/lib/landing-content";
+import { BrandLogo } from "@/components/brand-logo";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { cn } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
@@ -56,8 +58,8 @@ export function Navbar() {
             className="group flex items-center gap-2.5 outline-none"
             aria-label="GoalPath home"
           >
-            <span className="flex size-9 items-center justify-center rounded-full bg-primary text-white shadow-sm transition-transform duration-500 group-hover:scale-110 group-hover:-rotate-12">
-              <Sparkles className="size-4" aria-hidden="true" />
+            <span className="transition-transform duration-300 group-hover:scale-105">
+              <BrandLogo size={40} priority />
             </span>
             <span className="display text-[19px] font-semibold tracking-tight text-foreground">
               GoalPath
@@ -80,13 +82,13 @@ export function Navbar() {
           {/* Desktop Actions */}
           <div className="hidden items-center gap-2.5 md:flex">
             <ThemeToggle className="size-9 bg-transparent border-transparent hover:bg-surface-2" />
-            <a
+            <Link
               href="/login"
               className="px-4 py-2 text-[14px] font-semibold text-muted-foreground transition-colors hover:text-foreground outline-none"
             >
               Log in
-            </a>
-            <a
+            </Link>
+            <Link
               href="/register"
               className="group flex h-10 items-center justify-between gap-3 overflow-hidden rounded-full bg-foreground px-1.5 pr-4 text-[14px] font-semibold text-background transition-transform duration-300 hover:scale-[1.02] active:scale-[0.98] outline-none"
             >
@@ -95,7 +97,7 @@ export function Navbar() {
                 <ArrowUpRight className="size-3.5 transition-transform duration-300 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 group-hover:text-white" />
               </span>
               <span>Start goal</span>
-            </a>
+            </Link>
           </div>
 
           {/* Mobile Menu Toggle */}
@@ -121,9 +123,7 @@ export function Navbar() {
           >
             <div className="flex items-center justify-between p-6 sm:px-8">
               <span className="flex items-center gap-2.5">
-                <span className="flex size-9 items-center justify-center rounded-full bg-primary text-white">
-                  <Sparkles className="size-4" />
-                </span>
+                <BrandLogo size={40} />
                 <span className="display text-xl font-semibold text-foreground">
                   GoalPath
                 </span>
@@ -164,20 +164,20 @@ export function Navbar() {
                      <span className="text-sm font-semibold text-muted-foreground uppercase tracking-widest">Theme</span>
                      <ThemeToggle className="size-12 border-border/50" />
                    </div>
-                  <a
+                  <Link
                     href="/login"
                     onClick={() => setMobileMenuOpen(false)}
                     className="flex min-h-14 items-center justify-center rounded-full border border-border bg-surface text-lg font-semibold text-foreground"
                   >
                     Log in
-                  </a>
-                  <a
+                  </Link>
+                  <Link
                     href="/register"
                     onClick={() => setMobileMenuOpen(false)}
                     className="flex min-h-14 items-center justify-center rounded-full bg-primary text-lg font-semibold text-white"
                   >
                     Start your goal
-                  </a>
+                  </Link>
                 </motion.div>
               </nav>
             </div>

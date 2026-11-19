@@ -231,6 +231,11 @@ export const goalService = {
     return rows.map(mapApiGoal);
   },
 
+  async getGoalFromApi(id: string): Promise<Goal> {
+    const row = await apiRequest<ApiGoal>(`/goals/${id}`);
+    return mapApiGoal(row);
+  },
+
   async getDashboard(): Promise<GoalDashboard> {
     const data = await apiRequest<ApiGoalDashboardResponse>("/goals/dashboard");
 
@@ -245,6 +250,17 @@ export const goalService = {
     const row = await apiRequest<ApiGoal>("/goals", {
       method: "POST",
       body: JSON.stringify({ ...formData, progress: 0 }),
+    });
+    return mapApiGoal(row);
+  },
+
+  async updateGoalFromApi(
+    id: string,
+    update: Partial<Pick<Goal, "title" | "category" | "period" | "startDate" | "targetDate" | "reminderEnabled" | "notificationPreference">>,
+  ): Promise<Goal> {
+    const row = await apiRequest<ApiGoal>(`/goals/${id}`, {
+      method: "PATCH",
+      body: JSON.stringify(update),
     });
     return mapApiGoal(row);
   },

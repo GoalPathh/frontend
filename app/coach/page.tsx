@@ -11,7 +11,6 @@ import {
   Cpu,
   Flame,
   Menu,
-  MoreHorizontal,
   Send,
   Sparkles,
   Target,
@@ -23,7 +22,6 @@ import {
 import { AnimatePresence, motion } from "framer-motion";
 import { UserAvatar } from "@/components/user-avatar";
 import { AppSidebar } from "@/components/app-sidebar";
-import { BottomNavigation } from "@/components/bottom-navigation";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { ApiError, apiRequest, hasAuthSession } from "@/lib/api";
 import { isSubscriptionGateError } from "@/lib/subscriptionService";
@@ -886,7 +884,7 @@ function CoachPageContent() {
           {
             id: createMessageId("subscription-gate"),
             role: "assistant",
-            content: `${err instanceof Error ? err.message : "Batas plan Free tercapai."}\n\nBuka halaman Pricing untuk upgrade ke Premium, atau hapus goal yang sudah tidak aktif.`,
+            content: `${err instanceof Error ? err.message : "Batas plan Free tercapai."}\n\nBuka Profile → Subscription & Billing (/profile/subscription) untuk upgrade ke Premium, atau hapus goal yang sudah tidak aktif.`,
           },
         ]);
       } else {
@@ -937,7 +935,7 @@ function CoachPageContent() {
           {
             id: createMessageId("subscription-gate"),
             role: "assistant",
-            content: `${err instanceof Error ? err.message : "Batas plan Free tercapai."}\n\nBuka halaman Pricing untuk upgrade ke Premium, atau hapus goal yang sudah tidak aktif.`,
+            content: `${err instanceof Error ? err.message : "Batas plan Free tercapai."}\n\nBuka Profile → Subscription & Billing (/profile/subscription) untuk upgrade ke Premium, atau hapus goal yang sudah tidak aktif.`,
           },
         ]);
       } else {
@@ -991,10 +989,10 @@ function CoachPageContent() {
       <main className="flex min-w-0 flex-1 flex-col overflow-hidden">
         <header className="z-30 border-b border-border bg-surface/85 px-4 py-3 backdrop-blur-xl sm:px-6 lg:px-8">
           <div className="mx-auto flex max-w-[1180px] items-center justify-between gap-4">
-            <div className="flex min-w-0 items-center gap-3">
+            <div className="flex min-w-0 items-center gap-2 sm:gap-3">
               <button
                 onClick={() => setShowHistory(true)}
-                className="flex size-10 shrink-0 items-center justify-center rounded-xl border border-border bg-background text-primary transition hover:bg-muted focus:outline-none focus:ring-2 focus:ring-primary/30 lg:hidden"
+                className="flex size-10 shrink-0 items-center justify-center rounded-xl border border-border bg-background text-primary transition hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30 lg:hidden"
                 aria-label="Open chat history"
               >
                 <Menu className="h-5 w-5" />
@@ -1013,10 +1011,12 @@ function CoachPageContent() {
             <div className="flex items-center gap-1.5">
               <ThemeToggle className="size-10 bg-background dark:bg-surface/10" />
               <button
-                className="flex size-10 items-center justify-center rounded-xl text-foreground/45 transition hover:bg-muted hover:text-primary"
-                aria-label="Coach options"
+                onClick={() => router.push("/today")}
+                className="flex size-10 shrink-0 items-center justify-center rounded-xl border border-border bg-background text-foreground/60 transition hover:bg-muted hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30 lg:hidden"
+                aria-label="Back to Today"
+                title="Back to Today"
               >
-                <MoreHorizontal className="h-5 w-5" />
+                <X aria-hidden="true" className="size-5" />
               </button>
             </div>
           </div>
@@ -1151,7 +1151,7 @@ function CoachPageContent() {
               </div>
             </section>
 
-            <footer className="shrink-0 border-t border-border bg-background/95 px-4 pb-[calc(6.5rem+env(safe-area-inset-bottom))] pt-3 backdrop-blur-xl sm:px-6 lg:pb-5">
+            <footer className="shrink-0 border-t border-border bg-background/95 px-4 pb-[calc(1rem+env(safe-area-inset-bottom,0px))] pt-3 backdrop-blur-xl sm:px-6 lg:pb-5">
               
               {/* Quota Badge Indicator (SWR-driven; renders from sessionStorage
                   snapshot on revisits, real-time after a successful send). */}
@@ -1206,25 +1206,13 @@ function CoachPageContent() {
           <InsightsPanel />
         </div>
 
-        <div className="lg:hidden">
-          <BottomNavigation active="coach" />
-        </div>
-
       </main>
     </div>
   );
 }
 
 export default function CoachPage() {
-  return (
-    <Suspense fallback={
-      <div className="flex h-dvh items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
-      </div>
-    }>
-      <CoachPageContent />
-    </Suspense>
-  );
+  return <Suspense fallback={null}><CoachPageContent /></Suspense>;
 }
 
 /**

@@ -4,15 +4,12 @@
 
 /* ──────────────────────────────────────────────────────────
    GoalPath design tokens
-   Family: Deep Space & Nebula
-   - Primary nebula: deep space purple to vibrant violet
-   - Surface void: very dark space off-black
-   - Accent star: bright soft lavender/white punctuation
-   - Single accent color across the whole page (Color Consistency Lock)
+   Light canvas: lavender-tinted white, with a deep violet primary.
+   Dark surfaces retain the coordinated deep-space palette.
    ────────────────────────────────────────────────────────── */
 :root {
   /* Neutrals (light mode family) */
-  --background: 250 248 255;      /* very light purple-tinted white #faf8ff */
+  --background: 248 246 255;      /* lavender-tinted white #F8F6FF */
   --foreground: 20 18 36;         /* dark void #141224 */
   --surface: 255 255 255;         /* pure white elevated #ffffff */
   --surface-2: 242 238 252;       /* sunken light purple #f2eefc */
@@ -20,8 +17,8 @@
   --border: 220 213 235;          /* rule line #dcd5eb */
 
   /* Single accent — nebula purple */
-  --primary: 115 80 255;          /* vibrant violet #7350ff */
-  --primary-soft: 153 128 255;    /* soft violet hover #9980ff */
+  --primary: 99 53 216;           /* deep violet #6335D8 */
+  --primary-soft: 167 139 250;     /* soft lavender #A78BFA */
   --primary-deep: 60 40 140;      /* deep purple #3c288c */
 
   /* Punctuation — star white/lavender, used ONCE per page max */

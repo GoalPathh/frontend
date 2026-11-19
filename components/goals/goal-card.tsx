@@ -1,28 +1,17 @@
 import { GoalDashboardGoal } from "@/lib/goalService";
-import { AlertTriangle, CalendarDays, CheckCircle2, Flag, Zap } from "lucide-react";
+import { AlertTriangle, BookOpen, CalendarDays, CheckCircle2, CircleDot, Dumbbell, Flag, Globe2, Palette, Target, Zap } from "lucide-react";
 
 interface GoalCardProps {
   goal: GoalDashboardGoal;
-  onClick?: () => void;
-  onDelete?: () => void;
 }
 
-const categoryIcons: Record<string, string> = {
-  language: "🌍",
-  fitness: "💪",
-  skills: "🎯",
-  creativity: "🎨",
-  learning: "📚",
-  other: "⭐",
-};
-
-const categoryColors: Record<string, string> = {
-  language: "bg-sky/10 text-sky",
-  fitness: "bg-coral/12 text-coral",
-  skills: "bg-primary/10 text-primary",
-  creativity: "bg-gold/20 text-[#8a6100]",
-  learning: "bg-primary/10 text-primary",
-  other: "bg-muted text-foreground/60",
+const categoryIcons: Record<GoalDashboardGoal["category"], typeof Globe2> = {
+  language: Globe2,
+  fitness: Dumbbell,
+  skills: Target,
+  creativity: Palette,
+  learning: BookOpen,
+  other: CircleDot,
 };
 
 const statusColors: Record<GoalDashboardGoal["status"], string> = {
@@ -54,37 +43,20 @@ function formatTargetDate(value: string) {
   });
 }
 
-export function GoalCard({ goal, onClick, onDelete }: GoalCardProps) {
+export function GoalCard({ goal }: GoalCardProps) {
+  const CategoryIcon = categoryIcons[goal.category] ?? CircleDot;
+
   return (
     <article
-      onClick={onClick}
-      className={`group relative overflow-hidden rounded-[20px] border border-border bg-surface p-5 shadow-card transition-all ${
-        onClick ? "cursor-pointer hover:-translate-y-1 hover:shadow-soft" : ""
-      }`}
+      className="group relative overflow-hidden rounded-[20px] border border-border bg-surface p-5 shadow-card transition-all hover:-translate-y-1 hover:shadow-soft"
     >
-      <div className="absolute -right-12 -top-14 h-32 w-32 rounded-full bg-primary/10 blur-3xl" />
-
       <div className="relative mb-5 flex items-start justify-between gap-4">
-        <span className="flex h-14 w-14 items-center justify-center rounded-[16px] bg-background text-3xl shadow-card">
-          {categoryIcons[goal.category] ?? categoryIcons.other}
+        <span className="flex h-14 w-14 items-center justify-center rounded-[16px] bg-primary text-white shadow-card">
+          <CategoryIcon aria-hidden="true" className="h-6 w-6" />
         </span>
-        <div className="flex items-center gap-2">
-          <span className={`rounded-full px-3 py-1.5 text-xs font-extrabold capitalize ${categoryColors[goal.category] ?? categoryColors.other}`}>
-            {goal.category}
-          </span>
-          {onDelete && (
-            <button
-              type="button"
-              onClick={(event) => {
-                event.stopPropagation();
-                onDelete();
-              }}
-              className="rounded-full border border-border bg-background px-3 py-1.5 text-[10px] font-extrabold uppercase tracking-[0.18em] text-foreground/55 transition hover:border-coral/30 hover:text-coral"
-            >
-              Delete
-            </button>
-          )}
-        </div>
+        <span className="rounded-full border border-primary/15 bg-primary/10 px-3 py-1.5 text-xs font-extrabold capitalize text-primary">
+          {goal.category}
+        </span>
       </div>
 
       <h3 className="relative mb-2 text-lg font-extrabold text-foreground transition-colors group-hover:text-primary">
@@ -102,8 +74,8 @@ export function GoalCard({ goal, onClick, onDelete }: GoalCardProps) {
         </div>
         <div className="h-2.5 w-full overflow-hidden rounded-full bg-muted">
           <div
-            className="h-full rounded-full bg-gradient-to-r from-primary via-sky to-gold transition-all duration-500"
-            style={{ width: `${goal.progress}%` }}
+            className="h-full rounded-full bg-primary transition-all duration-500"
+            style={{ width: `${Math.min(100, Math.max(0, goal.progress))}%` }}
           />
         </div>
       </div>

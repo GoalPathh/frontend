@@ -67,21 +67,22 @@ export default async function GoalsPage() {
   };
 
   const stats = [
-    { label: "Active Goals", value: safeDashboard.summary.activeGoals, icon: Target, tone: "bg-primary/10 text-primary" },
-    { label: "Daily Habits", value: safeDashboard.summary.totalHabits, icon: CheckCircle2, tone: "bg-sky/10 text-sky" },
-    { label: "Focus Time", value: `${safeDashboard.summary.totalMinutes}m`, icon: Zap, tone: "bg-gold/20 text-[#8a6100]" },
-    { label: "Milestones Done", value: safeDashboard.summary.completedMilestones, icon: Trophy, tone: "bg-coral/12 text-coral" },
+    { label: "Active Goals", value: safeDashboard.summary.activeGoals, icon: Target },
+    { label: "Daily Habits", value: safeDashboard.summary.totalHabits, icon: CheckCircle2 },
+    { label: "Focus Time", value: `${safeDashboard.summary.totalMinutes}m`, icon: Zap },
+    { label: "Milestones Done", value: safeDashboard.summary.completedMilestones, icon: Trophy },
   ];
 
   const strongestGoal = safeDashboard.strongestGoal;
+  const strongestProgress = Math.min(100, Math.max(0, Number(strongestGoal?.progress) || 0));
 
   return (
     <div className="min-h-screen bg-background pb-32 text-foreground lg:pl-[272px] lg:pb-10">
       <AppSidebar active="goals" className="fixed inset-y-0 left-0 z-50 hidden lg:flex" />
 
-      <header className="fixed top-0 z-40 w-full border-b border-border bg-background/90 px-6 py-4 backdrop-blur-xl md:px-10 lg:left-[272px] lg:w-[calc(100%-272px)]">
+      <header className="fixed top-0 z-40 w-full border-b border-border bg-background/80 px-6 py-3 backdrop-blur-xl md:px-10 lg:left-[272px] lg:w-[calc(100%-272px)]">
         <div className="mx-auto flex max-w-7xl items-center justify-between">
-          <h1 className="text-2xl font-bold text-foreground">Goals</h1>
+          <h1 className="text-xl font-bold tracking-tight text-primary">Goals</h1>
           <div className="flex items-center gap-3">
             <ThemeToggle className="size-10 bg-surface/80 dark:bg-surface/10" />
             <GoalsInteractiveHeader />
@@ -89,20 +90,17 @@ export default async function GoalsPage() {
         </div>
       </header>
 
-      <main className="mx-auto mt-24 max-w-7xl space-y-8 px-5 md:px-10">
+      <main className="mx-auto mt-[92px] max-w-7xl space-y-6 px-5 md:px-10">
         {loadError && (
           <div className="rounded-2xl border border-coral/20 bg-coral/10 px-5 py-4 text-sm font-semibold text-coral">
             Goals could not be loaded: {loadError}
           </div>
         )}
 
-        <section className="relative overflow-hidden rounded-[24px] border border-border bg-surface p-5 shadow-card sm:p-7 lg:p-8">
-          <div className="absolute -right-20 -top-24 h-64 w-64 rounded-full bg-primary/12 blur-3xl" />
-          <div className="absolute -bottom-24 left-1/4 h-64 w-64 rounded-full bg-gold/14 blur-3xl" />
-
-          <div className="relative grid gap-8 lg:grid-cols-[1fr_22rem] lg:items-center">
+        <section className="rounded-[24px] border border-border bg-surface p-5 shadow-card sm:p-7 lg:p-8">
+          <div className="grid gap-6 lg:grid-cols-[1fr_22rem] lg:items-center">
             <div>
-              <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-primary/20 bg-primary/10 px-3 py-2 text-[11px] font-extrabold uppercase tracking-[0.18em] text-primary">
+              <div className="mb-4 inline-flex min-h-10 items-center gap-2 border-l-2 border-primary pl-3 text-[11px] font-extrabold uppercase tracking-[0.18em] text-primary">
                 <Sparkles className="h-4 w-4" />
                 Goal dashboard
               </div>
@@ -110,7 +108,7 @@ export default async function GoalsPage() {
                 Build big goals from small daily wins.
               </h2>
               <p className="mt-4 max-w-2xl text-sm font-medium leading-7 text-foreground/60 sm:text-base">
-                Your goal workspace now reads directly from the backend via Server-Side Rendering: active goals, habit load, milestones, and risk signals all stay in one place.
+                Track your goals, daily habits, milestones, and progress in one place.
               </p>
 
               <div className="mt-6 flex flex-col gap-3 sm:flex-row">
@@ -132,7 +130,7 @@ export default async function GoalsPage() {
               )}
             </div>
 
-            <div className="rounded-[20px] border border-border bg-background/80 p-5">
+            <div className="rounded-[18px] border border-border bg-background/80 p-5">
               <p className="text-[10px] font-extrabold uppercase tracking-[0.22em] text-foreground/50">
                 Top Momentum
               </p>
@@ -148,15 +146,27 @@ export default async function GoalsPage() {
                       : "Create your first goal to start tracking."}
                   </p>
                 </div>
-                <div className="flex h-20 w-20 shrink-0 items-center justify-center rounded-full border-[10px] border-primary/20 bg-surface text-lg font-extrabold text-primary shadow-card">
-                  {strongestGoal?.progress ?? 0}%
+                <div
+                  role="progressbar"
+                  aria-label="Top goal progress"
+                  aria-valuemin={0}
+                  aria-valuemax={100}
+                  aria-valuenow={strongestProgress}
+                  className="flex h-20 w-20 shrink-0 items-center justify-center rounded-full"
+                  style={{
+                    background: `conic-gradient(rgb(var(--primary)) ${strongestProgress * 3.6}deg, rgb(var(--muted)) 0deg)`,
+                  }}
+                >
+                  <span className="flex h-14 w-14 items-center justify-center rounded-full bg-surface text-sm font-extrabold text-primary shadow-card">
+                    {Math.round(strongestProgress)}%
+                  </span>
                 </div>
               </div>
 
               <div className="mt-5 h-2 overflow-hidden rounded-full bg-muted">
                 <div
-                  className="h-full rounded-full bg-gradient-to-r from-primary via-sky to-gold"
-                  style={{ width: `${strongestGoal?.progress ?? 0}%` }}
+                  className="h-full rounded-full bg-primary"
+                  style={{ width: `${strongestProgress}%` }}
                 />
               </div>
 
@@ -175,9 +185,9 @@ export default async function GoalsPage() {
         </section>
 
         <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-          {stats.map(({ label, value, icon: Icon, tone }) => (
+          {stats.map(({ label, value, icon: Icon }) => (
             <article key={label} className="rounded-[18px] border border-border bg-surface p-5 shadow-card">
-              <div className={`mb-5 flex h-12 w-12 items-center justify-center rounded-[14px] ${tone}`}>
+              <div className="mb-5 flex h-12 w-12 items-center justify-center rounded-[14px] bg-primary/10 text-primary">
                 <Icon className="h-5 w-5" />
               </div>
               <p className="text-[10px] font-extrabold uppercase tracking-[0.2em] text-foreground/50">{label}</p>

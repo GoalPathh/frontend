@@ -20,6 +20,7 @@ import { GoalProgressCard } from "@/components/progress/goal-progress-card";
 import { ConsistencyChart } from "@/components/progress/consistency-chart";
 import { HabitRankingCard } from "@/components/progress/habit-ranking-card";
 import { ActivityHeatmap } from "@/components/progress/activity-heatmap";
+import { GoalDetailTrigger } from "@/components/goals/goal-detail-trigger";
 import { AchievementCard } from "@/components/progress/achievement-card";
 import { AIInsightCard } from "@/components/progress/ai-insight-card";
 import { BottomNavigation } from "@/components/bottom-navigation";
@@ -29,15 +30,18 @@ import { ThemeToggle } from "@/components/theme-toggle";
 import { progressService, type ProgressOverview } from "@/lib/progressService";
 import { personaService } from "@/lib/personaService";
 import { PersonaCard } from "@/components/progress/persona-card";
+import { USER_PROFILE_EVENT } from "@/lib/userService";
 import type { DateRange, PersonaResponse } from "@/lib/types";
 
 const DEFAULT_RANGE: DateRange = "last-7-days";
+const progressCache = new Map<DateRange, ProgressOverview>();
+let cachedPersona: PersonaResponse | null = null;
 
 export default function ProgressPage() {
   const [range, setRange] = useState<DateRange>(DEFAULT_RANGE);
-  const [overview, setOverview] = useState<ProgressOverview | null>(null);
-  const [persona, setPersona] = useState<PersonaResponse | null>(null);
-  const [personaLoading, setPersonaLoading] = useState(false);
+  const [overview, setOverview] = useState<ProgressOverview | null>(() => progressCache.get(DEFAULT_RANGE) ?? null);
+  const [persona, setPersona] = useState<PersonaResponse | null>(cachedPersona);
+  const [personaLoading, setPersonaLoading] = useState(cachedPersona === null);
   const [personaWindowDays, setPersonaWindowDays] = useState<number>(14);
   const [loading, setLoading] = useState(true);
   const [fetchStatus, setFetchStatus] = useState<"idle" | "ok" | "error">("idle");
@@ -49,7 +53,7 @@ export default function ProgressPage() {
     const load = async () => {
       setLoading(true);
       setFetchStatus("idle");
-      setPersonaLoading(true);
+      setPersonaLoading(cachedPersona === null);
 
       try {
         const [progressData, personaData] = await Promise.all([
@@ -60,7 +64,9 @@ export default function ProgressPage() {
         if (cancelled) return;
 
         setOverview(progressData);
+        progressCache.set(range, progressData);
         setPersona(personaData);
+        cachedPersona = personaData;
         setFetchStatus("ok");
       } catch (error) {
         console.error("[progress-page] fetch failed:", error);
@@ -79,6 +85,19 @@ export default function ProgressPage() {
       cancelled = true;
     };
   }, [range, reloadKey, personaWindowDays]);
+
+  useEffect(() => {
+    const clearAccountData = (event: Event) => {
+      if ((event as CustomEvent<unknown>).detail !== null) return;
+      progressCache.clear();
+      cachedPersona = null;
+      setOverview(null);
+      setPersona(null);
+      setLoading(true);
+    };
+    window.addEventListener(USER_PROFILE_EVENT, clearAccountData);
+    return () => window.removeEventListener(USER_PROFILE_EVENT, clearAccountData);
+  }, []);
 
   useEffect(() => {
     function onFocus() {
@@ -116,10 +135,14 @@ export default function ProgressPage() {
     <div className="min-h-screen bg-background pb-32 text-foreground lg:pl-[272px] lg:pb-10">
       <AppSidebar active="progress" className="fixed inset-y-0 left-0 z-50 hidden lg:flex" />
 
-      <div className="mx-auto max-w-7xl px-5 py-8 md:px-10">
-        <div className="mb-8 flex justify-end">
-          <ThemeToggle className="bg-surface/80 dark:bg-surface/10" />
+      <header className="fixed top-0 z-40 w-full border-b border-border bg-background/80 px-6 py-3 backdrop-blur-xl md:px-10 lg:left-[272px] lg:w-[calc(100%-272px)]">
+        <div className="mx-auto flex max-w-7xl items-center justify-between">
+          <h1 className="text-xl font-bold tracking-tight text-primary">Progress</h1>
+          <ThemeToggle className="size-10 bg-surface/80 dark:bg-surface/10" />
         </div>
+      </header>
+
+      <main className="mx-auto mt-[92px] max-w-7xl px-5 md:px-10">
 
         {fetchStatus === "error" && !overview && (
           <div className="mb-4 flex items-center justify-between gap-3 rounded-2xl border border-coral/30 bg-coral/5 px-4 py-3 text-sm text-coral">
@@ -133,13 +156,10 @@ export default function ProgressPage() {
           </div>
         )}
 
-        <section className="relative mb-6 overflow-hidden rounded-[24px] border border-border bg-surface p-5 shadow-card sm:p-7 lg:p-8">
-          <div className="absolute -right-20 -top-24 h-64 w-64 rounded-full bg-primary/12 blur-3xl" />
-          <div className="absolute -bottom-28 left-1/4 h-64 w-64 rounded-full bg-sky/12 blur-3xl" />
-
-          <div className="relative grid gap-6 lg:grid-cols-[1fr_24rem] lg:items-center">
+        <section className="mb-6 rounded-[24px] border border-border bg-surface p-5 shadow-card sm:p-7 lg:p-8">
+          <div className="grid gap-6 lg:grid-cols-[1fr_24rem] lg:items-center">
             <div>
-              <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-primary/20 bg-primary/10 px-3 py-2 text-[11px] font-extrabold uppercase tracking-[0.18em] text-primary">
+              <div className="mb-4 inline-flex min-h-10 items-center gap-2 border-l-2 border-primary pl-3 text-[11px] font-extrabold uppercase tracking-[0.18em] text-primary">
                 <TrendingUp className="h-4 w-4" />
                 Progress dashboard
               </div>
@@ -226,20 +246,20 @@ export default function ProgressPage() {
               <StatCard
                 title="Current Streak"
                 value={stats?.currentStreak ?? "0 Days"}
-                icon={<Flame className="h-5 w-5 text-coral" />}
-                accentClass="bg-coral/10 text-coral"
+                icon={<Flame className="h-5 w-5 text-primary" />}
+                accentClass="bg-primary/10 text-primary"
               />
               <StatCard
                 title="Total XP"
                 value={stats?.totalXp ?? "0 XP"}
-                icon={<Trophy className="h-5 w-5 text-gold" />}
-                accentClass="bg-gold/10 text-[#8a6100]"
+                icon={<Trophy className="h-5 w-5 text-primary" />}
+                accentClass="bg-primary/10 text-primary"
               />
               <StatCard
                 title="Completion Rate"
                 value={stats?.completionRate ?? "0%"}
-                icon={<TrendingUp className="h-5 w-5 text-sky" />}
-                accentClass="bg-sky/10 text-sky"
+                icon={<TrendingUp className="h-5 w-5 text-primary" />}
+                accentClass="bg-primary/10 text-primary"
               />
               <StatCard
                 title="Habits Completed"
@@ -266,7 +286,15 @@ export default function ProgressPage() {
 
               <div className="grid gap-4 lg:grid-cols-3">
                 {goals.map((goal) => (
-                  <GoalProgressCard key={goal.id} goal={goal} />
+                  <GoalDetailTrigger
+                    key={goal.id}
+                    goalId={goal.id}
+                    preview={{ title: goal.title, progress: goal.progress, targetDate: goal.targetDate }}
+                    className="block"
+                    onChanged={() => setReloadKey((key) => key + 1)}
+                  >
+                    <GoalProgressCard goal={goal} />
+                  </GoalDetailTrigger>
                 ))}
               </div>
             </section>
@@ -281,7 +309,7 @@ export default function ProgressPage() {
                       <p className="text-[10px] font-extrabold uppercase tracking-[0.24em] text-primary">Achievements</p>
                       <h3 className="mt-2 text-xl font-extrabold text-foreground">Unlocked badges</h3>
                     </div>
-                    <Sparkles className="h-6 w-6 text-gold" />
+                    <Sparkles className="h-6 w-6 text-primary" />
                   </div>
 
                   <div className="grid gap-4 sm:grid-cols-2">
@@ -338,7 +366,7 @@ export default function ProgressPage() {
             </section>
           </>
         ) : null}
-      </div>
+      </main>
 
       <BottomNavigation active="progress" />
     </div>

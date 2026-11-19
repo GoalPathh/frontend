@@ -7,7 +7,7 @@ const titles: Record<AppSection, string> = {
   progress: "Progress",
   coach: "Coach",
   me: "Account",
-  pricing: "Pricing",
+  pricing: "Subscription & Billing",
 };
 
 export function RouteLoadingShell({ active }: { active: AppSection }) {
@@ -15,7 +15,7 @@ export function RouteLoadingShell({ active }: { active: AppSection }) {
     <div
       aria-label={`Loading ${titles[active]}`}
       aria-busy="true"
-      className="min-h-screen bg-background pb-32 text-foreground lg:pb-10 lg:pl-[272px]"
+      className={`min-h-screen bg-background ${active === "coach" ? "pb-10" : "pb-32"} text-foreground lg:pb-10 lg:pl-[272px]`}
     >
       <aside className="fixed inset-y-0 left-0 hidden w-[272px] border-r border-border bg-surface p-5 lg:block">
         <div className="h-10 w-36 animate-pulse rounded-xl bg-muted" />
@@ -40,7 +40,7 @@ export function RouteLoadingShell({ active }: { active: AppSection }) {
           <div className="h-72 animate-pulse rounded-[20px] border border-border bg-surface" />
         </div>
       </main>
-      <BottomNavigation active={active} />
+      {active !== "coach" && <BottomNavigation active={active} />}
     </div>
   );
 }

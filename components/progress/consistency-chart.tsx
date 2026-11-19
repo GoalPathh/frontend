@@ -79,7 +79,7 @@ export function ConsistencyChart({ series }: ConsistencyChartProps) {
           <defs>
             <linearGradient id="lineGradient" x1="0%" y1="0%" x2="100%" y2="0%">
               <stop offset="0%" stopColor="rgb(var(--primary))" />
-              <stop offset="100%" stopColor="rgb(var(--sky))" />
+              <stop offset="100%" stopColor="rgb(var(--primary))" />
             </linearGradient>
             <linearGradient id="areaGradient" x1="0%" y1="0%" x2="0%" y2="100%">
               <stop offset="0%" stopColor="rgb(var(--primary))" stopOpacity="0.18" />

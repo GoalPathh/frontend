@@ -3,6 +3,7 @@ import { getStoredAppearance, setStoredAppearance } from "@/lib/theme";
 import type {
   AppearancePreference,
   NotificationPreference,
+  PrivacyPreferences,
   UserProfile,
   UserStats,
 } from "@/lib/types";
@@ -19,6 +20,7 @@ type ApiProfile = {
 type ApiPreferences = {
   appearance?: AppearancePreference | null;
   notifications?: NotificationPreference[] | null;
+  privacy?: PrivacyPreferences | null;
 };
 
 type AvatarUploadSignature = {
@@ -55,6 +57,7 @@ export type UserOverview = {
   preferences: {
     appearance: AppearancePreference;
     notifications: NotificationPreference[];
+    privacy: PrivacyPreferences;
   };
   stats: UserStats;
   summary: MeOverviewResponse["summary"];
@@ -112,6 +115,9 @@ function normalizePreferences(preferences?: ApiPreferences | null) {
       preferences?.notifications && preferences.notifications.length > 0
         ? preferences.notifications
         : defaultNotifications,
+    privacy: {
+      personalizedCoach: preferences?.privacy?.personalizedCoach ?? true,
+    },
   };
 }
 
@@ -160,6 +166,7 @@ export const userService = {
   async getOverview() {
     const response = await apiRequest<MeOverviewResponse>("/me/overview");
     const overview = normalizeOverview(response);
+    setStoredAppearance(overview.preferences.appearance);
     cacheProfile(overview.profile);
     return overview;
   },
@@ -179,6 +186,7 @@ export const userService = {
   async updatePreferences(input: {
     appearance?: AppearancePreference;
     notifications?: NotificationPreference[];
+    privacy?: PrivacyPreferences;
   }) {
     const response = await apiRequest<ApiPreferences>("/me/preferences", {
       method: "PATCH",

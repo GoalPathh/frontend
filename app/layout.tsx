@@ -4,9 +4,17 @@ import "./globals.css";
 
 const themeBootScript = `
   try {
-    const raw = window.localStorage.getItem("goalpathAppearanceV2");
-    const appearance = raw ? JSON.parse(raw) : "dark";
-    document.documentElement.classList.toggle("dark", appearance !== "light");
+    const preferenceKey = "goalpathAppearanceV2";
+    const media = window.matchMedia("(prefers-color-scheme: dark)");
+    const applyTheme = () => {
+      const raw = window.localStorage.getItem(preferenceKey);
+      const stored = raw ? JSON.parse(raw) : "light";
+      const preference = stored === "dark" || stored === "system" ? stored : "light";
+      const dark = preference === "dark" || (preference === "system" && media.matches);
+      document.documentElement.classList.toggle("dark", dark);
+    };
+    applyTheme();
+    media.addEventListener("change", applyTheme);
   } catch {
     document.documentElement.classList.remove("dark");
   }
@@ -41,7 +49,7 @@ export default function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <html lang="en" className={`dark ${jakarta.variable} ${bricolage.variable}`} suppressHydrationWarning>
+    <html lang="en" className={`${jakarta.variable} ${bricolage.variable}`} suppressHydrationWarning>
       <head>
         <script dangerouslySetInnerHTML={{ __html: themeBootScript }} />
       </head>

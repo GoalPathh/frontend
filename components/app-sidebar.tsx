@@ -6,13 +6,11 @@ import { useRouter, useSearchParams } from "next/navigation";
 import {
   BarChart3,
   CheckCircle2,
-  Crown,
   Loader2,
+  MessageSquare,
   MessageSquarePlus,
   Pencil,
   Plus,
-  Settings,
-  Sparkles,
   Target,
   Trash2,
   UserCog,
@@ -43,7 +41,6 @@ const mainMenu = [
   { key: "goals", label: "Goals", href: "/goals", Icon: Target },
   { key: "progress", label: "Progress", href: "/progress", Icon: BarChart3 },
   { key: "coach", label: "Coach", href: "/coach", Icon: UserCog },
-  { key: "pricing", label: "Pricing", href: "/pricing", Icon: Crown },
 ] as const;
 
 export function AppSidebar({
@@ -81,7 +78,7 @@ export function AppSidebar({
 
   return (
     <aside
-      className={`flex h-dvh w-[272px] shrink-0 flex-col border-r border-border bg-surface ${className}`}
+      className={`flex h-dvh w-[272px] shrink-0 flex-col border-r border-primary-soft/40 bg-background ${className}`}
     >
       <div className="px-5 pb-5 pt-6">
         <div className="flex items-center gap-3">
@@ -95,8 +92,8 @@ export function AppSidebar({
         </div>
       </div>
 
-      <div className="border-y border-border px-4 py-5">
-        <p className="mb-2 px-3 text-[10px] font-bold uppercase tracking-[0.2em] text-foreground/40">
+      <div className="border-y border-primary-soft/40 px-4 py-5">
+        <p className="mb-2 px-3 text-[10px] font-bold uppercase tracking-[0.2em] text-foreground/70">
           Main menu
         </p>
         <nav className="space-y-1" aria-label="Main navigation">
@@ -112,13 +109,13 @@ export function AppSidebar({
                 )}
                 onClick={onNavigate}
                 aria-current={isActive ? "page" : undefined}
-                className={`flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-semibold transition ${
+                className={`flex min-h-11 cursor-pointer items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-semibold transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background active:bg-primary-soft/20 motion-reduce:transition-none ${
                   isActive
-                    ? "bg-primary/12 text-primary"
-                    : "text-foreground/60 hover:bg-muted hover:text-foreground"
+                  ? "bg-primary/10 font-bold text-primary"
+                  : "text-foreground/70 hover:bg-primary-soft/15 hover:text-foreground"
                 }`}
               >
-                <Icon className="h-4.5 w-4.5" />
+                <Icon aria-hidden="true" className="size-5 shrink-0" />
                 <span>{label}</span>
                 {isActive && <span className="ml-auto size-1.5 rounded-full bg-primary" />}
               </IntentLink>
@@ -131,24 +128,22 @@ export function AppSidebar({
         <CoachSessionsPanel onNavigate={onNavigate} />
       ) : (
         <div className="flex-1 px-4 py-5">
-          <div className="rounded-2xl border border-primary/15 bg-primary/8 p-4">
-            <Sparkles className="h-5 w-5 text-primary" />
+          <div className="rounded-2xl border border-primary-soft/40 bg-primary-soft/10 p-4">
+            <Target aria-hidden="true" className="size-5 text-primary" />
             <p className="mt-3 text-sm font-bold">Keep moving forward</p>
-            <p className="mt-1 text-xs font-medium leading-5 text-foreground/45">
+            <p className="mt-1 text-xs font-medium leading-5 text-foreground/70">
               Small consistent actions build meaningful progress.
             </p>
           </div>
         </div>
       )}
 
-      <div className="border-t border-border p-4">
-        <Link
-          href="/me"
+      <div className="border-t border-primary-soft/40 p-4">
+        <IntentLink
+          href="/profile"
           onClick={onNavigate}
           aria-current={active === "me" ? "page" : undefined}
-          className={`flex items-center gap-3 rounded-2xl p-2 transition focus:outline-none focus:ring-2 focus:ring-primary/30 ${
-            active === "me" ? "bg-primary/10" : "hover:bg-muted"
-          }`}
+          className={`flex min-h-14 items-center gap-3 rounded-2xl p-2 transition hover:bg-primary-soft/15 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background ${active === "me" ? "bg-primary/10" : ""}`}
         >
           <UserAvatar
             avatarUrl={profile?.avatarUrl}
@@ -158,14 +153,11 @@ export function AppSidebar({
           />
           <span className="min-w-0 flex-1">
             <span className="block truncate text-sm font-bold">{displayName}</span>
-            <span className="block truncate text-[10px] font-medium text-foreground/45">
+            <span className="block truncate text-[10px] font-medium text-foreground/70">
               {profileSubtitle}
             </span>
           </span>
-          <Settings
-            className={`h-4 w-4 ${active === "me" ? "text-primary" : "text-foreground/40"}`}
-          />
-        </Link>
+        </IntentLink>
       </div>
     </aside>
   );
@@ -272,14 +264,15 @@ function CoachSessionsPanel({ onNavigate }: { onNavigate?: () => void }) {
     <>
       <div className="px-4 py-5">
         <button
+          type="button"
           onClick={handleNewSession}
           disabled={creating}
-          className="flex w-full items-center justify-center gap-2 rounded-xl bg-primary px-4 py-3 text-sm font-bold text-white shadow-lg shadow-primary/20 transition hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-primary/40 focus:ring-offset-2 focus:ring-offset-surface active:scale-[0.98] disabled:opacity-60"
+          className="flex min-h-11 w-full cursor-pointer items-center justify-center gap-2 rounded-xl bg-primary px-4 py-3 text-sm font-bold text-white shadow-lg shadow-primary/20 transition hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-60 motion-reduce:transition-none"
         >
           {creating ? (
-            <Loader2 className="h-4 w-4 animate-spin" />
+            <Loader2 aria-hidden="true" className="h-4 w-4 motion-safe:animate-spin" />
           ) : (
-            <Plus className="h-4 w-4" />
+            <Plus aria-hidden="true" className="h-4 w-4" />
           )}
           {creating ? "Membuat..." : "New Session"}
         </button>
@@ -287,22 +280,22 @@ function CoachSessionsPanel({ onNavigate }: { onNavigate?: () => void }) {
 
       <div className="min-h-0 flex-1 overflow-y-auto px-4 pb-4">
         <div className="mb-2 flex items-center justify-between px-3">
-          <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-foreground/40">
+          <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-foreground/70">
             Recent chats
           </p>
-          <span className="text-[10px] font-medium text-foreground/40">
+          <span className="text-[10px] font-medium text-foreground/70">
             {sessions.length}
           </span>
         </div>
 
         {loading && sessions.length === 0 ? (
-          <div className="flex items-center gap-2 px-3 py-4 text-[11px] text-foreground/55">
-            <Loader2 className="h-3 w-3 animate-spin" /> Memuat...
+          <div className="flex items-center gap-2 px-3 py-4 text-[11px] text-foreground/70">
+            <Loader2 aria-hidden="true" className="h-3 w-3 motion-safe:animate-spin" /> Memuat...
           </div>
         ) : sessions.length === 0 ? (
-          <div className="rounded-xl border border-dashed border-border bg-background/70 px-4 py-6 text-center">
-            <MessageSquarePlus className="mx-auto mb-2 h-5 w-5 text-foreground/40" />
-            <p className="text-[11px] font-medium leading-5 text-foreground/55">
+          <div className="rounded-xl border border-dashed border-primary-soft/40 bg-background px-4 py-6 text-center">
+            <MessageSquarePlus aria-hidden="true" className="mx-auto mb-2 h-5 w-5 text-foreground/70" />
+            <p className="text-[11px] font-medium leading-5 text-foreground/70">
               Belum ada sesi. Klik &quot;New Session&quot; untuk mulai chat baru.
             </p>
           </div>
@@ -314,26 +307,26 @@ function CoachSessionsPanel({ onNavigate }: { onNavigate?: () => void }) {
               return (
                 <div
                   key={s.id}
-                  className={`group relative flex items-center gap-3 rounded-xl border px-3 py-3 transition ${
+                  className={`group relative flex items-center gap-3 rounded-xl border px-3 py-3 transition active:bg-primary-soft/20 motion-reduce:transition-none ${
                     isActive
-                      ? "border-primary/15 bg-primary/10"
-                      : "border-transparent hover:border-border hover:bg-muted"
+                      ? "border-primary-soft/40 bg-primary-soft/10"
+                      : "border-transparent hover:border-primary-soft/40 hover:bg-primary-soft/10"
                   }`}
                 >
                   <Link
                     href={`/coach?session=${s.id}`}
                     onClick={onNavigate}
-                    className="flex min-w-0 flex-1 items-center gap-3"
+                    className="flex min-h-11 min-w-0 flex-1 cursor-pointer items-center gap-3 rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background"
                     aria-current={isActive ? "page" : undefined}
                   >
                     <span
                       className={`flex size-8 shrink-0 items-center justify-center rounded-lg ${
                         isActive
-                          ? "bg-surface text-primary shadow-sm"
-                          : "bg-muted text-foreground/45 group-hover:text-primary"
+                          ? "bg-background text-primary shadow-sm"
+                          : "bg-primary-soft/15 text-foreground/70 group-hover:text-primary"
                       }`}
                     >
-                      <Sparkles className="h-4 w-4" />
+                      <MessageSquare aria-hidden="true" className="size-4" />
                     </span>
                     <span className="min-w-0 flex-1">
                       {isEditing ? (
@@ -357,7 +350,7 @@ function CoachSessionsPanel({ onNavigate }: { onNavigate?: () => void }) {
                           {s.title || "Untitled"}
                         </span>
                       )}
-                      <span className="mt-1 flex items-center gap-1.5 text-[10px] font-medium text-foreground/40">
+                      <span className="mt-1 flex items-center gap-1.5 text-[10px] font-medium text-foreground/70">
                         <span>{formatRelativeTime(s.updated_at)}</span>
                         {typeof s.message_count === "number" && (
                           <>
@@ -369,24 +362,26 @@ function CoachSessionsPanel({ onNavigate }: { onNavigate?: () => void }) {
                     </span>
                   </Link>
                   {!isEditing && (
-                    <div className="flex items-center gap-0.5 opacity-0 transition group-hover:opacity-100">
+                    <div className="flex items-center gap-1 opacity-100 transition group-hover:opacity-100 group-focus-within:opacity-100 motion-reduce:transition-none sm:opacity-0">
                       <button
+                        type="button"
                         onClick={(e) => {
                           e.preventDefault();
                           handleStartRename(s);
                         }}
-                        className="flex size-6 items-center justify-center rounded-md text-foreground/45 transition hover:bg-primary/10 hover:text-primary"
+                        className="flex size-11 cursor-pointer items-center justify-center rounded-md text-foreground/70 transition hover:bg-primary-soft/15 hover:text-primary active:bg-primary-soft/25 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background motion-reduce:transition-none"
                         aria-label="Rename session"
                         title="Rename"
                       >
                         <Pencil className="h-3 w-3" />
                       </button>
                       <button
+                        type="button"
                         onClick={(e) => {
                           e.preventDefault();
                           setConfirmDelete(s);
                         }}
-                        className="flex size-6 items-center justify-center rounded-md text-foreground/45 transition hover:bg-coral/10 hover:text-coral"
+                        className="flex size-11 cursor-pointer items-center justify-center rounded-md text-foreground/70 transition hover:bg-coral/10 hover:text-coral active:bg-coral/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background motion-reduce:transition-none"
                         aria-label="Delete session"
                         title="Delete"
                       >
@@ -449,14 +444,16 @@ function DeleteConfirmDialog({
         </div>
         <div className="mt-6 flex justify-end gap-2">
           <button
+            type="button"
             onClick={onCancel}
-            className="rounded-full border border-border bg-background px-4 py-2 text-xs font-bold text-foreground/65 hover:bg-muted hover:text-foreground"
+            className="min-h-11 cursor-pointer rounded-full border border-primary-soft/40 bg-background px-4 py-2 text-xs font-bold text-foreground/80 transition hover:bg-primary-soft/15 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background motion-reduce:transition-none"
           >
             Batal
           </button>
           <button
+            type="button"
             onClick={onConfirm}
-            className="inline-flex items-center gap-1.5 rounded-full bg-coral px-4 py-2 text-xs font-extrabold text-white shadow-md shadow-coral/30 hover:bg-coral/90 active:scale-95"
+            className="inline-flex min-h-11 cursor-pointer items-center gap-1.5 rounded-full bg-coral px-4 py-2 text-xs font-extrabold text-white shadow-md transition hover:bg-coral/90 active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background motion-reduce:transition-none"
           >
             <Trash2 className="h-3.5 w-3.5" />
             Hapus

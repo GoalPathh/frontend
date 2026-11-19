@@ -135,6 +135,10 @@ export interface NotificationPreference {
 
 export type AppearancePreference = "light" | "dark" | "system";
 
+export interface PrivacyPreferences {
+  personalizedCoach: boolean;
+}
+
 export type WizardDay = "mon" | "tue" | "wed" | "thu" | "fri" | "sat" | "sun";
 
 export type WizardStep = "idle" | "duration" | "habits" | "schedule" | "milestones" | "review";
@@ -275,6 +279,15 @@ export interface SubscriptionResponse {
   features: PlanFeatures;
   premiumPriceIdr: number;
   premiumPeriodDays: number;
+}
+
+export interface SubscriptionPayment {
+  order_id: string;
+  gross_amount: number | string;
+  status: string;
+  payment_type: string | null;
+  transaction_id: string | null;
+  created_at: string;
 }
 
 export interface SubscriptionCheckoutResponse {

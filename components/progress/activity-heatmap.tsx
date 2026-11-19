@@ -5,9 +5,9 @@ interface ActivityHeatmapProps {
 }
 
 const heatmapStyles: Record<HeatmapDay["level"], string> = {
-  high: "bg-gold",
-  medium: "bg-sky",
-  low: "bg-primary",
+  high: "bg-primary/85",
+  medium: "bg-primary/55",
+  low: "bg-primary/25",
   none: "bg-muted",
 };
 
@@ -30,13 +30,13 @@ export function ActivityHeatmap({ days }: ActivityHeatmapProps) {
       </div>
       <div className="mt-5 grid grid-cols-2 gap-2 text-xs font-bold text-foreground/60 sm:grid-cols-4">
         <div className="inline-flex items-center gap-2 rounded-2xl bg-background px-3 py-2">
-          <span className="h-3 w-3 rounded-full bg-gold" /> High
+          <span className="h-3 w-3 rounded-full bg-primary/85" /> High
         </div>
         <div className="inline-flex items-center gap-2 rounded-2xl bg-background px-3 py-2">
-          <span className="h-3 w-3 rounded-full bg-sky" /> Medium
+          <span className="h-3 w-3 rounded-full bg-primary/55" /> Medium
         </div>
         <div className="inline-flex items-center gap-2 rounded-2xl bg-background px-3 py-2">
-          <span className="h-3 w-3 rounded-full bg-primary" /> Low
+          <span className="h-3 w-3 rounded-full bg-primary/25" /> Low
         </div>
         <div className="inline-flex items-center gap-2 rounded-2xl bg-background px-3 py-2">
           <span className="h-3 w-3 rounded-full bg-muted border border-border" /> No activity

@@ -12,21 +12,6 @@ interface Props {
   onWindowDaysChange: (n: number) => void;
 }
 
-const ARCHETYPE_COLORS: Record<string, { bg: string; text: string; ring: string }> = {
-  "Steady Builder":     { bg: "bg-emerald-500/12", text: "text-emerald-600", ring: "ring-emerald-500/25" },
-  "Comeback Captain":   { bg: "bg-rose-500/12",    text: "text-rose-600",    ring: "ring-rose-500/25" },
-  "Momentum Maker":     { bg: "bg-amber-500/12",   text: "text-amber-600",   ring: "ring-amber-500/25" },
-  "Streak Hunter":      { bg: "bg-primary/12",     text: "text-primary",     ring: "ring-primary/20" },
-  "Marathon Runner":    { bg: "bg-sky-500/12",      text: "text-sky-600",      ring: "ring-sky-500/25" },
-  "GoalPath Apprentice":{ bg: "bg-foreground/8",   text: "text-foreground/70", ring: "ring-foreground/15" },
-};
-
-const DIFFICULTY_BADGE: Record<string, { bg: string; text: string }> = {
-  easier:  { bg: "bg-emerald-500/15", text: "text-emerald-700" },
-  maintain: { bg: "bg-sky-500/15",     text: "text-sky-700" },
-  harder:  { bg: "bg-amber-500/15",   text: "text-amber-700" },
-};
-
 const FEATURE_LABEL: Record<string, string> = {
   consistency: "Konsistensi",
   recovery: "Pemulihan streak",
@@ -76,7 +61,6 @@ export function PersonaCard({ persona, loading, onRefresh, windowDays, onWindowD
     );
   }
 
-  const colors = ARCHETYPE_COLORS[persona.archetype] || ARCHETYPE_COLORS["GoalPath Apprentice"];
   const sortedTraits = (Object.entries(persona.traits) as Array<[string, number]>)
     .sort((a, b) => b[1] - a[1]);
   const topThree = sortedTraits.slice(0, 3);
@@ -86,16 +70,16 @@ export function PersonaCard({ persona, loading, onRefresh, windowDays, onWindowD
   };
 
   return (
-    <div className={`relative overflow-hidden rounded-2xl border bg-surface p-1 shadow-card ${colors.ring} ring-1`}>
-      <div className="rounded-xl bg-gradient-to-br from-background/40 via-surface to-surface/90 p-5">
+    <div className="relative overflow-hidden rounded-2xl border border-border bg-surface p-1 shadow-card ring-1 ring-primary/20">
+      <div className="rounded-xl bg-surface p-5">
         <div className="flex items-start justify-between gap-3">
           <div className="flex flex-1 items-start gap-3">
-            <span className={`flex size-10 shrink-0 items-center justify-center rounded-xl ${colors.bg}`}>
-              <Sparkles className={`h-5 w-5 ${colors.text}`} />
+            <span className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-primary/10">
+              <Sparkles className="h-5 w-5 text-primary" />
             </span>
             <div className="min-w-0 flex-1">
               <div className="flex flex-wrap items-center gap-2">
-                <span className={`inline-flex items-center rounded-full px-2.5 py-1 text-[10px] font-extrabold uppercase tracking-wide ${colors.bg} ${colors.text}`}>
+                <span className="inline-flex items-center rounded-full bg-primary/10 px-2.5 py-1 text-[10px] font-extrabold uppercase tracking-wide text-primary">
                   {persona.archetype}
                 </span>
                 <span className="text-[10px] font-medium text-foreground/40">
@@ -142,7 +126,7 @@ export function PersonaCard({ persona, loading, onRefresh, windowDays, onWindowD
           </p>
           <div className="flex flex-wrap items-center gap-2 text-[11px]">
             <span className="font-bold text-foreground/65">Difficulty:</span>
-            <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 font-extrabold uppercase ${DIFFICULTY_BADGE[persona.advice.difficulty].bg} ${DIFFICULTY_BADGE[persona.advice.difficulty].text}`}>
+            <span className="inline-flex items-center rounded-full bg-primary/10 px-2.5 py-0.5 font-extrabold uppercase text-primary">
               {persona.advice.difficulty}
             </span>
           </div>

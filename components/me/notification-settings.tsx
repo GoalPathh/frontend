@@ -7,7 +7,7 @@ interface NotificationSettingsProps {
 
 export function NotificationSettings({ preferences, onToggle }: NotificationSettingsProps) {
   return (
-    <div className="rounded-[28px] border border-border bg-surface p-6 shadow-sm">
+    <div className="rounded-[28px] border border-border bg-surface p-5 shadow-card sm:p-6">
       <div className="mb-6 flex items-center justify-between gap-4">
         <div>
           <p className="text-sm font-semibold uppercase tracking-[0.22em] text-primary">Notification Settings</p>
@@ -25,11 +25,13 @@ export function NotificationSettings({ preferences, onToggle }: NotificationSett
               <button
                 type="button"
                 onClick={() => onToggle(item.id)}
-                aria-pressed={item.enabled}
-                className={`relative inline-flex h-9 w-16 items-center rounded-full transition ${item.enabled ? "bg-[#60a5fa]" : "bg-[#d1d5db]"}`}
+                role="switch"
+                aria-checked={item.enabled}
+                aria-label={item.title}
+                className={`relative inline-flex min-h-11 w-[72px] shrink-0 items-center rounded-full transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 ${item.enabled ? "bg-primary" : "bg-foreground/20"}`}
               >
                 <span
-                  className={`inline-block h-7 w-7 rounded-full bg-surface shadow-sm transition ${item.enabled ? "translate-x-7" : "translate-x-1"}`}
+                  className={`ml-1 inline-block size-8 rounded-full bg-surface shadow-sm transition-transform ${item.enabled ? "translate-x-7" : "translate-x-0"}`}
                 />
               </button>
             </div>

@@ -2,6 +2,7 @@ import { ApiError, apiRequest } from "./api";
 import {
   SUBSCRIPTION_GATE_CODE,
   type SubscriptionCheckoutResponse,
+  type SubscriptionPayment,
   type SubscriptionResponse,
   type SubscriptionTier,
   type SubscriptionWebhookAck,
@@ -14,6 +15,10 @@ import {
 export const subscriptionService = {
   async getMySubscription(): Promise<SubscriptionResponse> {
     return apiRequest<SubscriptionResponse>("/subscription");
+  },
+
+  async getPaymentHistory(): Promise<SubscriptionPayment[]> {
+    return apiRequest<SubscriptionPayment[]>("/subscription/payments");
   },
 
   async createCheckout(): Promise<SubscriptionCheckoutResponse> {

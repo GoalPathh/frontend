@@ -7,7 +7,7 @@ interface HabitRankingCardProps {
 }
 
 export function HabitRankingCard({ rank, habit }: HabitRankingCardProps) {
-  const trendIcon = habit.trend === "up" ? <ArrowUpRight className="h-4 w-4 text-gold" /> : habit.trend === "down" ? <ArrowDownRight className="h-4 w-4 text-coral" /> : <Minus className="h-4 w-4 text-foreground/60" />;
+  const trendIcon = habit.trend === "up" ? <ArrowUpRight className="h-4 w-4 text-primary" /> : habit.trend === "down" ? <ArrowDownRight className="h-4 w-4 text-primary" /> : <Minus className="h-4 w-4 text-foreground/60" />;
 
   return (
     <div className="rounded-[18px] border border-border bg-background p-4">

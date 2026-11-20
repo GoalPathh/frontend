@@ -216,6 +216,14 @@ function mapDashboardGoal(row: ApiGoalDashboardGoal): GoalDashboardGoal {
   };
 }
 
+export function mapApiDashboard(data: ApiGoalDashboardResponse): GoalDashboard {
+  return {
+    summary: data.summary,
+    strongestGoal: data.strongestGoal ? mapDashboardGoal(data.strongestGoal) : null,
+    goals: (data.goals ?? []).map(mapDashboardGoal),
+  };
+}
+
 export const goalCategories: Array<{ label: string; value: GoalCategory }> = [
   { label: "Language", value: "language" },
   { label: "Fitness", value: "fitness" },
@@ -238,12 +246,7 @@ export const goalService = {
 
   async getDashboard(): Promise<GoalDashboard> {
     const data = await apiRequest<ApiGoalDashboardResponse>("/goals/dashboard");
-
-    return {
-      summary: data.summary,
-      strongestGoal: data.strongestGoal ? mapDashboardGoal(data.strongestGoal) : null,
-      goals: (data.goals ?? []).map(mapDashboardGoal),
-    };
+    return mapApiDashboard(data);
   },
 
   async saveGoalToApi(formData: GoalFormData): Promise<Goal> {

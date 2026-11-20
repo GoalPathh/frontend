@@ -9,6 +9,20 @@ export class ApiError extends Error {
   }
 }
 
+async function fetchApi(path: string, options: RequestInit): Promise<Response> {
+  try {
+    return await fetch(`${API_URL}${path}`, options);
+  } catch (error) {
+    if (error instanceof TypeError) {
+      throw new ApiError(
+        "Unable to reach the API server. Check that the backend is running and NEXT_PUBLIC_API_URL is correct.",
+        0,
+      );
+    }
+    throw error;
+  }
+}
+
 // Server Component helper (requires passing headers manually)
 export function getApiUrl() {
   return API_URL;
@@ -35,7 +49,7 @@ export function unwrapApiData<T>(payload: MaybeApiData<T>): T {
   return payload as T;
 }
 async function request<T>(path: string, options: RequestInit, retryOnUnauthorized: boolean): Promise<T> {
-  const response = await fetch(`${API_URL}${path}`, {
+  const response = await fetchApi(path, {
     ...options,
     cache: options.cache ?? "no-store",
     credentials: "include", // This tells fetch to send cookies with cross-origin requests
@@ -53,7 +67,7 @@ async function request<T>(path: string, options: RequestInit, retryOnUnauthorize
     typeof window !== "undefined"
   ) {
     // Attempt backend-side refresh via cookie
-    const refreshResponse = await fetch(`${API_URL}/auth/refresh`, {
+    const refreshResponse = await fetchApi("/auth/refresh", {
       method: "POST",
       credentials: "include",
       headers: { "Content-Type": "application/json" },

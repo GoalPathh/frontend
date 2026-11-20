@@ -11,7 +11,7 @@ import {
   Zap,
 } from "lucide-react";
 import { getApiUrl } from "@/lib/api";
-import { GoalDashboard } from "@/lib/goalService";
+import { mapApiDashboard, type GoalDashboard } from "@/lib/goalService";
 import { BottomNavigation } from "@/components/bottom-navigation";
 import { AppSidebar } from "@/components/app-sidebar";
 import { IntentLink } from "@/components/intent-link";
@@ -47,7 +47,7 @@ export default async function GoalsPage() {
     }
 
     const payload = await res.json();
-    dashboard = payload.data as GoalDashboard;
+    dashboard = mapApiDashboard(payload.data);
   } catch (error) {
     loadError = error instanceof Error ? error.message : "Unable to load goals.";
   }

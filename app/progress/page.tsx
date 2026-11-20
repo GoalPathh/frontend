@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import {
   Activity,
@@ -20,9 +20,9 @@ import { GoalProgressCard } from "@/components/progress/goal-progress-card";
 import { ConsistencyChart } from "@/components/progress/consistency-chart";
 import { HabitRankingCard } from "@/components/progress/habit-ranking-card";
 import { ActivityHeatmap } from "@/components/progress/activity-heatmap";
-import { GoalDetailTrigger } from "@/components/goals/goal-detail-trigger";
 import { AchievementCard } from "@/components/progress/achievement-card";
 import { AIInsightCard } from "@/components/progress/ai-insight-card";
+import { AIAdaptationSection } from "@/components/progress/ai-adaptation-section";
 import { BottomNavigation } from "@/components/bottom-navigation";
 import { AppSidebar } from "@/components/app-sidebar";
 import { IntentLink } from "@/components/intent-link";
@@ -31,9 +31,11 @@ import { progressService, type ProgressOverview } from "@/lib/progressService";
 import { personaService } from "@/lib/personaService";
 import { PersonaCard } from "@/components/progress/persona-card";
 import { USER_PROFILE_EVENT } from "@/lib/userService";
+import { PROGRESS_REFRESH_EVENT, type ProgressAdaptation } from "@/lib/progressAdaptationService";
 import type { DateRange, PersonaResponse } from "@/lib/types";
 
 const DEFAULT_RANGE: DateRange = "last-7-days";
+const VALID_RANGES: DateRange[] = ["last-7-days", "last-30-days", "last-3-months", "last-6-months", "last-year"];
 const progressCache = new Map<DateRange, ProgressOverview>();
 let cachedPersona: PersonaResponse | null = null;
 
@@ -46,6 +48,16 @@ export default function ProgressPage() {
   const [loading, setLoading] = useState(true);
   const [fetchStatus, setFetchStatus] = useState<"idle" | "ok" | "error">("idle");
   const [reloadKey, setReloadKey] = useState(0);
+  const [adaptationGuidance, setAdaptationGuidance] = useState<ProgressAdaptation | null>(null);
+
+  const handleAdaptationLoaded = useCallback((data: ProgressAdaptation) => {
+    setAdaptationGuidance(data);
+  }, []);
+
+  useEffect(() => {
+    const requestedRange = new URLSearchParams(window.location.search).get("range");
+    if (requestedRange && VALID_RANGES.includes(requestedRange as DateRange)) setRange(requestedRange as DateRange);
+  }, []);
 
   useEffect(() => {
     let cancelled = false;
@@ -97,6 +109,15 @@ export default function ProgressPage() {
     };
     window.addEventListener(USER_PROFILE_EVENT, clearAccountData);
     return () => window.removeEventListener(USER_PROFILE_EVENT, clearAccountData);
+  }, []);
+
+  useEffect(() => {
+    const refreshProgress = () => {
+      progressCache.clear();
+      setReloadKey((key) => key + 1);
+    };
+    window.addEventListener(PROGRESS_REFRESH_EVENT, refreshProgress);
+    return () => window.removeEventListener(PROGRESS_REFRESH_EVENT, refreshProgress);
   }, []);
 
   useEffect(() => {
@@ -209,6 +230,8 @@ export default function ProgressPage() {
           />
         </section>
 
+        <AIAdaptationSection range={range} onAnalysisLoaded={handleAdaptationLoaded} />
+
         {loading && !overview ? (
           <div className="space-y-6">
             <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
@@ -286,15 +309,14 @@ export default function ProgressPage() {
 
               <div className="grid gap-4 lg:grid-cols-3">
                 {goals.map((goal) => (
-                  <GoalDetailTrigger
+                  <Link
                     key={goal.id}
-                    goalId={goal.id}
-                    preview={{ title: goal.title, progress: goal.progress, targetDate: goal.targetDate }}
-                    className="block"
-                    onChanged={() => setReloadKey((key) => key + 1)}
+                    href={`/progress/goals/${goal.id}?range=${range}`}
+                    aria-label={`Open AI goal review for ${goal.title}`}
+                    className="block rounded-[20px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background"
                   >
                     <GoalProgressCard goal={goal} />
-                  </GoalDetailTrigger>
+                  </Link>
                 ))}
               </div>
             </section>
@@ -322,16 +344,26 @@ export default function ProgressPage() {
                 <div className="rounded-[20px] border border-border bg-surface p-5 shadow-card">
                   <div className="mb-5 flex items-center justify-between gap-4">
                     <div>
-                      <p className="text-[10px] font-extrabold uppercase tracking-[0.24em] text-primary">AI Insights</p>
+                      <p className="text-[10px] font-extrabold uppercase tracking-[0.24em] text-primary">
+                        {adaptationGuidance?.range === range && adaptationGuidance.analysisSource === "ai" ? "AI-enhanced guidance" : "Activity insights"}
+                      </p>
                       <h3 className="mt-2 text-xl font-extrabold text-foreground">Smart guidance</h3>
                     </div>
                     <BrainCog className="h-6 w-6 text-primary" />
                   </div>
 
                   <div className="grid gap-4">
-                    {insights.map((insight) => (
-                      <AIInsightCard key={insight.id} insight={insight} />
-                    ))}
+                    {adaptationGuidance?.range === range && (
+                      <div className="rounded-[18px] border border-primary/15 bg-primary/[0.035] p-4">
+                        <p className="text-xs font-extrabold text-primary">{adaptationGuidance.analysisSource === "ai" ? "AI-generated summary" : "Evidence-based pattern analysis"}</p>
+                        <p className="mt-2 text-sm font-semibold leading-6 text-foreground">{adaptationGuidance.analysis.narrative}</p>
+                        {!adaptationGuidance.coachPersonalizationEnabled && <p className="mt-2 text-[11px] leading-5 text-foreground/50">Personalized Coach data is off; this analysis was calculated locally.</p>}
+                      </div>
+                    )}
+                    {(adaptationGuidance?.range === range && adaptationGuidance.analysis.insights.length > 0
+                      ? adaptationGuidance.analysis.insights
+                      : insights
+                    ).map((insight) => <AIInsightCard key={insight.id} insight={insight} />)}
                   </div>
                 </div>
               </div>

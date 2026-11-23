@@ -14,6 +14,8 @@ type ApiProfile = {
   level?: number | null;
   xp?: number | null;
   streak_days?: number | null;
+  email?: string | null;
+  role?: "USER" | "ADMIN" | null;
 };
 
 type ApiPreferences = {
@@ -79,6 +81,8 @@ function normalizeProfile(profile: ApiProfile): UserProfile {
     level: Number(profile.level ?? 1),
     xp: Number(profile.xp ?? 0),
     streakDays: Number(profile.streak_days ?? 0),
+    email: profile.email ? String(profile.email) : undefined,
+    role: (profile.role as any) ?? "USER",
   };
 }
 

@@ -109,6 +109,8 @@ export interface ConsistencyPoint {
   habitsCompleted: number;
 }
 
+export type UserRole = "USER" | "ADMIN";
+
 export interface UserProfile {
   name: string;
   username: string;
@@ -116,6 +118,8 @@ export interface UserProfile {
   level: number;
   xp: number;
   streakDays: number;
+  email?: string;
+  role?: UserRole;
 }
 
 export interface UserStats {

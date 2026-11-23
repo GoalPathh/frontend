@@ -12,6 +12,7 @@ import {
   Pencil,
   Plus,
   Settings,
+  ShieldCheck,
   Sparkles,
   Target,
   Trash2,
@@ -26,7 +27,7 @@ import { UserAvatar } from "@/components/user-avatar";
 import { userService } from "@/lib/userService";
 import type { UserProfile } from "@/lib/types";
 
-export type AppSection = "today" | "goals" | "progress" | "coach" | "me" | "pricing";
+export type AppSection = "today" | "goals" | "progress" | "coach" | "me" | "pricing" | "admin";
 
 type AppSidebarProps = {
   active: AppSection;
@@ -120,6 +121,22 @@ export function AppSidebar({
               </a>
             );
           })}
+          {profile?.role === "ADMIN" && (
+            <a
+              href="/admin"
+              onClick={onNavigate}
+              aria-current={active === "admin" ? "page" : undefined}
+              className={`flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-semibold transition ${
+                active === "admin"
+                  ? "bg-primary/12 text-primary"
+                  : "text-amber-600 dark:text-amber-400 hover:bg-amber-500/10"
+              }`}
+            >
+              <ShieldCheck className="h-4.5 w-4.5" />
+              <span>Admin Panel</span>
+              {active === "admin" && <span className="ml-auto size-1.5 rounded-full bg-primary" />}
+            </a>
+          )}
         </nav>
       </div>
 

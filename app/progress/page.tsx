@@ -220,50 +220,15 @@ export default function ProgressPage() {
           </div>
         </section>
 
-        <section className="mb-6" data-testid="persona-card">
-          <PersonaCard
-            persona={persona}
-            loading={personaLoading}
-            onRefresh={handleRefreshPersona}
-            windowDays={personaWindowDays}
-            onWindowDaysChange={handleWindowDaysChange}
-          />
-        </section>
-
-        <AIAdaptationSection range={range} onAnalysisLoaded={handleAdaptationLoaded} />
-
-        {loading && !overview ? (
-          <div className="space-y-6">
-            <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-              {Array.from({ length: 4 }).map((_, index) => (
-                <div key={index} className="h-32 animate-pulse rounded-[18px] border border-border bg-surface" />
-              ))}
-            </section>
-            <section className="grid gap-6 xl:grid-cols-[1.35fr_0.85fr]">
-              <div className="h-[320px] animate-pulse rounded-[20px] border border-border bg-surface" />
-              <div className="grid gap-6">
-                <div className="h-[240px] animate-pulse rounded-[20px] border border-border bg-surface" />
-                <div className="h-[240px] animate-pulse rounded-[20px] border border-border bg-surface" />
-              </div>
-            </section>
-          </div>
-        ) : emptyState ? (
-          <section className="rounded-[32px] border border-border bg-surface p-12 text-center shadow-sm">
-            <div className="mx-auto mb-6 inline-flex h-20 w-20 items-center justify-center rounded-full bg-primary/10 text-primary">
-              <Activity className="h-10 w-10" />
-            </div>
-            <h2 className="mb-3 text-2xl font-bold text-foreground">No progress data yet.</h2>
-            <p className="mb-6 text-foreground/60">
-              Start your first goal to unlock progress analytics, streak tracking, and habit rankings.
-            </p>
-            <Link
-              href="/goals/add"
-              className="inline-flex rounded-full bg-primary px-6 py-3 text-sm font-bold text-white shadow-sm transition-colors hover:bg-primary/90"
-            >
-              Start Your First Goal
-            </Link>
+        {loading && !overview && (
+          <section className="mb-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+            {Array.from({ length: 4 }).map((_, index) => (
+              <div key={index} className="h-32 animate-pulse rounded-[18px] border border-border bg-surface" />
+            ))}
           </section>
-        ) : overview ? (
+        )}
+
+        {overview && !emptyState && (
           <>
             <section className="mb-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
               <StatCard
@@ -303,7 +268,7 @@ export default function ProgressPage() {
                   </h2>
                 </div>
                 <div className="rounded-full border border-border bg-background px-4 py-2 text-sm font-bold text-foreground/60">
-                  {summary?.completedGoals ?? 0} completed • {summary?.atRiskGoals ?? 0} at risk
+                  {summary?.completedGoals ?? 0} completed â€¢ {summary?.atRiskGoals ?? 0} at risk
                 </div>
               </div>
 
@@ -320,7 +285,47 @@ export default function ProgressPage() {
                 ))}
               </div>
             </section>
+          </>
+        )}
 
+        <section className="mb-6" data-testid="persona-card">
+          <PersonaCard
+            persona={persona}
+            loading={personaLoading}
+            onRefresh={handleRefreshPersona}
+            windowDays={personaWindowDays}
+            onWindowDaysChange={handleWindowDaysChange}
+          />
+        </section>
+
+        <AIAdaptationSection range={range} onAnalysisLoaded={handleAdaptationLoaded} />
+
+        {loading && !overview ? (
+          <section className="mb-6 grid gap-6 xl:grid-cols-[1.35fr_0.85fr]">
+            <div className="h-[320px] animate-pulse rounded-[20px] border border-border bg-surface" />
+            <div className="grid gap-6">
+              <div className="h-[240px] animate-pulse rounded-[20px] border border-border bg-surface" />
+              <div className="h-[240px] animate-pulse rounded-[20px] border border-border bg-surface" />
+            </div>
+          </section>
+        ) : emptyState ? (
+          <section className="rounded-[32px] border border-border bg-surface p-12 text-center shadow-sm">
+            <div className="mx-auto mb-6 inline-flex h-20 w-20 items-center justify-center rounded-full bg-primary/10 text-primary">
+              <Activity className="h-10 w-10" />
+            </div>
+            <h2 className="mb-3 text-2xl font-bold text-foreground">No progress data yet.</h2>
+            <p className="mb-6 text-foreground/60">
+              Start your first goal to unlock progress analytics, streak tracking, and habit rankings.
+            </p>
+            <Link
+              href="/goals/add"
+              className="inline-flex rounded-full bg-primary px-6 py-3 text-sm font-bold text-white shadow-sm transition-colors hover:bg-primary/90"
+            >
+              Start Your First Goal
+            </Link>
+          </section>
+        ) : overview ? (
+          <>
             <section className="mb-6 grid gap-6 xl:grid-cols-[1.35fr_0.85fr] xl:items-start">
               <div className="grid gap-6">
                 <ConsistencyChart series={series} />

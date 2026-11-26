@@ -275,6 +275,9 @@ export interface SubscriptionResponse {
   tier: SubscriptionTier;
   status: SubscriptionStatus;
   currentPeriodEnd: string | null;
+  trialEligible: boolean;
+  isTrial: boolean;
+  trialPeriodDays: number;
   limits: SubscriptionLimits;
   features: PlanFeatures;
   premiumPriceIdr: number;

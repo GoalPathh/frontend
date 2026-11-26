@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   ArrowRight,
   Bell,
@@ -24,6 +24,12 @@ import { useRouter } from "next/navigation";
 import { IntentLink } from "@/components/intent-link";
 import { UserAvatar } from "@/components/user-avatar";
 import { authService } from "@/lib/authService";
+import {
+  describeSubscriptionStatus,
+  notifySubscriptionUpdated,
+  subscriptionService,
+} from "@/lib/subscriptionService";
+import type { SubscriptionResponse } from "@/lib/types";
 import { useProfileOverview } from "@/components/profile/use-profile-overview";
 
 const quickLinks = [
@@ -43,12 +49,50 @@ export function ProfileHub() {
   const router = useRouter();
   const { overview, loading, error, reload } = useProfileOverview("/profile");
   const [loggingOut, setLoggingOut] = useState(false);
+  const [subscription, setSubscription] = useState<SubscriptionResponse | null>(null);
+  const [subscriptionLoading, setSubscriptionLoading] = useState(true);
+  const [trialStarting, setTrialStarting] = useState(false);
+  const [trialError, setTrialError] = useState("");
+
+  useEffect(() => {
+    let cancelled = false;
+    void subscriptionService.getMySubscription().then((value) => {
+      if (!cancelled) setSubscription(value);
+    }).catch(() => {
+      if (!cancelled) setSubscription(null);
+    }).finally(() => {
+      if (!cancelled) setSubscriptionLoading(false);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   async function handleLogout() {
     if (!window.confirm("Logout from GoalPath? You can sign in again at any time.")) return;
     setLoggingOut(true);
     await authService.logout();
     router.replace("/login");
+  }
+
+  async function handleStartTrial() {
+    if (trialStarting) return;
+    setTrialStarting(true);
+    setTrialError("");
+    try {
+      setSubscription(await subscriptionService.startTrial());
+    } catch (cause) {
+      setTrialError(cause instanceof Error ? cause.message : "Unable to start the Premium trial.");
+      await subscriptionService.getMySubscription().then((latest) => {
+        setSubscription(latest);
+        if (!latest.trialEligible) {
+          setTrialError("");
+          notifySubscriptionUpdated(latest);
+        }
+      }).catch(() => undefined);
+    } finally {
+      setTrialStarting(false);
+    }
   }
 
   if (loading && !overview) {
@@ -108,7 +152,31 @@ export function ProfileHub() {
             <div className="min-w-0">
               <p id="profile-overview-title" className="text-[10px] font-extrabold uppercase tracking-[0.16em] text-primary sm:text-xs sm:tracking-[0.2em]">Profile Overview</p>
               <h2 className="mt-1 break-words text-xl font-extrabold leading-tight text-foreground sm:mt-2 sm:text-3xl">{profile.name}</h2>
-              <p className="mt-1 truncate text-xs font-semibold text-foreground/55 sm:text-sm">{profile.username}</p>
+              <div aria-live="polite">
+                {subscriptionLoading ? (
+                  <p className="mt-1 text-xs font-semibold text-foreground/55 sm:text-sm">Loading plan status</p>
+                ) : subscription?.trialEligible ? (
+                  <div className="mt-2">
+                    <button
+                      type="button"
+                      onClick={() => void handleStartTrial()}
+                      disabled={trialStarting}
+                      className="inline-flex min-h-11 items-center gap-2 rounded-full bg-primary px-4 py-2 text-xs font-extrabold text-white transition hover:bg-primary/90 disabled:cursor-wait disabled:opacity-60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
+                    >
+                      {trialStarting ? <Loader2 aria-hidden="true" className="size-4 animate-spin" /> : <Sparkles aria-hidden="true" className="size-4" />}
+                      {trialStarting ? "Starting trial..." : `Start ${subscription.trialPeriodDays}-day Premium trial`}
+                    </button>
+                    <p className="mt-1 text-[10px] font-medium leading-4 text-foreground/55">No payment details needed. Returns to Free without an automatic charge.</p>
+                  </div>
+                ) : subscription ? (
+                  <span className="mt-2 inline-flex min-h-7 items-center rounded-full bg-primary/10 px-3 text-xs font-extrabold text-primary">
+                    {describeSubscriptionStatus(subscription)}
+                  </span>
+                ) : (
+                  <p className="mt-1 text-xs font-semibold text-foreground/55 sm:text-sm">Plan status unavailable</p>
+                )}
+              </div>
+              {trialError && <p role="alert" className="mt-2 text-xs font-semibold text-coral">{trialError}</p>}
               <div className="mt-2 flex flex-wrap gap-1.5 sm:mt-4 sm:gap-2">
                 <span className="inline-flex min-h-7 items-center gap-1.5 rounded-full bg-primary/10 px-2 text-[10px] font-extrabold text-primary sm:min-h-9 sm:gap-2 sm:px-3 sm:text-xs"><Trophy aria-hidden="true" className="size-3.5 sm:size-4" /> Level {profile.level}</span>
                 <span className="inline-flex min-h-7 items-center gap-1.5 rounded-full bg-sky/10 px-2 text-[10px] font-extrabold text-sky sm:min-h-9 sm:gap-2 sm:px-3 sm:text-xs"><Sparkles aria-hidden="true" className="size-3.5 sm:size-4" /> {formatNumber(stats.totalXp)} XP</span>

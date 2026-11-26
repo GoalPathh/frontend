@@ -8,6 +8,20 @@ import {
   type SubscriptionWebhookAck,
 } from "./types";
 
+export const SUBSCRIPTION_UPDATED_EVENT = "goalpath:subscription-updated";
+
+export function notifySubscriptionUpdated(subscription: SubscriptionResponse) {
+  if (typeof window !== "undefined") {
+    window.dispatchEvent(new CustomEvent(SUBSCRIPTION_UPDATED_EVENT, { detail: subscription }));
+  }
+}
+
+export function describeSubscriptionStatus(subscription: SubscriptionResponse): string {
+  if (subscription.tier === "premium") return subscription.isTrial ? "Premium trial" : "Premium";
+  if (subscription.isTrial) return "Trial ended";
+  return subscription.trialEligible ? "Try Premium trial" : "Free plan";
+}
+
 /**
  * Frontend wrapper for the backend subscription service.
  * All endpoints live at `${API_URL}/subscription/*`.
@@ -15,6 +29,14 @@ import {
 export const subscriptionService = {
   async getMySubscription(): Promise<SubscriptionResponse> {
     return apiRequest<SubscriptionResponse>("/subscription");
+  },
+
+  async startTrial(): Promise<SubscriptionResponse> {
+    const subscription = await apiRequest<SubscriptionResponse>("/subscription/trial", {
+      method: "POST",
+    });
+    notifySubscriptionUpdated(subscription);
+    return subscription;
   },
 
   async getPaymentHistory(): Promise<SubscriptionPayment[]> {
@@ -28,15 +50,19 @@ export const subscriptionService = {
   },
 
   async refresh(): Promise<SubscriptionResponse> {
-    return apiRequest<SubscriptionResponse>("/subscription/refresh", {
+    const subscription = await apiRequest<SubscriptionResponse>("/subscription/refresh", {
       method: "POST",
     });
+    notifySubscriptionUpdated(subscription);
+    return subscription;
   },
 
   async cancel(): Promise<SubscriptionResponse> {
-    return apiRequest<SubscriptionResponse>("/subscription/cancel", {
+    const subscription = await apiRequest<SubscriptionResponse>("/subscription/cancel", {
       method: "POST",
     });
+    notifySubscriptionUpdated(subscription);
+    return subscription;
   },
 };
 

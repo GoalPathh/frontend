@@ -2,9 +2,10 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
-import { useRouter, useSearchParams } from "next/navigation";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import {
   BarChart3,
+  Wallet,
   CheckCircle2,
   Loader2,
   MessageSquare,
@@ -24,7 +25,12 @@ import { UserAvatar } from "@/components/user-avatar";
 import { BrandLogo } from "@/components/brand-logo";
 import { IntentLink } from "@/components/intent-link";
 import { USER_PROFILE_EVENT, userService } from "@/lib/userService";
-import type { UserProfile } from "@/lib/types";
+import {
+  describeSubscriptionStatus,
+  SUBSCRIPTION_UPDATED_EVENT,
+  subscriptionService,
+} from "@/lib/subscriptionService";
+import type { SubscriptionResponse, UserProfile } from "@/lib/types";
 
 export type AppSection = "today" | "goals" | "progress" | "coach" | "me" | "pricing";
 
@@ -41,6 +47,7 @@ const mainMenu = [
   { key: "goals", label: "Goals", href: "/goals", Icon: Target },
   { key: "progress", label: "Progress", href: "/progress", Icon: BarChart3 },
   { key: "coach", label: "Coach", href: "/coach", Icon: UserCog },
+  { key: "pricing", label: "Pricing", href: "/profile/subscription", Icon: Wallet },
 ] as const;
 
 export function AppSidebar({
@@ -50,7 +57,11 @@ export function AppSidebar({
   onNavigate,
   prefetchTodayGoals = true,
 }: AppSidebarProps) {
+  const pathname = usePathname();
+  const isProfileActive = active === "me" && pathname !== "/profile/subscription";
   const [profile, setProfile] = useState<UserProfile | null>(null);
+  const [subscription, setSubscription] = useState<SubscriptionResponse | null>(null);
+  const [subscriptionLoading, setSubscriptionLoading] = useState(true);
 
   useEffect(() => {
     let cancelled = false;
@@ -69,12 +80,34 @@ export function AppSidebar({
     };
   }, []);
 
+  useEffect(() => {
+    let cancelled = false;
+    let receivedUpdate = false;
+    const updateSubscription = (event: Event) => {
+      receivedUpdate = true;
+      setSubscription((event as CustomEvent<SubscriptionResponse>).detail);
+      setSubscriptionLoading(false);
+    };
+    window.addEventListener(SUBSCRIPTION_UPDATED_EVENT, updateSubscription);
+    void subscriptionService.getMySubscription().then((value) => {
+      if (!cancelled && !receivedUpdate) setSubscription(value);
+    }).catch(() => {
+      if (!cancelled && !receivedUpdate) setSubscription(null);
+    }).finally(() => {
+      if (!cancelled) setSubscriptionLoading(false);
+    });
+    return () => {
+      cancelled = true;
+      window.removeEventListener(SUBSCRIPTION_UPDATED_EVENT, updateSubscription);
+    };
+  }, []);
+
   const displayName = profile?.name?.trim() || "GoalPath User";
-  const profileSubtitle = profile?.username?.trim()
-    ? `@${profile.username.trim()}`
-    : profile
-      ? `Level ${profile.level} • ${profile.xp.toLocaleString("id-ID")} XP`
-      : "Account settings";
+  const profileSubtitle = subscription
+    ? describeSubscriptionStatus(subscription)
+    : subscriptionLoading
+      ? "Loading plan status"
+      : "Plan status unavailable";
 
   return (
     <aside
@@ -98,7 +131,8 @@ export function AppSidebar({
         </p>
         <nav className="space-y-1" aria-label="Main navigation">
           {mainMenu.map(({ key, label, href, Icon }) => {
-            const isActive = active === key;
+            const isActive =
+              active === key || (key === "pricing" && pathname === "/profile/subscription");
             return (
               <IntentLink
                 key={key}
@@ -142,8 +176,8 @@ export function AppSidebar({
         <IntentLink
           href="/profile"
           onClick={onNavigate}
-          aria-current={active === "me" ? "page" : undefined}
-          className={`flex min-h-14 items-center gap-3 rounded-2xl p-2 transition hover:bg-primary-soft/15 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background ${active === "me" ? "bg-primary/10" : ""}`}
+          aria-current={isProfileActive ? "page" : undefined}
+          className={`flex min-h-14 items-center gap-3 rounded-2xl p-2 transition hover:bg-primary-soft/15 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background ${isProfileActive ? "bg-primary/10" : ""}`}
         >
           <UserAvatar
             avatarUrl={profile?.avatarUrl}

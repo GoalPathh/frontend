@@ -220,18 +220,20 @@ export function SubscriptionSettings({ upgradeStatus }: { upgradeStatus?: string
                 <div><p className="text-xs font-extrabold uppercase tracking-[0.18em] text-primary">Current subscription plan</p><h2 id="current-plan-title" className="mt-1 text-2xl font-extrabold text-foreground">{describeTierLabel(subscription.tier)}</h2></div>
               </div>
               <div className="mt-5 flex flex-wrap items-center gap-2">
-                <span className={`inline-flex min-h-8 items-center rounded-full px-3 text-xs font-extrabold ${subscription.tier === "premium" ? "bg-primary/10 text-primary" : "bg-foreground/5 text-foreground/60"}`}>{subscription.tier === "premium" ? "Premium status" : "Free plan"}</span>
+                <span className={`inline-flex min-h-8 items-center rounded-full px-3 text-xs font-extrabold ${subscription.tier === "premium" ? "bg-primary/10 text-primary" : "bg-foreground/5 text-foreground/60"}`}>{subscription.tier === "premium" ? subscription.isTrial ? "Premium trial" : "Premium status" : "Free plan"}</span>
                 <span className="inline-flex min-h-8 items-center rounded-full border border-border bg-background px-3 text-xs font-bold capitalize text-foreground/65">{formatLabel(subscription.status)}</span>
               </div>
               <dl className="mt-6 grid gap-3 sm:grid-cols-2">
-                <div className="rounded-[18px] border border-border bg-background p-4"><dt className="text-[11px] font-bold uppercase tracking-[0.14em] text-foreground/50">Premium price</dt><dd className="mt-2 text-lg font-extrabold text-foreground">{premiumPrice}</dd></div>
-                <div className="rounded-[18px] border border-border bg-background p-4"><dt className="text-[11px] font-bold uppercase tracking-[0.14em] text-foreground/50">Billing period</dt><dd className="mt-2 text-lg font-extrabold text-foreground">{subscription.premiumPeriodDays} days</dd></div>
+                <div className="rounded-[18px] border border-border bg-background p-4"><dt className="text-[11px] font-bold uppercase tracking-[0.14em] text-foreground/50">{subscription.isTrial ? "Trial price" : "Premium price"}</dt><dd className="mt-2 text-lg font-extrabold text-foreground">{subscription.isTrial ? "Free" : premiumPrice}</dd></div>
+                <div className="rounded-[18px] border border-border bg-background p-4"><dt className="text-[11px] font-bold uppercase tracking-[0.14em] text-foreground/50">{subscription.isTrial ? "Trial duration" : "Billing period"}</dt><dd className="mt-2 text-lg font-extrabold text-foreground">{subscription.isTrial ? `${subscription.trialPeriodDays} days` : `${subscription.premiumPeriodDays} days`}</dd></div>
                 <div className="rounded-[18px] border border-border bg-background p-4"><dt className="text-[11px] font-bold uppercase tracking-[0.14em] text-foreground/50">Subscription expires</dt><dd className="mt-2 text-sm font-extrabold text-foreground">{formatDate(subscription.currentPeriodEnd)}</dd></div>
                 <div className="rounded-[18px] border border-border bg-background p-4"><dt className="text-[11px] font-bold uppercase tracking-[0.14em] text-foreground/50">Latest payment method</dt><dd className="mt-2 text-sm font-extrabold text-foreground">{formatLabel(latestPaymentMethod)}</dd></div>
               </dl>
               <div className="mt-6 flex flex-wrap items-center gap-3 border-t border-border pt-5">
                 {isPremium ? (
-                  subscription.status === "active" ? (
+                  subscription.isTrial ? (
+                    <p className="text-sm font-semibold text-foreground/60">Your trial ends {formatDate(subscription.currentPeriodEnd)}. It will return to Free without an automatic charge.</p>
+                  ) : subscription.status === "active" ? (
                     <button type="button" onClick={() => void handleCancel()} disabled={cancelling} className="inline-flex min-h-11 items-center gap-2 rounded-full border border-coral/30 bg-background px-5 py-2.5 text-sm font-extrabold text-coral transition hover:bg-coral/10 disabled:cursor-wait disabled:opacity-60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-coral focus-visible:ring-offset-2">
                       {cancelling ? <Loader2 aria-hidden="true" className="size-4 animate-spin" /> : <LockKeyhole aria-hidden="true" className="size-4" />}
                       {cancelling ? "Updating…" : "Cancel auto-renewal"}
